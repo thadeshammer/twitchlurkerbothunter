@@ -1,15 +1,13 @@
 FROM python:3.11-slim
 
-WORKDIR /server
+WORKDIR /app
 
-# src lives in /server in local and container
-COPY . /server
+COPY requirements.txt requirements.txt
+RUN pip install -r requirements.txt
 
-# install requirements
-RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
 
-# TODO 443 / tokens / oauth
-EXPOSE 80
+COPY wait-for-it.sh /wait-for-it.sh
+RUN chmod +x /wait-for-it.sh
 
-# invoke uvicorn with hot-reload
-CMD ["uvicorn", "server.main:app", "--host", "0.0.0.0", "--port", "80", "--reload", "--reload-dir", "/server", "--log-config", "./logging_config.yml"]
+CMD ["/wait-for-it.sh", "db:3306", "--", "flask", "run", "--host=0.0.0.0", "--port=80"]

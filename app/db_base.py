@@ -1,4 +1,5 @@
 """
+TODO update this comment header
 Base declarative class for SQLAlchemy models.
 
 This module defines the base class for all SQLAlchemy ORM models in the application.
@@ -27,6 +28,14 @@ Note:
     so that the models are registered with the `Base` metadata.
 """
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
+
+DATABASE_URL = "mysql+pymysql://user:password@db/mydatabase"
+
+# Defining these here instead of db.py will fix circular imports. Hopefully.
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Create a base class for all declarative models to inherit from.
 Base = declarative_base()
