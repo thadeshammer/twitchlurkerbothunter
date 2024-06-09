@@ -1,0 +1,24 @@
+services:
+  python-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "0.0.0.0:80:80"
+      # - "0.0.0.0:4000:80"
+    volumes:
+      - .:/server
+    environment:
+      - NAME=World
+    depends_on:
+      - postgres
+
+  # used how-to at https://github.com/felipewom/docker-compose-postgres
+  postgres:
+    image: 'postgres:latest'
+    ports:
+      - "0.0.0.0:5432:5432"
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: default_database
