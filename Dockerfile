@@ -4,10 +4,8 @@ WORKDIR /app
 
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
+RUN apt-get update && apt-get install -y default-mysql-client
 
 COPY . .
 
-COPY wait-for-it.sh /wait-for-it.sh
-RUN chmod +x /wait-for-it.sh
-
-CMD ["/wait-for-it.sh", "db:3306", "--", "flask", "run", "--host=0.0.0.0", "--port=80"]
+CMD ["flask", "run", "--host=0.0.0.0", "--port=80"]
