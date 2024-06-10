@@ -2,6 +2,21 @@
 
 CURRENTLY IN DEVELOPMENT
 
+| Issues and Milestones                       | Status       |
+| ------------------------------------------- | ------------ |
+| Base schema implemeneted                    | ✅           |
+|   Boilerplate nailed down                   | ✅           |
+|   Test routes working                       | ✅           |
+| Twitch OAuth flow                           | ❌           |
+| Viewer list fetch for target channel        | ❌           |
+| Crawl the streams. (How?)                   | ❌           |
+| white list / ignore list (for good bots)    | ❌           |
+| ignore list for channels that opt-out       | ❌           |
+| Profiling (Consider a db table for it.)     | ❌           |
+| Parallelization                             | ❌           |
+| Get hard-coded config stuff into config.    | ❌           |
+| Unit tests                                  | ❌           |
+
 ## Why am I doing this?
 
 **Lurker Bots** are Twitch accounts which remain resident in thousands of chat channels across Twitch for large spans of time, either to quietly collect data on those channels and their discussions, or simply to serve as a passive advertisement. They're hoping the curious folks click, think they're cute, and subscribe, I guess. While in some ways they're harmless, and some perhaps appreciate the padding on their viewer counts, almost everyone I've spoken to about the topic finds them distasteful, creepy, frustrating, or all three. Why doesn't Twitch do anything about these accounts? I have no idea, but in light of that, there are really only two champions in the space addressing this issue in any capacity.
