@@ -1,0 +1,10 @@
+handlers:
+  - sink: sys.stderr
+    level: INFO
+    format: "{time} - {level} - {message}"
+  - sink: "/logs/server.log"
+    level: DEBUG
+    format: "{time} - {level} - {message}"
+    rotation: "10 MB"
+    retention: "10 days"
+    compression: "zip"

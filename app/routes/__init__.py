@@ -1,1 +1,3 @@
-from .test_routes import *
+from .test_routes import register_routes
+
+__all__ = ["register_routes"]

@@ -21,12 +21,20 @@ services:
     command: flask run --host=0.0.0.0 --port=80
     volumes:
       - .:/app
+      - log_volume:/logs
     ports:
       - "8000:80"
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   mysql_data:
+    driver: local
+  log_volume:
     driver: local

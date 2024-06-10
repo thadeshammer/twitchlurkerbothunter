@@ -19,6 +19,7 @@ class TwitchUserData(Base):
 
     # Relationships
     observations = relationship("Observation", back_populates="twitch_user_data")
+    suspects = relationship("Suspect", back_populates="twitch_user_data")
 
 
 class TwitchUserDataBase(BaseModel):
