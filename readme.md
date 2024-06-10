@@ -2,6 +2,8 @@
 
 CURRENTLY IN DEVELOPMENT
 
+<div align="center">
+    
 | Issues and Milestones                       | Status       |
 | ------------------------------------------- | ------------ |
 | Base schema implemeneted                    | ✅           |
@@ -16,6 +18,8 @@ CURRENTLY IN DEVELOPMENT
 | Parallelization                             | ❌           |
 | Get hard-coded config stuff into config.    | ❌           |
 | Unit tests                                  | ❌           |
+
+</div>
 
 ## Why am I doing this?
 
