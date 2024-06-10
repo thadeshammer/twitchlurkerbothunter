@@ -2,3 +2,4 @@ __pycache__
 ./db
 ./logs
 .mypy_cache
+sys.stderr

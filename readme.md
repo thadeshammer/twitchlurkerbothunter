@@ -3,21 +3,21 @@
 <div align="center">
 
 CURRENTLY IN DEVELOPMENT
-    
-| Issues and Milestones                       | Status       |
-| ------------------------------------------- | ------------ |
-| Base schema implemeneted                    | ✅           |
-|   Boilerplate nailed down                   | ✅           |
-|   Test routes working                       | ✅           |
-| Twitch OAuth flow                           | ❌           |
-| Viewer list fetch for target channel        | ❌           |
-| Crawl the streams. (How?)                   | ❌           |
-| white list / ignore list (for good bots)    | ❌           |
-| ignore list for channels that opt-out       | ❌           |
-| Profiling (Consider a db table for it.)     | ❌           |
-| Parallelization                             | ❌           |
-| Get hard-coded config stuff into config.    | ❌           |
-| Unit tests                                  | ❌           |
+
+| Issues and Milestones                    | Status |
+| ---------------------------------------- | ------ |
+| Base schema implemeneted                 | ✅     |
+| Boilerplate nailed down                  | ✅     |
+| Test routes working                      | ✅     |
+| Twitch OAuth flow                        | ❌     |
+| Viewer list fetch for target channel     | ❌     |
+| Crawl the streams. (How?)                | ❌     |
+| white list / ignore list (for good bots) | ❌     |
+| ignore list for channels that opt-out    | ❌     |
+| Profiling (Consider a db table for it.)  | ❌     |
+| Parallelization                          | ❌     |
+| Get hard-coded config stuff into config. | ❌     |
+| Unit tests                               | ❌     |
 
 </div>
 
@@ -77,32 +77,34 @@ The bot utilizes Flask, SQLAlchemy, Docker, and Pydantic to validate and manage 
 ### Installation
 
 1. **Clone the repository**:
-    ```bash
-    git clone https://github.com/yourusername/twitch-lurker-bot-recon.git
-    cd twitch-lurker-bot-recon
-    ```
+
+   ```bash
+   git clone https://github.com/yourusername/twitch-lurker-bot-recon.git
+   cd twitch-lurker-bot-recon
+   ```
 
 2. **Set up the Docker environment**:
-    Ensure you have Docker and Docker Compose installed on your machine. The provided `docker-compose.yaml` will handle the setup of the MySQL database and the Flask application.
+   Ensure you have Docker and Docker Compose installed on your machine. The provided `docker-compose.yaml` will handle the setup of the MySQL database and the Flask application.
 
 3. **Start the Docker containers**:
-    ```bash
-    docker-compose up --build
-    ```
+
+   ```bash
+   docker-compose up --build
+   ```
 
 4. **Check the logs**:
-    To verify everything is running correctly, you can check the logs:
-    ```bash
-    docker-compose logs
-    ```
+   To verify everything is running correctly, you can check the logs:
+   ```bash
+   docker-compose logs
+   ```
 
 ### Configuration
 
 - **Database Configuration**:
-    The database configuration is managed through environment variables set in the `docker-compose.yaml`.
+  The database configuration is managed through environment variables set in the `docker-compose.yaml`.
 
 - **Logging Configuration**:
-    Logging is configured through `logging_config.yaml`. Logs are written to both standard error and `server.log`. **NOTE** This is currently busted, repairs are my next step. We gotta have logging.
+  Logging is configured through `logging_config.yaml`. Logs are written to both standard error and `server.log`. **NOTE** This is currently busted, repairs are my next step. We gotta have logging.
 
 ## Usage
 
@@ -132,6 +134,6 @@ This project is licensed under the MIT License. See the `LICENSE` file for detai
 ## Acknowledgments
 
 Special thanks to:
+
 - [AlphaDuplo](https://twitch.tv/alphaduplo) for maintaining Twitch Insights Bot list. Everyone I know uses it when they're trying to boot lurker bots out of their chats.
 - The [Twitchtv-Bots-List project](https://github.com/arrowgent/Twitchtv-Bots-List) for their profound efforts in the space.
-
