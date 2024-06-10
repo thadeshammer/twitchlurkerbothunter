@@ -21,7 +21,7 @@ services:
     command: flask run --host=0.0.0.0 --port=80
     volumes:
       - .:/app
-      - log_volume:/logs
+      - ./logs:/logs
     ports:
       - "8000:80"
     depends_on:
@@ -35,6 +35,4 @@ services:
 
 volumes:
   mysql_data:
-    driver: local
-  log_volume:
     driver: local

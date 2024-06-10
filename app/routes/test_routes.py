@@ -1,9 +1,12 @@
+import logging
+
 from flask import Flask, jsonify, request
-from loguru import logger
 
 from ..db import get_db
 from ..models.observation import Observation
 from ..models.twitch_user_data import TwitchUserData
+
+logger = logging.getLogger(__name__)
 
 
 def register_routes(app: Flask) -> None:

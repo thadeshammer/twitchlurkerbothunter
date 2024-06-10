@@ -1,5 +1,3 @@
 __pycache__
-./db
-./logs
+logs/
 .mypy_cache
-sys.stderr

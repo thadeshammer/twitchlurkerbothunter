@@ -1,10 +1,21 @@
+version: 1
+formatters:
+  detailed:
+    format: "%(asctime)s %(name)s %(levelname)s %(message)s"
+
 handlers:
-  - sink: sys.stderr
-    level: INFO
-    format: "{time} - {level} - {message}"
-  - sink: "/logs/server.log"
+  console:
+    class: logging.StreamHandler
     level: DEBUG
-    format: "{time} - {level} - {message}"
-    rotation: "10 MB"
-    retention: "10 days"
-    compression: "zip"
+    formatter: detailed
+    stream: ext://sys.stdout
+
+  file:
+    class: logging.FileHandler
+    level: DEBUG
+    formatter: detailed
+    filename: /logs/server.log
+
+root:
+  level: DEBUG
+  handlers: [console, file]
