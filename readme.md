@@ -40,6 +40,7 @@ I'm [live streaming](https://twitch.tv/thadeshammer) portions of my development 
 This application will - within the 20 channel-joins per 10 seconds ratelimit - crawl over Twitch live streams to collect their publically available viewer lists and publically available user data to help identify lurker bots. Multiple methods will be used to fingerprint lurkerbots, including:
 
 - aggregate viewer list data to identify accounts (by account id) who are concurrently in large numbers of live channels;
+- account age;
 - ratios between following and follower counts;
 - comparisons of follower and following lists across suspect accounts.
 
