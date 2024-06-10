@@ -1,8 +1,8 @@
 # Twitch Lurker Bot Recon Bot
 
-CURRENTLY IN DEVELOPMENT
-
 <div align="center">
+
+CURRENTLY IN DEVELOPMENT
     
 | Issues and Milestones                       | Status       |
 | ------------------------------------------- | ------------ |
