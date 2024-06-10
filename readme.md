@@ -12,6 +12,7 @@ CURRENTLY IN DEVELOPMENT
 | Twitch OAuth flow                        | ❌     |
 | Viewer list fetch for target channel     | ❌     |
 | Crawl the streams. (How?)                | ❌     |
+| Collections metrics and visualizer       | ❌     |
 | white list / ignore list (for good bots) | ❌     |
 | ignore list for channels that opt-out    | ❌     |
 | Profiling (Consider a db table for it.)  | ❌     |
@@ -50,7 +51,7 @@ The bot will also randomize when it performs as sweep and what channels are incl
 
 The bot utilizes Flask, SQLAlchemy, Docker, and Pydantic to validate and manage data from Twitch. The project adheres to Twitch's TOS by using the Twitch IRC interface to scrape viewer lists manually without using undocumented endpoints or exceeding prescribed ratelimits.
 
-## Features
+## Frameworks and Features
 
 - **Flask**: Web framework used to create the backend API.
 - **SQLAlchemy**: ORM for interacting with the MySQL database.
@@ -94,6 +95,7 @@ The bot utilizes Flask, SQLAlchemy, Docker, and Pydantic to validate and manage 
 
 4. **Check the logs**:
    To verify everything is running correctly, you can check the logs:
+
    ```bash
    docker-compose logs
    ```
