@@ -12,16 +12,25 @@ logger = logging.getLogger(__name__)
 def register_routes(app: Flask) -> None:
     @app.route("/test")
     def test():
-        return jsonify({"ohai": "you did it"})
+        logger.info("/test route accessed.")
+        return jsonify({"test_endpoint": "achievement get"})
+    
+
+    @app.route("/start-sweep")
+    def start_sweep():
+        logger.info("/start-sweep route accessed.")
+        return jsonify({"start-sweep": "Not yet implemented"})
+    
+    @app.route("/scan-channel")
+    def scan_channel():
+        logger.info("/scan-channel route accessed.")
+        return jsonify({"scan-channel": "Not yet implemented"})
 
     @app.route("/")
     def index():
-        print("OHAI YOU TRIED TO LOAD THE HOMEPAGE TY", flush=True)
-        logger.debug("OHAI YOU TRIED TO LOAD THE HOMEPAGE TY")
+        logger.info("/ route accessed.")
         with get_db() as db:
-            print("in get_db closure, querying users")
             users = db.query(TwitchUserData).all()
-            print("querying observations")
             observations = db.query(Observation).all()
             return jsonify(
                 {

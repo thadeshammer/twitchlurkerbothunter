@@ -24,17 +24,19 @@ def setup_logging(
             config: Union[List, dict, None] = yaml.safe_load(config_file.read())
         assert isinstance(config, dict)
         logging.config.dictConfig(config)
+        print(f"Logging good to go: {config}", flush=True)
     else:
+        print("Logging is borked, falling back on defaults.", flush=True)
         logging.basicConfig(level=default_level)
 
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
-    app.debug = True
+    app.debug = False
 
     setup_logging()  # should only need to call this once (here)
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("app")
 
     logger.info("Creating app")
 
