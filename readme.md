@@ -1,4 +1,4 @@
-# Twitch Lurker Bot Recon Bot
+# Twitch Lurker Bot Finder
 
 <div align="center">
 
