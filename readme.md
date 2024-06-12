@@ -18,7 +18,7 @@ CURRENTLY IN DEVELOPMENT
 | ignore list for channels that opt-out    | ❌     |
 | Profiling (Consider a db table for it.)  | ❌     |
 | Parallelization                          | ❌     |
-| Get hard-coded config stuff into config. | ❌     |
+| Get hard-coded config stuff into config. | ✅     |
 | Unit tests                               | ❌     |
 
 </div>
