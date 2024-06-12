@@ -19,16 +19,26 @@ def register_routes(app: Flask) -> None:
     # Endpoint to receive the token
     @app.route("/store_token", methods=["POST"])
     def store_token():
-        token: Optional[str] = None
+        access_token: Optional[str] = None
+        refresh_token: Optional[str] = None
         if request is not None and request.json is not None:
-            token = request.json.get("access_token")
+            access_token = request.json.get("access_token")
+            refresh_token = request.json.get("refresh_token")
 
-        if token:
-            # You can store the token securely or handle it as needed
-            # For example, save it in a database or a secure file
-            return jsonify({"message": "Token received"}), 200
+        if access_token and refresh_token:
+            # TODO Store tokens in current_app.config
+            return (
+                jsonify(
+                    {
+                        "message": "Token received",
+                        "access": access_token,
+                        "refresh": refresh_token,
+                    }
+                ),
+                200,
+            )
 
-        return jsonify({"error": "No token provided"}), 400
+        return jsonify({"error": "Missing or bad tokens"}), 400
 
     @app.route("/start-sweep")
     def start_sweep():
