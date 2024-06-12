@@ -9,10 +9,11 @@ CURRENTLY IN DEVELOPMENT
 | Base schema implemeneted                 | ✅     |
 | Boilerplate nailed down                  | ✅     |
 | Test routes working                      | ✅     |
-| Twitch OAuth flow                        | ❌     |
+| Twitch OAuth flow                        | ✅     |
 | Viewer list fetch for target channel     | ❌     |
-| Crawl the streams. (How?)                | ❌     |
+| Crawl the streams.                       | ❌     |
 | Collections metrics and visualizer       | ❌     |
+| Documentation pass                       | ❌     |
 | white list / ignore list (for good bots) | ❌     |
 | ignore list for channels that opt-out    | ❌     |
 | Profiling (Consider a db table for it.)  | ❌     |
@@ -51,6 +52,8 @@ The bot will also randomize when it performs as sweep and what channels are incl
 
 The bot utilizes Flask, SQLAlchemy, Docker, and Pydantic to validate and manage data from Twitch. The project adheres to Twitch's TOS by using the Twitch IRC interface to scrape viewer lists manually without using undocumented endpoints or exceeding prescribed ratelimits.
 
+There's a second app - a single file Flask servlet - whose only job is to take care of the Twitch OAuth flow and secure a token. I did this for the experience; it was painful because the fetch_token() method wasn't recognizing the access_token was in fact in the response, and this ate a couple of my hours. Unless you also want the experience, may I recommend you just use [Twitch Token Generator](https://twitchtokengenerator.com/) as needed.
+
 ## Frameworks and Features
 
 - **Flask**: Web framework used to create the backend API.
@@ -58,22 +61,25 @@ The bot utilizes Flask, SQLAlchemy, Docker, and Pydantic to validate and manage 
 - **Docker**: Containerization for easy deployment and management.
 - **Pydantic**: Data validation and settings management.
 - **Twitch IRC Interface**: For collecting viewer lists in compliance with Twitch's TOS.
+- **Twitch Helix API**: To query for live streams to include in the sweep.
 - **Parallel Processing**: Considering using Python coroutines, multiprocesses, or microservices for parallelizing tasks.
 
 ## Regarding foundational tech choices
 
-- **Why Python?**: Python as an ecosystem and community has a lot of well documented and maintained projects that are useful in data analysis. In addition, I wanted to use Python because I want to keep my Python skills sharp.
+- **Why Python?**: Python as an ecosystem and community has a lot of well documented and maintained projects that are useful in data analysis. In addition, I wanted to use Python because I want to keep my Python skills sharp in the current market. And I happen to enjoy Python. Mostly.
 - **Why Flask?**: There are several twitch-api Python modules I came across that seem to be geared towards Flask, which is in part why we're here. In addition, I wanted recent work with Flask since it's been a year since I've used it, and this is my first time setting up a Flask app from the studs, which was a valuable if painful experience.
 - **Why not JavaScript?**: The honest answer is, I already have a JS project in-flight right now and wanted a balance. The availability of stats analysis tools in Python was also important, but was secondary.
 - **Why not Rust?**: I will no doubt continue asking myself this question as the project goes on.
 
 ## Getting Started
 
+This is very, very early development, so if you fork it, you're really just getting the preliminary data schemas and some boilerplate. I hope it serves you well.
+
 ### Prerequisites
 
 - Docker + Docker Compose
 - Python 3.11+ (See requirements.txt for additional details)
-- A Twitch account with your own client id and secret if you want to fork it yourself.
+- A Twitch account with your own client id and secret if you want to fork it.
 
 ### Installation
 
@@ -116,6 +122,9 @@ Currently, the bot doesn't do anything beyond standing up and creating the table
 
 - **GET /**: Returns a summary of collected user data.
 - **GET /test**: Confirms the server is in fact up.
+- **POST /store_token**: Receiver for a token from the twitch-oauth servlet. (Stub.)
+- **POST /scan_channel**: Pull viewer list from specified channel. (Not implemented.)
+- **POST /start_sweep**: Sweep live streams. (Not implemented.)
 - **POST /add_user**: Adds a new user to the database.
 - **POST /add_observation**: Adds a new observation to the database.
 
