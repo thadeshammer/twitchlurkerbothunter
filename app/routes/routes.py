@@ -15,7 +15,6 @@ def register_routes(app: Flask) -> None:
         logger.info("/test route accessed.")
         return jsonify({"test_endpoint": "achievement get"})
     
-
     @app.route("/start-sweep")
     def start_sweep():
         logger.info("/start-sweep route accessed.")
