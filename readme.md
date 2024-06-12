@@ -10,9 +10,11 @@ CURRENTLY IN DEVELOPMENT
 | Boilerplate nailed down                  | ✅     |
 | Test routes working                      | ✅     |
 | Twitch OAuth flow                        | ✅     |
+| Step up OAuth to HTTPS                   | ✅     |
 | Viewer list fetch for target channel     | ❌     |
 | Crawl the streams.                       | ❌     |
 | Collections metrics and visualizer       | ❌     |
+| Reconsider schema needs and indexing     | ❌     |
 | Documentation pass                       | ❌     |
 | white list / ignore list (for good bots) | ❌     |
 | ignore list for channels that opt-out    | ❌     |
