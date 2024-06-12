@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from flask import Flask, jsonify, request
 
@@ -14,12 +15,26 @@ def register_routes(app: Flask) -> None:
     def test():
         logger.info("/test route accessed.")
         return jsonify({"test_endpoint": "achievement get"})
-    
+
+    # Endpoint to receive the token
+    @app.route("/store_token", methods=["POST"])
+    def store_token():
+        token: Optional[str] = None
+        if request is not None and request.json is not None:
+            token = request.json.get("access_token")
+
+        if token:
+            # You can store the token securely or handle it as needed
+            # For example, save it in a database or a secure file
+            return jsonify({"message": "Token received"}), 200
+
+        return jsonify({"error": "No token provided"}), 400
+
     @app.route("/start-sweep")
     def start_sweep():
         logger.info("/start-sweep route accessed.")
         return jsonify({"start-sweep": "Not yet implemented"})
-    
+
     @app.route("/scan-channel")
     def scan_channel():
         logger.info("/scan-channel route accessed.")
