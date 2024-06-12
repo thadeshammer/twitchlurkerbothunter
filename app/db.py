@@ -3,30 +3,31 @@ import time
 from contextlib import contextmanager
 from typing import Generator, Optional
 
+from flask import current_app
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
+from app.config import ConfigKey
 from app.exceptions import DatabaseConnectionError
 
 from .db_base import SessionLocal
 
-MAX_RETRIES = 5
-RETRY_INTERVAL = 5
-
 
 def _get_session() -> Session:
     retries = 0
+    max_retries = current_app.config[ConfigKey.SQLALCHEMY_CONNECT_MAX_RETRIES]
+    retry_interval = current_app.config[ConfigKey.SQLALCHEMY_CONNECT_RETRY_INTERVAL]
 
     db: Optional[Session] = None
-    while retries < MAX_RETRIES and db is None:
+    while retries < max_retries and db is None:
         try:
-            print("calling SessionLocal", flush=True)
+
             db = SessionLocal()
-            print("returned from SessionLocal call", flush=True)
+
         except OperationalError as e:
             retries += 1
-            time.sleep(RETRY_INTERVAL)
-            if retries >= MAX_RETRIES:
+            time.sleep(retry_interval)
+            if retries >= max_retries:
                 raise DatabaseConnectionError(
                     "Failed to connect to the database after multiple retries."
                 ) from e
@@ -39,8 +40,6 @@ def _get_session() -> Session:
 def get_db() -> Generator[Session, None, None]:
     db = _get_session()
     try:
-        print("yielding dat db hopefully", flush=True)
         yield db
     finally:
-        print("closing db session", flush=True)
         db.close()

@@ -12,7 +12,9 @@ COPY . .
 RUN mkdir -p /logs
 
 # Set environment variables
-ENV LOG_CFG=logging_config.yaml
+ENV LOG_CFG="logging_config.yaml"
+ENV DATABASE_URL="mysql+pymysql://user:password@db/mydatabase"
+ENV SECRETS_DIR="./secrets/tokens.yaml"
 
 # Expose the port
 EXPOSE 8000
