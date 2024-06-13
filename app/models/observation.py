@@ -7,7 +7,7 @@ from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import relationship
 
-from app.db import Base
+from app.db_base import Base
 
 
 class Observation(Base):

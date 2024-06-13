@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from sqlalchemy import JSON, Boolean, Column, Integer, String
 from sqlalchemy.orm import Mapped, relationship  # type: ignore
 
-from app.db import Base
+from app.db_base import Base
 
 
 class TwitchUserData(Base):

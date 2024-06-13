@@ -3,9 +3,9 @@ from typing import Optional
 
 from flask import Flask, jsonify, request
 
-from app.db import get_db
-from app.models.observation import Observation
-from app.models.twitch_user_data import TwitchUserData
+from ..db import get_db
+from ..models.observation import Observation
+from ..models.twitch_user_data import TwitchUserData
 
 logger = logging.getLogger(__name__)
 
