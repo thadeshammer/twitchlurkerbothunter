@@ -6,8 +6,9 @@ from typing import List, Union
 import yaml
 from flask import Flask
 
-from .config import Config
-from .db_base import Base, engine
+from app.db import Base, engine, init_db
+
+from .config import Config, ConfigKey
 from .models import observation, suspect, twitch_user_data
 from .routes import register_routes
 
@@ -39,6 +40,13 @@ def setup_logging() -> None:
         logging.basicConfig(level=logging.DEBUG)
 
 
+def tee_up_database(app: Flask):
+    database_uri: str = app.config[ConfigKey.SQLALCHEMY_DATABASE_URI]
+    max_retries: int = app.config[ConfigKey.SQLALCHEMY_CONNECT_MAX_RETRIES]
+    retry_interval: int = app.config[ConfigKey.SQLALCHEMY_CONNECT_RETRY_INTERVAL]
+    init_db(database_uri, max_retries, retry_interval)
+
+
 def create_app() -> Flask:
     app: Flask = Flask(__name__)
 
@@ -49,6 +57,8 @@ def create_app() -> Flask:
     setup_logging()
     logger = logging.getLogger("app")
     logger.info("Logger is ready.")
+
+    tee_up_database(app)
 
     with app.app_context():
         register_routes(app)
