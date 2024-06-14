@@ -6,10 +6,10 @@ from typing import List, Union
 import yaml
 from flask import Flask
 
-from .config import Config
-from .db_base import Base, engine
-from .models import observation, suspect, twitch_user_data
-from .routes import register_routes
+from app.config import Config
+from app.db import Base, engine
+from app.models import observation, suspect, twitch_user_data
+from app.routes import register_routes
 
 
 def extract_filenames_from_logger_config(logger_config: dict) -> list:

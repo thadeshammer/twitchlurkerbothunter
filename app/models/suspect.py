@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
-from app.db_base import Base
+from app.db import Base
 
 
 class Suspect(Base):

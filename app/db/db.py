@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.config import ConfigKey
 from app.exceptions import DatabaseConnectionError
 
-from .db_base import SessionLocal
+from .base import SessionLocal
 
 
 def _get_session() -> Session:
