@@ -1,11 +1,12 @@
 import logging
-from typing import Optional
 
 from flask import Flask, jsonify, request
+from pydantic import ValidationError
 
-from ..db import get_db
-from ..models.observation import Observation
-from ..models.twitch_user_data import TwitchUserData
+from app.db import get_db
+from app.models.observation import Observation
+from app.models.secrets import Secret, SecretCreate
+from app.models.twitch_user_data import TwitchUserData
 
 logger = logging.getLogger(__name__)
 
@@ -19,26 +20,53 @@ def register_routes(app: Flask) -> None:
     # Endpoint to receive the token
     @app.route("/store_token", methods=["POST"])
     def store_token():
-        access_token: Optional[str] = None
-        refresh_token: Optional[str] = None
-        if request is not None and request.json is not None:
-            access_token = request.json.get("access_token")
-            refresh_token = request.json.get("refresh_token")
+        if not request.json:
+            return jsonify({"error": "Missing JSON payload"}), 400
 
-        if access_token and refresh_token:
-            # TODO Store tokens in current_app.config
-            return (
-                jsonify(
-                    {
-                        "message": "Token received",
-                        "access": access_token,
-                        "refresh": refresh_token,
-                    }
-                ),
-                200,
-            )
+        try:
+            # Validate and parse the request data using Pydantic
+            secret_create = SecretCreate(**request.json)
+        except ValidationError as e:
+            return jsonify({"error": "Validation error", "details": e.errors()}), 400
 
-        return jsonify({"error": "Missing or bad tokens"}), 400
+        # Extract values from the validated Pydantic model
+        access_token = secret_create.access_token
+        refresh_token = secret_create.refresh_token
+        expires_in = secret_create.expires_in
+        token_type = secret_create.token_type
+        scope = secret_create.scope
+
+        # Handle scope if it's a list
+        if isinstance(scope, list):
+            scope = " ".join(scope)
+
+        logger.info(f"Tokens received. {expires_in=}, {token_type=}, {scope=}")
+
+        # Use get_db context manager to handle the database session
+        with get_db() as db:
+            # Ensure only one row in the secrets table
+            existing_secret = db.query(Secret).first()
+            if existing_secret:
+                # Update the existing row
+                existing_secret.access_token = access_token
+                existing_secret.refresh_token = refresh_token
+                existing_secret.expires_in = expires_in
+                existing_secret.token_type = token_type
+                existing_secret.scope = scope
+            else:
+                # Insert a new row
+                new_secret = Secret(
+                    access_token=access_token,
+                    refresh_token=refresh_token,
+                    expires_in=expires_in,
+                    token_type=token_type,
+                    scope=scope,
+                )
+                db.add(new_secret)
+                db.commit()
+                existing_secret = new_secret
+
+        return jsonify({"message": "ok"}), 200
 
     @app.route("/start-sweep")
     def start_sweep():

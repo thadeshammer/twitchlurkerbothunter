@@ -101,6 +101,9 @@ def callback():
                 json={
                     "access_token": token_response["access_token"],
                     "refresh_token": token_response["refresh_token"],
+                    "expires_in": token_response["expires_in"],
+                    "token_type": token_response["token_type"],
+                    "scope": token_response["scope"],
                 },
                 timeout=5,
             )
