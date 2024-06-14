@@ -2,6 +2,7 @@ import logging
 
 from flask import Flask, jsonify, request
 from pydantic import ValidationError
+from sqlalchemy.exc import IntegrityError
 
 from app.db import get_db
 from app.models.observation import Observation
@@ -44,17 +45,8 @@ def register_routes(app: Flask) -> None:
 
         # Use get_db context manager to handle the database session
         with get_db() as db:
-            # Ensure only one row in the secrets table
-            existing_secret = db.query(Secret).first()
-            if existing_secret:
-                # Update the existing row
-                existing_secret.access_token = access_token
-                existing_secret.refresh_token = refresh_token
-                existing_secret.expires_in = expires_in
-                existing_secret.token_type = token_type
-                existing_secret.scope = scope
-            else:
-                # Insert a new row
+            try:
+                # Try to insert the new row, which will fail if the unique constraint is violated
                 new_secret = Secret(
                     access_token=access_token,
                     refresh_token=refresh_token,
@@ -65,7 +57,23 @@ def register_routes(app: Flask) -> None:
                 db.add(new_secret)
                 db.commit()
                 existing_secret = new_secret
+            except IntegrityError:
+                db.rollback()
+                # If the insertion fails, update the existing row
+                existing_secret = (
+                    db.query(Secret)
+                    .filter_by(enforce_one_row="enforce_one_row")
+                    .first()
+                )
+                if existing_secret:
+                    existing_secret.access_token = access_token
+                    existing_secret.refresh_token = refresh_token
+                    existing_secret.expires_in = expires_in
+                    existing_secret.token_type = token_type
+                    existing_secret.scope = scope
+                    db.commit()
 
+        # Return the stored secret using Pydantic model for serialization
         return jsonify({"message": "ok"}), 200
 
     @app.route("/start-sweep")
