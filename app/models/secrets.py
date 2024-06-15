@@ -29,7 +29,7 @@ Modules:
 from typing import Union
 
 from pydantic import BaseModel
-from sqlalchemy import Column, Integer, String, Text
+from sqlalchemy import Column, DateTime, Integer, String, Text
 
 from app.db import Base
 
@@ -43,7 +43,10 @@ class Secret(Base):
     expires_in = Column(Integer, nullable=False)
     token_type = Column(String(64), nullable=False)
     scope = Column(Text, nullable=False)
-    # TODO add last-update timestamp for calculating and tracking TTL and when to use refresh token
+
+    # For calculating and tracking TTL and when to use refresh token
+    # TODO wire this up
+    last_update_timestamp = Column(DateTime, nullable=False)
 
     def __init__(
         self, access_token, refresh_token, expires_in, token_type, scope

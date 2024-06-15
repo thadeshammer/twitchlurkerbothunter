@@ -81,10 +81,10 @@ def register_routes(app: Flask) -> None:
         logger.info("/start-sweep route accessed.")
         return jsonify({"start-sweep": "Not yet implemented"})
 
-    @app.route("/scan-channel")
-    def scan_channel():
-        logger.info("/scan-channel route accessed.")
-        return jsonify({"scan-channel": "Not yet implemented"})
+    @app.route("/fetch-channel-viewerlist")
+    def fetch_channel_viewerlist():
+        logger.info("/fetch-channel-viewerlist route accessed.")
+        return jsonify({"fetch-channel-viewerlist": "Not yet implemented"})
 
     @app.route("/")
     def index():

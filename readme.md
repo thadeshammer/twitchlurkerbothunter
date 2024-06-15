@@ -48,7 +48,7 @@ This application will - within the 20 channel-joins per 10 seconds ratelimit - c
 - ratios between following and follower counts;
 - comparisons of follower and following lists across suspect accounts.
 
-This bot will not remain resident in channels, so it will be unable to track whether lurker bots speak vs. don't speak ever, or their specific entry and exit times; however we may estimate entry and exit times within some (potentially wide) margin of error depending on how frequently it can conduct scans.
+This bot will not remain resident in channels, so it will be unable to track whether lurker bots speak or don't speak ever, or their specific entry and exit times; however we may estimate entry and exit times within some (potentially wide) margin of error depending on how frequently and quickly it can conduct sweeps.
 
 The bot will also randomize when it performs as sweep and what channels are included in a given sweep so as to be less predictable to those that wish to evade its detection.
 
@@ -125,7 +125,7 @@ Currently, the bot doesn't do anything beyond standing up and creating the table
 - **GET /**: Returns a summary of collected user data.
 - **GET /test**: Confirms the server is in fact up.
 - **POST /store_token**: Receiver for a token from the twitch-oauth servlet. (Stub.)
-- **POST /scan_channel**: Pull viewer list from specified channel. (Not implemented.)
+- **POST /fetch_viewer_list**: Pull viewer list from specified channel. (Not implemented.)
 - **POST /start_sweep**: Sweep live streams. (Not implemented.)
 - **POST /add_user**: Adds a new user to the database.
 - **POST /add_observation**: Adds a new observation to the database.
