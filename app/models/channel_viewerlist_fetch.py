@@ -1,6 +1,6 @@
 # app/models/channel_viewerlist_fetch.py
 # A channel_viewerlist_fetch represents the reception of the 353 message.
-# For our purposes, it is a set of Observations in a given Channel during a Sweep.
+# For our purposes, it is a set of ViewerSightings in a given Channel during a Sweep.
 
 from uuid import uuid4
 
@@ -31,6 +31,6 @@ class ChannelViewerListFetch(Base):
     sweep_id = Column(CHAR(36), ForeignKey("sweeps.sweep_id"), nullable=False)
 
     sweep = relationship("Sweep", back_populates="channel_viewerlist_fetches")
-    observations = relationship(
-        "Observation", back_populates="channel_viewerlist_fetch"
+    viewer_sightings = relationship(
+        "ViewerSighting", back_populates="channel_viewerlist_fetch"
     )

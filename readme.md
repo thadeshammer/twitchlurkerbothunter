@@ -127,12 +127,10 @@ Currently, the bot doesn't do anything beyond standing up and creating the table
 - **POST /store_token**: Receiver for a token from the twitch-oauth servlet. (Stub.)
 - **POST /fetch_viewer_list**: Pull viewer list from specified channel. (Not implemented.)
 - **POST /start_sweep**: Sweep live streams. (Not implemented.)
-- **POST /add_user**: Adds a new user to the database.
-- **POST /add_observation**: Adds a new observation to the database.
 
 ### Data Model
 
-The bot uses SQLAlchemy models to define the database schema, including tables for Twitch user data, observations, and suspects. Data validation will be performed using Pydantic models.
+The bot uses SQLAlchemy models to define the database schema, including tables for Twitch user data, sightings, and suspects. Data validation will be performed using Pydantic models.
 
 ## Future Plans
 
