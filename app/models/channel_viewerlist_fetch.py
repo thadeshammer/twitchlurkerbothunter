@@ -4,7 +4,6 @@
 
 from uuid import uuid4
 
-from pydantic import BaseModel
 from sqlalchemy import BigInteger, Column, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import relationship
