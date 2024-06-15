@@ -74,10 +74,10 @@ def register_routes(app: Flask) -> None:
         # Return the stored secret using Pydantic model for serialization
         return jsonify({"message": "ok"}), 200
 
-    @app.route("/start-sweep")
-    def start_sweep():
-        logger.info("/start-sweep route accessed.")
-        return jsonify({"start-sweep": "Not yet implemented"})
+    @app.route("/start-scan")
+    def start_scan():
+        logger.info("/start-scan route accessed.")
+        return jsonify({"start-scan": "Not yet implemented"})
 
     @app.route("/fetch-channel-viewerlist")
     def fetch_channel_viewerlist():

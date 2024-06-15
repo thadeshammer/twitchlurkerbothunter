@@ -48,9 +48,9 @@ This application will - within the 20 channel-joins per 10 seconds ratelimit - c
 - ratios between following and follower counts;
 - comparisons of follower and following lists across suspect accounts.
 
-This bot will not remain resident in channels, so it will be unable to track whether lurker bots speak or don't speak ever, or their specific entry and exit times; however we may estimate entry and exit times within some (potentially wide) margin of error depending on how frequently and quickly it can conduct sweeps.
+This bot will not remain resident in channels, so it will be unable to track whether lurker bots speak or don't speak ever, or their specific entry and exit times; however we may estimate entry and exit times within some (potentially wide) margin of error depending on how frequently and quickly it can conduct scans.
 
-The bot will also randomize when it performs as sweep and what channels are included in a given sweep so as to be less predictable to those that wish to evade its detection.
+The bot will also randomize when it performs as scan and what channels are included in a given scan so as to be less predictable to those that wish to evade its detection.
 
 The bot utilizes Flask, SQLAlchemy, Docker, and Pydantic to validate and manage data from Twitch. The project adheres to Twitch's TOS by using the Twitch IRC interface to scrape viewer lists manually without using undocumented endpoints or exceeding prescribed ratelimits.
 
@@ -63,7 +63,7 @@ There's a second app - a single file Flask servlet - whose only job is to take c
 - **Docker**: Containerization for easy deployment and management.
 - **Pydantic**: Data validation and settings management.
 - **Twitch IRC Interface**: For collecting viewer lists in compliance with Twitch's TOS.
-- **Twitch Helix API**: To query for live streams to include in the sweep.
+- **Twitch Helix API**: For collecting additional data on viewers and channels.
 - **Parallel Processing**: Considering using Python coroutines, multiprocesses, or microservices for parallelizing tasks.
 
 ## Regarding foundational tech choices
@@ -126,7 +126,7 @@ Currently, the bot doesn't do anything beyond standing up and creating the table
 - **GET /test**: Confirms the server is in fact up.
 - **POST /store_token**: Receiver for a token from the twitch-oauth servlet. (Stub.)
 - **POST /fetch_viewer_list**: Pull viewer list from specified channel. (Not implemented.)
-- **POST /start_sweep**: Sweep live streams. (Not implemented.)
+- **POST /start_scan**: Start a scanning session of a set of live streams. (Not implemented.)
 
 ### Data Model
 

@@ -11,6 +11,7 @@ from app.db import Base
 
 
 class ViewerSighting(Base):
+    # Previously the "Observations" table.
     __tablename__ = "viewer_sightings"
 
     viewer_sighting_id = Column(
@@ -19,7 +20,9 @@ class ViewerSighting(Base):
     viewerlist_fetch_id = Column(
         CHAR(36), ForeignKey("channel_viewerlist_fetch.fetch_id"), nullable=False
     )
-    viewer_name = Column(String(40), nullable=False)
+
+    # unique, all lowercase, and used in Twitch backend API calls
+    viewer_login_name = Column(String(40), nullable=False)
 
     # Relationships
     channel_viewerlist_fetch = relationship(

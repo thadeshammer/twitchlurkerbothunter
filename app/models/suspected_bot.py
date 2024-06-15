@@ -23,7 +23,7 @@ from app.db import Base
 class SuspectedBot(Base):
     __tablename__ = "suspects"
 
-    # TODO should this have a sweepid foreign-keyed in it?
+    # TODO should this have a scanning_session_id foreign-keyed in it?
     # TODO should this have a last sighting timestamp? would that be the viewerlist fetch timestamp?
 
     twitch_account_id = Column(
