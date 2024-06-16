@@ -4,7 +4,6 @@
 from uuid import uuid4
 
 from sqlalchemy import (
-    JSON,
     BigInteger,
     Boolean,
     Column,
@@ -15,16 +14,18 @@ from sqlalchemy import (
     String,
 )
 from sqlalchemy.dialects.mysql import CHAR
-from sqlalchemy.orm import Mapped, relationship  # type: ignore
+from sqlalchemy.orm import relationship
 
 from app.db import Base
 
+from . import stream_tags_association
 
-class ChannelViewerListFetch(Base):
-    """SQLAlchemy model representing a Channel Viewlist Fetch event from the Viewer List Fetcher.
+
+class StreamViewerListFetch(Base):
+    """SQLAlchemy model representing a Stream Viewlist Fetch event from the Viewer List Fetcher.
     The Viewer List Fetcher will negotiate and handle the reception and parsing of the viewer list
     and will create rows in the ViewerSightings table for each name. This table tracks data of
-    interest for the channel(s) in question.
+    interest for the streams/channel(s) in question.
 
     ID Attributes:
         fetch_id (str): PK. UUID of this channel's Viewerlist Fetch Action.
@@ -51,27 +52,34 @@ class ChannelViewerListFetch(Base):
 
     Attributes from our data collection:
         time_of_fetch (DateTime): Timestamp of when this fetch action took place.
-        time_in_channel (float): Time elapsed by the Viewer List Fetcher worker in this channel,
-            clocked with time.perf_counter().
+        time_in_channel (float): Time elapsed by the Viewer List Fetcher worker in this stream's
+            chat, clocked with time.perf_counter().
 
     Relationships:
         scanning_session ():
         viewer_sightings ():
     """
 
-    __tablename__ = "channel_viewerlist_fetch"
+    __tablename__ = "stream_viewerlist_fetch"
 
     fetch_id = Column(CHAR(36), primary_key=True, default=lambda: str(uuid4()))
     scanning_session_id = Column(
         CHAR(36), ForeignKey("scanning_session.scanning_session_id"), nullable=False
     )
 
-    channel_owner_id = Column(BigInteger, nullable=False)  # 'user_id'
-    channel_owner_login = Column(String(40), nullable=False)  # 'user_login'
-    channel_owner_display_name = Column(String(40), nullable=False)  # 'user_name'
+    channel_owner_id = Column(
+        BigInteger, ForeignKey("twitch_user_data.twitch_account_id"), nullable=False
+    )  # 'user_id'
+    channel_created_at = Column(
+        DateTime, ForeignKey("twitch_user_data.created_at"), nullable=False
+    )  # 'created_at' in 'Get User'
+    viewer_count = Column(Integer, nullable=False)  # 'viewer_count' for this broadcast
+
     stream_id = Column(
         BigInteger, nullable=False
     )  # 'id' UUID of this specific live-stream
+    stream_started_at = Column(DateTime, nullable=False)  # 'started_at'
+
     category = Column(String(40), nullable=False)  # 'game_name'
     category_id = Column(BigInteger, nullable=False)  # 'game_id'
     language: Column(
@@ -81,14 +89,8 @@ class ChannelViewerListFetch(Base):
     was_live: Column(
         Boolean, nullable=False
     )  # the 'type' field is either "live" or "" for down.
-    tag_ids: Mapped[list] = Column(JSON, default=[])
-
-    viewer_count = Column(Integer, nullable=False)  # 'view_count'
 
     # not tracked: thumbnail_url, title
-
-    stream_started_at = Column(DateTime, nullable=False)  # 'started_at'
-    channel_created_at = Column(DateTime, nullable=False)  # 'created_at' in 'Get User'
 
     time_of_fetch = Column(DateTime, nullable=False)
     time_in_channel = Column(
@@ -96,8 +98,16 @@ class ChannelViewerListFetch(Base):
     )  # use time.perf_counter() to measure, returns fractional seconds
 
     scanning_session = relationship(
-        "ScanningSession", back_populates="channel_viewerlist_fetches"
+        "ScanningSession", back_populates="stream_viewerlist_fetches"
+    )  # many stream_viewerlist_fetches to one scanning_session
+    tags = relationship(
+        "StreamTags",
+        secondary=stream_tags_association,
+        back_populates="streams",
+    )
+    twitch_user_data = relationship(
+        "TwitchUserData", back_populates="stream_viewerlist_fetch"
     )
     viewer_sightings = relationship(
-        "ViewerSighting", back_populates="channel_viewerlist_fetch"
-    )
+        "ViewerSighting", back_populates="stream_viewerlist_fetch"
+    )  # many viewer_sightings to one stream_viewerlist_fetch

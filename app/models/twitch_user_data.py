@@ -44,6 +44,10 @@ class TwitchUserData(Base):
     display_name = Column(String(40), nullable=False)  # 'display_name'
     account_type = Column(String(15), nullable=True)  # 'type'
     broadcaster_type = Column(String(15), nullable=True)  # 'broadcaster_type'
+    view_count = Column(Integer, nullable=True)  # 'view_count'
+    created_at = Column(DateTime, nullable=True)  # 'created_at'
+
+    # not tracking: description, image urls, email,
 
     # Collected data
     most_recent_concurrent_channel = Column(Integer, nullable=False)
@@ -55,6 +59,10 @@ class TwitchUserData(Base):
     )
 
     # Relationships
+    stream_viewerlist_fetch = relationship(
+        "StreamViewerlistFetch", back_populates="twitch_user_data"
+    )
+
     # One-or-none / optional one-to-one with SuspectedBot table.
     suspected_bot = relationship(
         "SuspectedBot", uselist=False, back_populates="twitch_user_data"

@@ -42,11 +42,11 @@ class ViewerSighting(Base):
         CHAR(36), primary_key=True, default=lambda: str(uuid4())
     )
     viewerlist_fetch_id = Column(
-        CHAR(36), ForeignKey("channel_viewerlist_fetch.fetch_id"), nullable=False
+        CHAR(36), ForeignKey("stream_viewerlist_fetch.fetch_id"), nullable=False
     )
     viewer_login_name = Column(String(40), nullable=False)
 
     # Relationships
-    channel_viewerlist_fetch = relationship(
-        "ChannelViewerListFetch", back_populates="viewer_sightings"
-    )
+    stream_viewerlist_fetch = relationship(
+        "StreamViewerListFetch", back_populates="viewer_sightings"
+    )  # many viewer_sightings to one stream_viewerlist_fetch
