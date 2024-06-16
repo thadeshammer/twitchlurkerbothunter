@@ -1,8 +1,8 @@
 # app/models/twitch_user_data.py
-
+# SQLAlchemy model representing Twitch Users that have been spotted during scans.
 from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.dialects.mysql import CHAR
-from sqlalchemy.orm import relationship  # type: ignore
+from sqlalchemy.orm import relationship
 
 from app.db import Base
 
@@ -10,7 +10,7 @@ from app.db import Base
 class TwitchUserData(Base):
     """SQLAlchemy model representing Twitch Users that have been spotted during scans.
 
-    Attributes from 'Get User' Twitch backend API call:
+    Attributes from 'Get User' Twitch backend API endpoint:
         twitch_account_id (int):the UID Twitch uses to uniquely
             identify each account, persists across name changes.
         login_name (str): Unique, all lowercase: used for auth, URLs, and Twitch backend API calls.

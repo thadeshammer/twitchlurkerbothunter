@@ -15,7 +15,7 @@ from sqlalchemy import (
     Text,
 )
 from sqlalchemy.dialects.mysql import CHAR
-from sqlalchemy.orm import Mapped, relationship
+from sqlalchemy.orm import Mapped, relationship  # type: ignore
 
 from app.db import Base
 
