@@ -50,6 +50,7 @@ class TwitchUserData(Base):
     # not tracking: description, image urls, email,
 
     # Collected data
+    first_sighting = Column(DateTime, nullable=False)
     most_recent_concurrent_channel = Column(Integer, nullable=False)
     most_recent_sighting = Column(DateTime, nullable=False)
     all_time_concurrent_channels = Column(Integer, nullable=False)

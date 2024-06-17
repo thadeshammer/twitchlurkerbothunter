@@ -1,10 +1,17 @@
+from enum import StrEnum
 from uuid import uuid4
 
-from sqlalchemy import Column, DateTime, Float, Integer
+from sqlalchemy import Column, DateTime, Float, Integer, String
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import relationship
 
 from app.db import Base
+
+
+class ScanningSessionStopReasonEnum(StrEnum):
+    COMPLETE = "complete"
+    CANCELLED = "cancelled"
+    ERRORED = "errored"
 
 
 class ScanningSession(Base):
@@ -15,15 +22,18 @@ class ScanningSession(Base):
     )
 
     time_started = Column(DateTime, nullable=False)
-    time_ended = Column(DateTime, nullable=False)
+    time_ended = Column(DateTime, nullable=True)
+    reason_ended = Column(String(12), nullable=True)  # ScanningSessionStopReasonEnum
 
     # channel viewerlists fetched / channels_in_scan ratio metric
     streams_in_scan = Column(Integer, nullable=False)
-    viewerlists_fetched = Column(Integer, nullable=False)
-    average_time_in_channel = Column(Float, nullable=True)
+    viewerlists_fetched = Column(Integer, nullable=True)
+    average_time_per_fetch = Column(Float, nullable=True)
+    average_time_for_get_user_call = Column(Float, nullable=True)
+    average_time_for_get_stream_call = Column(Float, nullable=True)
 
-    error_count = Column(Integer, nullable=True)
     suspects_spotted = Column(Integer, nullable=True)
+    error_count = Column(Integer, nullable=True)
 
     stream_viewerlist_fetches = relationship(
         "StreamViewerListFetch", back_populates="scanning_session"

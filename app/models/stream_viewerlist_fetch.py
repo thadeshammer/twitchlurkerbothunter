@@ -3,22 +3,11 @@
 # For our purposes, it is a set of ViewerSightings in a given Channel during a Scan.
 from uuid import uuid4
 
-from sqlalchemy import (
-    BigInteger,
-    Boolean,
-    Column,
-    DateTime,
-    Float,
-    ForeignKey,
-    Integer,
-    String,
-)
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, Float, ForeignKey, Integer
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import relationship
 
 from app.db import Base
-
-from . import stream_tags_association
 
 
 class StreamViewerListFetch(Base):
@@ -70,18 +59,16 @@ class StreamViewerListFetch(Base):
     channel_owner_id = Column(
         BigInteger, ForeignKey("twitch_user_data.twitch_account_id"), nullable=False
     )  # 'user_id'
-    channel_created_at = Column(
-        DateTime, ForeignKey("twitch_user_data.created_at"), nullable=False
-    )  # 'created_at' in 'Get User'
-    viewer_count = Column(Integer, nullable=False)  # 'viewer_count' for this broadcast
+    category_id = Column(
+        BigInteger, ForeignKey("stream_categories.category_id"), nullable=False
+    )  # 'game_id'
+    # category_name should be stored in the StreamCategories table if it's new to us.
 
+    viewer_count = Column(Integer, nullable=False)  # 'viewer_count' for this broadcast
     stream_id = Column(
         BigInteger, nullable=False
     )  # 'id' UUID of this specific live-stream
     stream_started_at = Column(DateTime, nullable=False)  # 'started_at'
-
-    category = Column(String(40), nullable=False)  # 'game_name'
-    category_id = Column(BigInteger, nullable=False)  # 'game_id'
     language: Column(
         CHAR(2), nullable=False
     )  # 'language', ISO 639-1, always two char long.
@@ -89,22 +76,17 @@ class StreamViewerListFetch(Base):
     was_live: Column(
         Boolean, nullable=False
     )  # the 'type' field is either "live" or "" for down.
+    # not tracked: thumbnail_url, title,
 
-    # not tracked: thumbnail_url, title
-
-    time_of_fetch = Column(DateTime, nullable=False)
-    time_in_channel = Column(
+    fetch_action_at = Column(DateTime, nullable=False)
+    duration_of_fetch_action = Column(
         Float, nullable=False
     )  # use time.perf_counter() to measure, returns fractional seconds
 
+    # relationships
     scanning_session = relationship(
         "ScanningSession", back_populates="stream_viewerlist_fetches"
     )  # many stream_viewerlist_fetches to one scanning_session
-    tags = relationship(
-        "StreamTags",
-        secondary=stream_tags_association,
-        back_populates="streams",
-    )
     twitch_user_data = relationship(
         "TwitchUserData", back_populates="stream_viewerlist_fetch"
     )
