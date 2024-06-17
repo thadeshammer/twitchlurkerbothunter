@@ -1,104 +1,139 @@
-<mxfile host="app.diagrams.net" modified="2024-06-15T23:14:34.106Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0" etag="uD0iGm06aHW0jskPvoM-" version="24.5.4" type="device">
+<mxfile host="app.diagrams.net" modified="2024-06-17T13:52:27.230Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0" etag="cRUegD5qzazCFe4MpNEq" version="24.5.4" type="device">
   <diagram name="Page-1" id="c4acf3e9-155e-7222-9cf6-157b1a14988f">
-    <mxGraphModel dx="1274" dy="680" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" background="none" math="0" shadow="0">
+    <mxGraphModel dx="1687" dy="864" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1100" background="none" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="5d2195bd80daf111-18" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;TwitchUserData&lt;/b&gt;&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ &lt;b&gt;account_id:&lt;/b&gt; PK&lt;br&gt;+ login_name&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ display_name&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ account_type&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ broadcaster_type&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ most_recent_concurrent_channels&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ all_time_most_concurrent_channels&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ ViewerSightings: One-to-Many&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ SuspectedBot: One-or-None&lt;br&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1" parent="1" vertex="1">
-          <mxGeometry x="85" y="92" width="220" height="203" as="geometry" />
+        <mxCell id="5d2195bd80daf111-18" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;TwitchUserData&lt;/b&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;Each row represents a distinct Twitch account&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;that was sighted in a channel by the app during&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;a scanning session.&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;&lt;b&gt;+ account_id: (str) PK&lt;/b&gt;&lt;br&gt;+ login_name (str)&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ display_name (str)&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ account_type (str)&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ broadcaster_type (str)&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ view_count (int)&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ created_at (DateTime)&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ first_sighting_as_viewer (DateTime)&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ most_recent_sighting_as_viewer (DateTime)&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ most_recent_concurrent_channel_count (int)&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ all_time_high_concurrent_channel_count (int)&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ all_time_high_at (DateTime)&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ ViewerSightings: informal/implicit One-to-Many&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ SuspectedBot: One-or-None&lt;br&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1" parent="1" vertex="1">
+          <mxGeometry x="1035" y="480" width="274" height="326" as="geometry" />
         </mxCell>
-        <mxCell id="AvK1rYgLBQbUIPVSa8lQ-2" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;SuspectedBots&lt;/b&gt;&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ &lt;b&gt;account_id&lt;/b&gt;: PK, FK&lt;br&gt;+ &lt;i&gt;aliases &lt;/i&gt;(10000+ concurrent channels)&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ account_creation_date&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ account_age_in_days&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ follower_count&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ following_count&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ is_banned_or_deleted&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ additional_notes&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ TwitchUserData: One-to-One&lt;br&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1" vertex="1" parent="1">
-          <mxGeometry x="525" y="92" width="228" height="203" as="geometry" />
+        <mxCell id="AvK1rYgLBQbUIPVSa8lQ-2" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;SuspectedBots&lt;/b&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;A row is additional metadata about a&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;Twitch account we have classified&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;as likely to be a lurker-bot.&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;&lt;b&gt;+ account_id: PK, FK&lt;/b&gt;&lt;br&gt;+ &lt;i&gt;aliases &lt;/i&gt;(10000+ concurrent channels)&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ follower_count&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ following_count&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ is_banned_or_deleted&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ additional_notes&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ TwitchUserData: One-to-One&lt;br&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1" parent="1" vertex="1">
+          <mxGeometry x="1382" y="544" width="228" height="214" as="geometry" />
         </mxCell>
-        <mxCell id="AvK1rYgLBQbUIPVSa8lQ-3" value="" style="endArrow=classic;html=1;rounded=0;entryX=0.991;entryY=0.197;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.009;exitY=0.197;exitDx=0;exitDy=0;exitPerimeter=0;endSize=12;" edge="1" parent="1" source="AvK1rYgLBQbUIPVSa8lQ-2" target="5d2195bd80daf111-18">
+        <mxCell id="AvK1rYgLBQbUIPVSa8lQ-4" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;ViewerSightings&lt;/b&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;Each row represents a distinct sighting&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;of a login name in a stream chat&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;participant list&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ &lt;b&gt;viewer_sighting_id:&lt;/b&gt; PK&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ viewerlist_fetch_id: FK&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ login_name&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ TwitchUserData: implicit Many-to-One&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ StreamViewerListFetch: Many-to-One&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1" parent="1" vertex="1">
+          <mxGeometry x="730" y="639" width="230" height="183" as="geometry" />
+        </mxCell>
+        <mxCell id="AvK1rYgLBQbUIPVSa8lQ-6" value="" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fillColor=#00FF22;fillStyle=solid;" parent="1" source="AvK1rYgLBQbUIPVSa8lQ-20" target="yCQpJYcG371SY_RABIUf-13" edge="1">
           <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="535" y="385" as="sourcePoint" />
-            <mxPoint x="585" y="335" as="targetPoint" />
+            <mxPoint x="428.00000000000045" y="148.49999999999977" as="sourcePoint" />
+            <mxPoint x="328" y="148" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="AvK1rYgLBQbUIPVSa8lQ-21" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="AvK1rYgLBQbUIPVSa8lQ-4" target="AvK1rYgLBQbUIPVSa8lQ-7">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="AvK1rYgLBQbUIPVSa8lQ-8" value="&lt;font style=&quot;font-size: 22px;&quot;&gt;&lt;b&gt;User Data Fetcher&lt;br&gt;&lt;/b&gt;&lt;/font&gt;" style="ellipse;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="785" y="296" width="154" height="104" as="geometry" />
         </mxCell>
-        <mxCell id="AvK1rYgLBQbUIPVSa8lQ-4" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;ViewerSightings&lt;/b&gt;&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ &lt;b&gt;viewer_sighting_id:&lt;/b&gt; PK&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ viewerlist_fetch_id: FK&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ login_name&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ TwitchUserData: Many-to-One&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ ChannelViewerListFetch: Many-to-One&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1" vertex="1" parent="1">
-          <mxGeometry x="315" y="340" width="230" height="129" as="geometry" />
+        <mxCell id="AvK1rYgLBQbUIPVSa8lQ-12" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;StreamViewerListFetch&lt;/b&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;A row is the metadata for a stream&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;chat participant list fetch.&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ &lt;b&gt;fetch_id:&lt;/b&gt; (UID) PK&lt;br&gt;&lt;i&gt;+ scanning_session_id (UID) FK&lt;/i&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;&lt;i&gt;&lt;br&gt;&lt;/i&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;&lt;i&gt;+ channel_owner_id (int) FK&lt;/i&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;&lt;i&gt;+ category_id (int) FK&lt;/i&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ viewer_count (int)&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ stream_id (int)&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ stream_started_at (DateTime)&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ language (str)&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ is_mature (bool)&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ was_live (bool)&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ fetch_action_at (DateTime)&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ duration_of_fetch_action(float)&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ ViewerSightings: One-to-Many&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ ScanningSession: Many-to-One&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ TwitchUserData: One-to-One&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ StreamCategory: One-to-One&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1" parent="1" vertex="1">
+          <mxGeometry x="434" y="453" width="220" height="373" as="geometry" />
         </mxCell>
-        <mxCell id="AvK1rYgLBQbUIPVSa8lQ-5" value="&lt;b&gt;Viewer List Fetcher&lt;br&gt;&lt;/b&gt;" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="645" y="365" width="120" height="80" as="geometry" />
+        <mxCell id="AvK1rYgLBQbUIPVSa8lQ-15" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;ScanningSession&lt;/b&gt;&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ &lt;b&gt;scanning_session_id&lt;/b&gt; (uid) PK&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ time_started (DateTime)&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ time_ended (DateTime)&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ reason_ended (str)&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ streams_in_scan (int)&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ viewerlists_fetched (int)&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ average_time_per_fetch (float)&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;average_time_for_get_user_call (float)&lt;br&gt;average_time_for_get_stream_call (float&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ suspects_spotted (int)&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ error_count (int)&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ StreamViewerListFetches: One-to-Many&lt;br&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1" parent="1" vertex="1">
+          <mxGeometry x="91" y="453" width="246" height="230" as="geometry" />
         </mxCell>
-        <mxCell id="AvK1rYgLBQbUIPVSa8lQ-6" value="" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;fillColor=#00FF22;fillStyle=solid;" edge="1" parent="1" source="AvK1rYgLBQbUIPVSa8lQ-5" target="AvK1rYgLBQbUIPVSa8lQ-4">
+        <mxCell id="AvK1rYgLBQbUIPVSa8lQ-20" value="&lt;font style=&quot;font-size: 22px;&quot;&gt;&lt;b&gt;Scan Conductor&lt;br&gt;&lt;/b&gt;&lt;/font&gt;" style="ellipse;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="140" y="214" width="197" height="124" as="geometry" />
+        </mxCell>
+        <mxCell id="AvK1rYgLBQbUIPVSa8lQ-24" value="&lt;font style=&quot;font-size: 22px;&quot;&gt;&lt;b&gt;Suspicious User Classifier&lt;br&gt;&lt;/b&gt;&lt;/font&gt;" style="ellipse;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="1367" y="308" width="219" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="yCQpJYcG371SY_RABIUf-1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;StreamCategory&lt;/b&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;Twitch streaming category setting&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ &lt;b&gt;category_id:&lt;/b&gt; (int) PK&lt;br&gt;+ category_name (str)&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ StreamViewerListFetch: One-to-One&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1" vertex="1" parent="1">
+          <mxGeometry x="104" y="724" width="220" height="118" as="geometry" />
+        </mxCell>
+        <mxCell id="yCQpJYcG371SY_RABIUf-2" value="" style="endArrow=classic;html=1;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;endSize=12;exitX=0.5;exitY=0;exitDx=0;exitDy=0;strokeWidth=2;" edge="1" parent="1" source="AvK1rYgLBQbUIPVSa8lQ-4" target="AvK1rYgLBQbUIPVSa8lQ-8">
           <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="535" y="355" as="sourcePoint" />
-            <mxPoint x="585" y="305" as="targetPoint" />
+            <mxPoint x="1175" y="926" as="sourcePoint" />
+            <mxPoint x="1117" y="926" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="AvK1rYgLBQbUIPVSa8lQ-7" value="&lt;b&gt;login_name&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
-          <mxGeometry x="565" y="375" width="80" height="30" as="geometry" />
-        </mxCell>
-        <mxCell id="AvK1rYgLBQbUIPVSa8lQ-8" value="&lt;b&gt;User Data Fetcher&lt;br&gt;&lt;/b&gt;" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="135" y="365" width="120" height="80" as="geometry" />
-        </mxCell>
-        <mxCell id="AvK1rYgLBQbUIPVSa8lQ-9" value="" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;fillColor=#00FF22;fillStyle=solid;" edge="1" parent="1" source="AvK1rYgLBQbUIPVSa8lQ-8" target="5d2195bd80daf111-18">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="135" y="325" as="sourcePoint" />
-            <mxPoint x="35" y="325" as="targetPoint" />
+        <mxCell id="yCQpJYcG371SY_RABIUf-4" value="" style="edgeStyle=entityRelationEdgeStyle;fontSize=12;html=1;endArrow=ERoneToMany;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;endSize=25;entryX=-0.003;entryY=0.361;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" target="AvK1rYgLBQbUIPVSa8lQ-12">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="327" y="783" as="sourcePoint" />
+            <mxPoint x="434" y="572" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="AvK1rYgLBQbUIPVSa8lQ-10" value="" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;fillColor=#00FF22;fillStyle=solid;" edge="1" parent="1" source="AvK1rYgLBQbUIPVSa8lQ-4" target="AvK1rYgLBQbUIPVSa8lQ-8">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="255" y="505" as="sourcePoint" />
-            <mxPoint x="155" y="505" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="AvK1rYgLBQbUIPVSa8lQ-12" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;ChannelViewerListFetch&lt;/b&gt;&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ &lt;b&gt;fetch_id:&lt;/b&gt; PK&lt;br&gt;+ scanning_session_id: FK&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ channel_id&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ channel_name&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ category&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ viewer_count&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ channel_created_at&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ time_of_fetch&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ fetch_duration&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ ViewerSightings: One-to-Many&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ ScanningSession: Many-to-One&lt;br&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1" vertex="1" parent="1">
-          <mxGeometry x="320" y="508" width="220" height="212" as="geometry" />
-        </mxCell>
-        <mxCell id="AvK1rYgLBQbUIPVSa8lQ-14" value="" style="endArrow=classic;html=1;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;endSize=12;" edge="1" parent="1" source="AvK1rYgLBQbUIPVSa8lQ-12" target="AvK1rYgLBQbUIPVSa8lQ-4">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="212" y="543" as="sourcePoint" />
-            <mxPoint x="262" y="493" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="AvK1rYgLBQbUIPVSa8lQ-15" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;ScanningSession&lt;/b&gt;&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ &lt;b&gt;scanning_session_id:&lt;/b&gt; PK&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ time_started&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ time_ended&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ channels_in_scan&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ viewerlists_fetched&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ average_time_per_fetch&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ suspects_spotted&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ error_count&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin:0px;margin-left:4px;&quot;&gt;+ ChannelViewerListFetches: One-to-Many&lt;br&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1" vertex="1" parent="1">
-          <mxGeometry x="307" y="759" width="246" height="186" as="geometry" />
-        </mxCell>
-        <mxCell id="AvK1rYgLBQbUIPVSa8lQ-16" value="" style="endArrow=classic;html=1;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;endSize=12;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" edge="1" parent="1" source="AvK1rYgLBQbUIPVSa8lQ-15" target="AvK1rYgLBQbUIPVSa8lQ-12">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="440" y="518" as="sourcePoint" />
-            <mxPoint x="440" y="479" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="AvK1rYgLBQbUIPVSa8lQ-20" value="&lt;b&gt;Scan Conductor&lt;br&gt;&lt;/b&gt;" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="645" y="574" width="120" height="80" as="geometry" />
-        </mxCell>
-        <mxCell id="AvK1rYgLBQbUIPVSa8lQ-22" value="" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;fillColor=#00FF22;fillStyle=solid;" edge="1" parent="1" source="AvK1rYgLBQbUIPVSa8lQ-20" target="AvK1rYgLBQbUIPVSa8lQ-12">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="647" y="550" as="sourcePoint" />
-            <mxPoint x="547" y="550" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="AvK1rYgLBQbUIPVSa8lQ-23" value="" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;fillColor=#00FF22;fillStyle=solid;" edge="1" parent="1" source="AvK1rYgLBQbUIPVSa8lQ-20" target="AvK1rYgLBQbUIPVSa8lQ-15">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="655" y="683" as="sourcePoint" />
-            <mxPoint x="550" y="683" as="targetPoint" />
+        <mxCell id="yCQpJYcG371SY_RABIUf-6" value="" style="edgeStyle=entityRelationEdgeStyle;fontSize=12;html=1;endArrow=ERoneToMany;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=-0.018;entryY=0.243;entryDx=0;entryDy=0;entryPerimeter=0;endSize=25;" edge="1" parent="1">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="340.96" y="568.36" as="sourcePoint" />
+            <mxPoint x="433.99999999999994" y="543.9989999999999" as="targetPoint" />
             <Array as="points">
-              <mxPoint x="703" y="852" />
+              <mxPoint x="781.96" y="782.36" />
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="AvK1rYgLBQbUIPVSa8lQ-24" value="&lt;b&gt;Suspicious User Classifier&lt;br&gt;&lt;/b&gt;" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="355" y="153.5" width="120" height="80" as="geometry" />
-        </mxCell>
-        <mxCell id="AvK1rYgLBQbUIPVSa8lQ-25" value="" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fillColor=#00FF22;fillStyle=solid;" edge="1" parent="1" source="5d2195bd80daf111-18" target="AvK1rYgLBQbUIPVSa8lQ-24">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="375" y="257" as="sourcePoint" />
-            <mxPoint x="315" y="257" as="targetPoint" />
+        <mxCell id="yCQpJYcG371SY_RABIUf-7" value="" style="edgeStyle=entityRelationEdgeStyle;fontSize=12;html=1;endArrow=ERoneToMany;rounded=0;endSize=25;exitX=0.997;exitY=0.204;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="AvK1rYgLBQbUIPVSa8lQ-12">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="658.6400000000001" y="530.042" as="sourcePoint" />
+            <mxPoint x="730" y="748.95" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="AvK1rYgLBQbUIPVSa8lQ-26" value="" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fillColor=#00FF22;fillStyle=solid;" edge="1" parent="1" source="AvK1rYgLBQbUIPVSa8lQ-24" target="AvK1rYgLBQbUIPVSa8lQ-2">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="402" y="275" as="sourcePoint" />
-            <mxPoint x="375" y="204" as="targetPoint" />
+        <mxCell id="yCQpJYcG371SY_RABIUf-9" value="" style="edgeStyle=entityRelationEdgeStyle;fontSize=12;html=1;endArrow=ERmandOne;rounded=0;entryX=0;entryY=0.178;entryDx=0;entryDy=0;entryPerimeter=0;endSize=25;exitX=0.994;exitY=0.311;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="AvK1rYgLBQbUIPVSa8lQ-12" target="5d2195bd80daf111-18">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="672" y="516" as="sourcePoint" />
+            <mxPoint x="711" y="335" as="targetPoint" />
           </mxGeometry>
+        </mxCell>
+        <mxCell id="yCQpJYcG371SY_RABIUf-11" value="" style="edgeStyle=entityRelationEdgeStyle;fontSize=12;html=1;endArrow=ERoneToMany;rounded=1;endSize=30;curved=0;strokeWidth=2;strokeColor=#BB54FF;exitX=1;exitY=0.699;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="AvK1rYgLBQbUIPVSa8lQ-4">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="1040" y="799" as="sourcePoint" />
+            <mxPoint x="1032" y="589" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="yCQpJYcG371SY_RABIUf-12" value="" style="edgeStyle=entityRelationEdgeStyle;fontSize=12;html=1;endArrow=ERmandOne;rounded=0;exitX=1.001;exitY=0.271;exitDx=0;exitDy=0;entryX=-0.003;entryY=0.441;entryDx=0;entryDy=0;endSize=25;exitPerimeter=0;entryPerimeter=0;" edge="1" parent="1" source="5d2195bd80daf111-18" target="AvK1rYgLBQbUIPVSa8lQ-2">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="1292" y="308" as="sourcePoint" />
+            <mxPoint x="1687" y="307" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="yCQpJYcG371SY_RABIUf-13" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;&lt;b&gt;Viewer List Fetcher&lt;br&gt;&lt;/b&gt;&lt;/font&gt;" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="462" y="237" width="182" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="yCQpJYcG371SY_RABIUf-16" value="" style="endArrow=classic;html=1;rounded=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;strokeWidth=5;" edge="1" parent="1" source="AvK1rYgLBQbUIPVSa8lQ-20" target="AvK1rYgLBQbUIPVSa8lQ-15">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="856" y="660" as="sourcePoint" />
+            <mxPoint x="906" y="610" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="yCQpJYcG371SY_RABIUf-17" value="" style="endArrow=classic;html=1;rounded=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;strokeWidth=5;" edge="1" parent="1" source="yCQpJYcG371SY_RABIUf-13" target="AvK1rYgLBQbUIPVSa8lQ-12">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="536" y="348.9999999999998" as="sourcePoint" />
+            <mxPoint x="224" y="463" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="yCQpJYcG371SY_RABIUf-18" value="" style="endArrow=classic;html=1;rounded=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;exitX=1.011;exitY=0.611;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="yCQpJYcG371SY_RABIUf-13" target="AvK1rYgLBQbUIPVSa8lQ-4">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="725" y="298" as="sourcePoint" />
+            <mxPoint x="904" y="322" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="yCQpJYcG371SY_RABIUf-19" value="" style="endArrow=classic;html=1;rounded=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;endSize=12;exitX=1;exitY=0.5;exitDx=0;exitDy=0;strokeWidth=2;" edge="1" parent="1" source="AvK1rYgLBQbUIPVSa8lQ-8" target="5d2195bd80daf111-18">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="855" y="649" as="sourcePoint" />
+            <mxPoint x="855" y="410" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1167" y="364" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="yCQpJYcG371SY_RABIUf-20" value="" style="endArrow=classic;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endSize=12;exitX=0.803;exitY=0;exitDx=0;exitDy=0;strokeWidth=2;exitPerimeter=0;" edge="1" parent="1" source="5d2195bd80daf111-18" target="AvK1rYgLBQbUIPVSa8lQ-24">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="1244" y="423" as="sourcePoint" />
+            <mxPoint x="1261" y="184" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1265" y="383" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="yCQpJYcG371SY_RABIUf-21" value="" style="endArrow=classic;html=1;rounded=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;endSize=12;exitX=0.5;exitY=1;exitDx=0;exitDy=0;strokeWidth=2;" edge="1" parent="1" source="AvK1rYgLBQbUIPVSa8lQ-24" target="AvK1rYgLBQbUIPVSa8lQ-2">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="1265" y="490" as="sourcePoint" />
+            <mxPoint x="1377" y="383" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="yCQpJYcG371SY_RABIUf-22" value="List of target streams is in memory and ultimately in StreamViewerListFetch" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;dashed=0;flipH=1;" vertex="1" parent="1">
+          <mxGeometry x="303" y="331" width="173" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="yCQpJYcG371SY_RABIUf-23" value="not a FK" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="960" y="659" width="63" height="26" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
