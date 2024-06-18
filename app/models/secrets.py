@@ -1,10 +1,9 @@
 # app/models/secrets.py
 # SQLAlchemy Base model for access and refresh tokens, and their associated metadata and TTL.
-
 """
-Secret model for the secrets table in the database using SQLAlchemy and Pydantic.
+A table for storing some short-lived secrets.
 
-The Secret model is used to store OAuth tokens and their associated metadata, which the bot uses for
+The Secret table is used to store OAuth tokens and their associated metadata, which the app uses for
 its Twitch API interactions (the same access token is used both for IRC interactions and Helix).
 
 It ensures that there is only one set of tokens stored at any given time using the unique column

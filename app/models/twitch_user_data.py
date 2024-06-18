@@ -20,18 +20,24 @@ class TwitchUserData(Base):
             normal user.
         broadcaster_type (str): Possible values: ('partner', 'affiliate', '') where '' is a normal
             user.
+        lifetime_view_count (int): The total number of channel views this user's channel has.
+        account_created_at (DateTime): Timestamp of this account's creation.
 
         NOTE. We're not currently storing 'description' or profile_img urls. If we want these for
             display purposes / visualization, we can fetch them adhoc or reconsider later.
 
     Attributes from our data collection.
-        most_recent_concurrent_channel (int): Count of channels this account was observed to be in
-            during the most recent scan it was seen in.
-        most_recent_sighting (DateTime): Timestamp of the last time this user was observed during a
-            scan.
-        all_time_concurrent_channels (int): The highest count of channels this account_id was ever
-            observed in across all scans it's been a part of.
-        all_time_high_at (DateTime): Timestamp of the all_time_concurrent_channels reading.
+        first_sighting_as_viewer (DateTime): The first time this account was spotted AS A VIEWER
+            during a scanning session.
+        most_recent_sighting_as_viewer (DateTime): Timestamp of the last time this user was observed
+            during a scan AS A VIEWER.
+        most_recent_concurrent_channel_count (int): Count of channels this account was observed to
+            be in during the most recent scan it was seen in.
+        all_time_high_concurrent_channel_count (int): The highest count of channels this account_id
+            was ever observed in across all scans it's been a part of.
+        all_time_high_at (DateTime): Timestamp of the all_time_concurrent_channel_count reading.
+        suspected_bot_id (str): [FK] This accounts associated entry on the SuspectedBots table, if
+            applicable. Nullable as not all accounts are suspects.
 
     Relationships:
         suspected_bot
@@ -52,6 +58,12 @@ class TwitchUserData(Base):
     # Collected data
     # NOTE Could FK in scanning_session_id for most_recent sighting AND first_sighting BUT those
     # tables will grow pretty quickly and may be subject to pruning.
+
+    # NOTE If a first encounter with a Twitch account login name is as a live stream, it will still
+    # be recorded here as a viewer because streamers appear in their own chats. I could add a catch
+    # for this (i.e. ignore the streamer in their own channel) but I prefer these fields being not
+    # nullable anyway.
+
     first_sighting_as_viewer = Column(DateTime, nullable=False)
     most_recent_sighting_as_viewer = Column(DateTime, nullable=False)
     most_recent_concurrent_channel_count = Column(Integer, nullable=False)

@@ -10,12 +10,12 @@ from app.db import Base
 
 
 class ViewerSighting(Base):
-    """Events-style table tracking sightings of viewer-names across Scanning Sessions. The order of
-    operations is this:
+    """Events-style table for tracking sightings of viewer-names across Scanning Sessions. The order
+    of operations is this:
 
     - List of live channels is curated by the Scan Conductor.
     - Scan Conductor dispatches target channel names to the Viewer List Fetcher worker(s).
-    - Viewer List Fetcher joins the target channel, receives viewer list, and parts from channel.
+    - Viewer List Fetcher joins the target stream chat, receives viewer list, and parts from chat.
     - Viewer List Fetcher parses the viewer list, making one entry per login name in this table.
 
     This table is light weight and has no incoming dependencies as it's projected to potentially get
@@ -25,15 +25,15 @@ class ViewerSighting(Base):
 
     Attributes:
         viewer_sighting_id (str): UUID for this sighting.
-        viewerlist_fetch_id (str): FK UUID with the associated viewerlist fetch (for a given
-            channel).
+        viewerlist_fetch_id (str): [FK] UUID with the associated viewerlist fetch (for a given
+            stream).
         viewer_login_name (str): The login name, which is all we get from the fetch. It's unique,
             all lowercase, and used for the user's own auth and in general for Twitch back-end API
             calls. The User Data Fetcher will pull data of interest on each user for the
             TwitchUserData table, which will not have a direct relationship with this table.
 
     Relationships:
-        channel_viewerlist_fetch: Many-to-One with the ChannelViewerListFetch table.
+        stream_viewerlist_fetch: Many-to-One with the ChannelViewerListFetch table.
     """
 
     __tablename__ = "viewer_sightings"

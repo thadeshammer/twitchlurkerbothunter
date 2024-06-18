@@ -1,5 +1,6 @@
-# app/models/channel_viewerlist_fetch.py
-# A channel_viewerlist_fetch represents the reception of the viewer list and associatd metadata.
+# app/models/stream_viewerlist_fetch.py
+# SQLAlchemy model representing a single viewerlist fetch event of a target stream.
+# A stream_viewerlist_fetch represents the reception of the viewer list and associatd metadata.
 # For our purposes, it is a set of ViewerSightings in a given Channel during a Scan.
 from uuid import uuid4
 
@@ -27,35 +28,30 @@ class StreamViewerListFetch(Base):
 
     ID Attributes:
         fetch_id (str): PK. UUID of this channel's Viewerlist Fetch Action.
-        scanning_session_id (str): FK. UUID of the parent Scanning Session.
-
-    Attributes from 'Get Streams' Twitch backend API endpoint:
-        channel_owner_id (int): Twitch UUID of the channel this Viewerlist Fetch Action took place
-            in; the broadcaster's account id.
-        channel_owner_login (str): Name of the channel (broadcaster's login name) the viewerlist was
-            fetched from.
-        channel_owner_display_name (str): Display name of the channel, can contain non-Latin
-            characters and mixed case capitalizaion.
-        stream_id (int): Twitch UUID of the given stream/broadcast. Useful for tracking different
-            streams for the same channel.
-        category (str): The category that the channel was streaming under (e.g. 'Just Chatting').
-        category_id (int): Twitch UUID for the category.
-        language (str): ISO 639-1 lanuage code of the stream.
-        is_mature (bool): Whether the given channel is flagged as "For mature audiences."
-        was_live (bool): Whether the channel was (still) live when the viewerlist fetch took place.
-        tag_ids (list): List of tag IDs that were ascribed to this stream.
-
-        viewer_count (int): The reported viewer count for the stream at the time of the fetch.
-        channel_created_at (DateTime): The timestamp of the broadcaster's account creation.
+        scanning_session_id (str): [FK] UUID of the parent Scanning Session.
 
     Attributes from our data collection:
         time_of_fetch (DateTime): Timestamp of when this fetch action took place.
         time_in_channel (float): Time elapsed by the Viewer List Fetcher worker in this stream's
             chat, clocked with time.perf_counter().
 
+    Attributes from 'Get Streams' Twitch backend API endpoint:
+        channel_owner_id (int): [FK] Twitch UUID of the channel this Viewerlist Fetch Action took
+            place in; the broadcaster's account id.
+        viewer_count (int): The reported viewer count for the stream at the time of the fetch.
+        stream_id (int): Twitch UUID of the given stream/broadcast. Useful for tracking different
+            streams for the same channel.
+        stream_started_at (DateTime): The go-live timestamp of this live stream.
+        category (str): The category that the channel was streaming under (e.g. 'Just Chatting').
+        category_id (int): Twitch UUID for the category.
+        language (str): ISO 639-1 lanuage code of the stream.
+        is_mature (bool): Whether the given channel is flagged as "For mature audiences."
+        was_live (bool): Whether the channel was (still) live when the viewerlist fetch took place.
+
     Relationships:
-        scanning_session ():
-        viewer_sightings ():
+        scanning_session (): many stream_viewerlist_fetches to one scanning_session
+        twitch_user_data (): # one-to-one (this relationship mapping is for the user of THIS STREAM)
+        viewer_sightings (): many viewer_sightings to one stream_viewerlist_fetch
     """
 
     __tablename__ = "stream_viewerlist_fetch"
@@ -100,7 +96,7 @@ class StreamViewerListFetch(Base):
     )  # many stream_viewerlist_fetches to one scanning_session
     twitch_user_data = relationship(
         "TwitchUserData", back_populates="stream_viewerlist_fetch"
-    )
+    )  # one-to-one (this relationship mapping is for the user of THIS STREAM)
     viewer_sightings = relationship(
         "ViewerSighting", back_populates="stream_viewerlist_fetch"
     )  # many viewer_sightings to one stream_viewerlist_fetch
