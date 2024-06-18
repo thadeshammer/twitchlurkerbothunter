@@ -45,7 +45,9 @@ class TwitchUserData(Base):
 
     __tablename__ = "twitch_user_data"
 
-    twitch_account_id = Column(BigInteger, primary_key=True)  # 'id'
+    twitch_account_id = Column(
+        BigInteger, primary_key=True, autoincrement=False
+    )  # 'id'
     login_name = Column(String(40), unique=True, nullable=False)  # 'login'
     display_name = Column(String(40), unique=True, nullable=False)  # 'display_name'
     account_type = Column(String(15), nullable=False)  # 'type'

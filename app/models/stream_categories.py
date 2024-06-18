@@ -28,7 +28,9 @@ class StreamCategory(Base):
 
     __tablename__ = "stream_categories"
 
-    category_id = Column(BigInteger, primary_key=True, default=NO_CATEGORY_ID)
+    category_id = Column(
+        BigInteger, primary_key=True, default=NO_CATEGORY_ID, autoincrement=False
+    )
     category_name = Column(
         String(40), unique=True, nullable=False, default=NO_CATEGORY_NAME
     )
