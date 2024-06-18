@@ -3,7 +3,16 @@
 # For our purposes, it is a set of ViewerSightings in a given Channel during a Scan.
 from uuid import uuid4
 
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, Float, ForeignKey, Integer
+from sqlalchemy import (
+    BigInteger,
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+)
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import relationship
 
@@ -52,10 +61,15 @@ class StreamViewerListFetch(Base):
     __tablename__ = "stream_viewerlist_fetch"
 
     fetch_id = Column(CHAR(36), primary_key=True, default=lambda: str(uuid4()))
+    fetch_action_at = Column(DateTime, nullable=False)
+    duration_of_fetch_action = Column(
+        Float, nullable=False
+    )  # use time.perf_counter() to measure, returns fractional seconds
+
+    # foreign keys
     scanning_session_id = Column(
         CHAR(36), ForeignKey("scanning_session.scanning_session_id"), nullable=False
     )
-
     channel_owner_id = Column(
         BigInteger, ForeignKey("twitch_user_data.twitch_account_id"), nullable=False
     )  # 'user_id'
@@ -64,9 +78,10 @@ class StreamViewerListFetch(Base):
     )  # 'game_id'
     # category_name should be stored in the StreamCategories table if it's new to us.
 
+    # 'Get Stream' response data
     viewer_count = Column(Integer, nullable=False)  # 'viewer_count' for this broadcast
     stream_id = Column(
-        BigInteger, nullable=False
+        BigInteger, unique=True, nullable=False
     )  # 'id' UUID of this specific live-stream
     stream_started_at = Column(DateTime, nullable=False)  # 'started_at'
     language: Column(
@@ -76,12 +91,8 @@ class StreamViewerListFetch(Base):
     was_live: Column(
         Boolean, nullable=False
     )  # the 'type' field is either "live" or "" for down.
-    # not tracked: thumbnail_url, title,
 
-    fetch_action_at = Column(DateTime, nullable=False)
-    duration_of_fetch_action = Column(
-        Float, nullable=False
-    )  # use time.perf_counter() to measure, returns fractional seconds
+    # not tracked: thumbnail_url, title,
 
     # relationships
     scanning_session = relationship(
@@ -93,3 +104,10 @@ class StreamViewerListFetch(Base):
     viewer_sightings = relationship(
         "ViewerSighting", back_populates="stream_viewerlist_fetch"
     )  # many viewer_sightings to one stream_viewerlist_fetch
+
+    # indexes
+    __table_args__ = (
+        Index("ix_scanning_session_id", "scanning_session_id"),
+        Index("ix_channel_owner_id", "channel_owner_id"),
+        Index("ix_category_id", "category_id"),
+    )

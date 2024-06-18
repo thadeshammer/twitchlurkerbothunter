@@ -9,6 +9,7 @@ from app.db import Base
 
 
 class ScanningSessionStopReasonEnum(StrEnum):
+    UNSPECIFIED = "unspecified"
     COMPLETE = "complete"
     CANCELLED = "cancelled"
     ERRORED = "errored"
@@ -23,7 +24,9 @@ class ScanningSession(Base):
 
     time_started = Column(DateTime, nullable=False)
     time_ended = Column(DateTime, nullable=True)
-    reason_ended = Column(String(12), nullable=True)  # ScanningSessionStopReasonEnum
+    reason_ended = Column(
+        String(12), nullable=True, default=ScanningSessionStopReasonEnum.UNSPECIFIED
+    )  # ScanningSessionStopReasonEnum
 
     # channel viewerlists fetched / channels_in_scan ratio metric
     streams_in_scan = Column(Integer, nullable=False)

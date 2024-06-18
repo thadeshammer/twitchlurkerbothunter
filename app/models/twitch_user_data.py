@@ -1,6 +1,6 @@
 # app/models/twitch_user_data.py
 # SQLAlchemy model representing Twitch Users that have been spotted during scans.
-from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Index, Integer, String
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import relationship
 
@@ -40,20 +40,22 @@ class TwitchUserData(Base):
     __tablename__ = "twitch_user_data"
 
     twitch_account_id = Column(BigInteger, primary_key=True)  # 'id'
-    login_name = Column(String(40), nullable=False)  # 'login'
-    display_name = Column(String(40), nullable=False)  # 'display_name'
-    account_type = Column(String(15), nullable=True)  # 'type'
-    broadcaster_type = Column(String(15), nullable=True)  # 'broadcaster_type'
-    view_count = Column(Integer, nullable=True)  # 'view_count'
-    created_at = Column(DateTime, nullable=True)  # 'created_at'
+    login_name = Column(String(40), unique=True, nullable=False)  # 'login'
+    display_name = Column(String(40), unique=True, nullable=False)  # 'display_name'
+    account_type = Column(String(15), nullable=False)  # 'type'
+    broadcaster_type = Column(String(15), nullable=False)  # 'broadcaster_type'
+    lifetime_view_count = Column(Integer, nullable=False)  # 'view_count'
+    account_created_at = Column(DateTime, nullable=False)  # 'created_at'
 
     # not tracking: description, image urls, email,
 
     # Collected data
-    first_sighting = Column(DateTime, nullable=False)
-    most_recent_concurrent_channel = Column(Integer, nullable=False)
-    most_recent_sighting = Column(DateTime, nullable=False)
-    all_time_concurrent_channels = Column(Integer, nullable=False)
+    # NOTE Could FK in scanning_session_id for most_recent sighting AND first_sighting BUT those
+    # tables will grow pretty quickly and may be subject to pruning.
+    first_sighting_as_viewer = Column(DateTime, nullable=False)
+    most_recent_sighting_as_viewer = Column(DateTime, nullable=False)
+    most_recent_concurrent_channel_count = Column(Integer, nullable=False)
+    all_time_high_concurrent_channel_count = Column(Integer, nullable=False)
     all_time_high_at = Column(DateTime, nullable=False)
     suspected_bot_id = Column(
         CHAR(36), ForeignKey("suspected_bots.suspected_bot_id"), nullable=True
@@ -67,4 +69,11 @@ class TwitchUserData(Base):
     # One-or-none / optional one-to-one with SuspectedBot table.
     suspected_bot = relationship(
         "SuspectedBot", uselist=False, back_populates="twitch_user_data"
+    )
+
+    # indexes
+    __table_args__ = (
+        Index("ix_twitch_account_id", "twitch_account_id"),
+        Index("ix_login_name", "login_name"),
+        Index("ix_suspected_bot_id", "suspected_bot_id"),
     )

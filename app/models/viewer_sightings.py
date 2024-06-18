@@ -2,7 +2,7 @@
 # SQLAlchemy model representing sightings of Twitch login names in a channel.
 from uuid import uuid4
 
-from sqlalchemy import Column, ForeignKey, String
+from sqlalchemy import Column, ForeignKey, Index, String
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import relationship
 
@@ -44,9 +44,14 @@ class ViewerSighting(Base):
     viewerlist_fetch_id = Column(
         CHAR(36), ForeignKey("stream_viewerlist_fetch.fetch_id"), nullable=False
     )
-    viewer_login_name = Column(String(40), nullable=False)
+    viewer_login_name = Column(
+        String(40), nullable=False
+    )  # This will NOT be unique IN THIS TABLE.
 
     # Relationships
     stream_viewerlist_fetch = relationship(
         "StreamViewerListFetch", back_populates="viewer_sightings"
     )  # many viewer_sightings to one stream_viewerlist_fetch
+
+    # indexes
+    __table_args__ = (Index("ix_viewer_login_name", "viewer_login_name"),)
