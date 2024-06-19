@@ -1,5 +1,9 @@
 # app/models/twitch_user_data.py
 # SQLAlchemy model representing Twitch Users that have been spotted during scans.
+from datetime import datetime
+from typing import Literal, Optional
+
+from pydantic import BaseModel, Field, constr
 from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Index, Integer, String
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import relationship
@@ -10,7 +14,7 @@ from app.db import Base
 class TwitchUserData(Base):
     """SQLAlchemy model representing Twitch Users that have been spotted during scans.
 
-    Attributes from 'Get User' Twitch backend API endpoint:
+    Attributes from 'Get Users' Twitch backend API endpoint:
         twitch_account_id (int):the UID Twitch uses to uniquely
             identify each account, persists across name changes.
         login_name (str): Unique, all lowercase: used for auth, URLs, and Twitch backend API calls.
@@ -91,3 +95,74 @@ class TwitchUserData(Base):
         Index("ix_login_name", "login_name"),
         Index("ix_suspected_bot_id", "suspected_bot_id"),
     )
+
+
+TwitchAccountTypes = Literal["staff", "admin", "global_mod", ""]
+TwitchBroadcasterTypes = Literal["partner", "affiliate", ""]
+
+
+class TwitchUserDataAPIResponse(BaseModel):
+    """Pydantic model for the data received from the Twitch API."""
+
+    id: int = Field(..., alias="twitch_account_id")
+    login: constr(regex=r"^[a-z0-9_]{1,25}$") = Field(..., alias="login_name")
+    display_name: constr(regex=r"^[a-zA-Z0-9_]{1,25}$") = Field(...)
+    type: TwitchAccountTypes = Field(..., alias="account_type")
+    broadcaster_type: TwitchBroadcasterTypes = Field(...)
+    view_count: int = Field(..., alias="lifetime_view_count")
+    created_at: datetime = Field(..., alias="account_created_at")
+
+    class Config:
+        # arbitrary_types_allowed = True ?? for handling of the input being 100% strings?
+        allow_population_by_field_name = True
+        orm_mode = True
+
+
+class TwitchUserDataCreate(BaseModel):
+    """Pydantic model for creating a new TwitchUserData entry for the SQLAlchemy model."""
+
+    twitch_account_id: int
+    login_name: str
+    display_name: str
+    account_type: str
+    broadcaster_type: str
+    lifetime_view_count: int
+    account_created_at: datetime
+    first_sighting_as_viewer: datetime
+    most_recent_sighting_as_viewer: datetime
+    most_recent_concurrent_channel_count: int
+    all_time_high_concurrent_channel_count: int
+    all_time_high_at: datetime
+    suspected_bot_id: Optional[str] = None
+
+    class Config:
+        orm_mode = True
+
+
+# Example API response
+
+# api_response = {
+#     "id": 123456,
+#     "login": "example_user",
+#     "display_name": "ExampleUser",
+#     "type": "",
+#     "broadcaster_type": "",
+#     "view_count": 1000,
+#     "created_at": "2013-06-03T19:12:02Z"
+# }
+
+# # Parse API response
+# twitch_user_data_api = TwitchUserDataAPI(**api_response)
+
+# # Create internal representation using unpacking
+# twitch_user_data_create = TwitchUserDataCreate(
+#     **twitch_user_data_api.dict(),
+#     first_sighting_as_viewer=datetime.utcnow(),
+#     most_recent_sighting_as_viewer=datetime.utcnow(),
+#     most_recent_concurrent_channel_count=1,
+#     all_time_high_concurrent_channel_count=1,
+#     all_time_high_at=datetime.utcnow()
+# )
+
+# # Marshall into database model
+# new_twitch_user_data = TwitchUserData(**twitch_user_data_create.dict())
