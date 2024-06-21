@@ -41,6 +41,8 @@ I'm [live streaming](https://twitch.tv/thadeshammer) portions of my development 
 
 ## Project Overview
 
+See the current data model [here](uml/lurker-bot-hunter%20data%20model%20diagram.pdf).
+
 This application will - within the 20 channel-joins per 10 seconds ratelimit - crawl over Twitch live streams to collect their publically available viewer lists and publically available user data to help identify lurker bots. Multiple methods will be used to fingerprint lurkerbots, including:
 
 - aggregate viewer list data to identify accounts (by account id) who are concurrently in large numbers of live channels;
@@ -48,13 +50,13 @@ This application will - within the 20 channel-joins per 10 seconds ratelimit - c
 - ratios between following and follower counts;
 - comparisons of follower and following lists across suspect accounts.
 
-This bot will not remain resident in channels, so it will be unable to track whether lurker bots speak or don't speak ever, or their specific entry and exit times; however we may estimate entry and exit times within some (potentially wide) margin of error depending on how frequently and quickly it can conduct scans.
+This bot will not remain resident in channels, so it will be unable to track whether lurker bots speak or don't speak ever, or their specific entry and exit times; however we may estimate entry and exit times within some (potentially wide) margin of error depending on how frequently and quickly it can conduct scans. Nor will it request or record user emails from the Helix API.
 
-The bot will also randomize when it performs as scan and what channels are included in a given scan so as to be less predictable to those that wish to evade its detection.
+The bot will also randomize when it performs as scan and what channels/categories are included in a given scan so as to be less predictable to those that wish to evade its detection.
 
 The bot utilizes Flask, SQLAlchemy, Docker, and Pydantic to validate and manage data from Twitch. The project adheres to Twitch's TOS by using the Twitch IRC interface to scrape viewer lists manually without using undocumented endpoints or exceeding prescribed ratelimits.
 
-There's a second app - a single file Flask servlet - whose only job is to take care of the Twitch OAuth flow and secure a token. I did this for the experience; it was painful because the fetch_token() method wasn't recognizing the access_token was in fact in the response, and this ate a couple of my hours. Unless you also want the experience, may I recommend you just use [Twitch Token Generator](https://twitchtokengenerator.com/) as needed.
+There's a second app - a single file Flask servlet - whose only job is to take care of the Twitch OAuth flow and secure a token. I did this for the experience; it was painful because the fetch_token() method wasn't recognizing the access_token was in fact in the response, and this ate a couple of my hours. Unless you also want the experience, may I recommend you just use [Twitch Token Generator](https://twitchtokengenerator.com/) as needed. Or write a tiny Node.js app, that was way less painful.
 
 ## Frameworks and Features
 
@@ -134,9 +136,10 @@ The bot uses SQLAlchemy models to define the database schema, including tables f
 
 ## Future Plans
 
-- Implementing parallel processing using Python coroutines or multiprocesses.
+- Implementing parallel processing using Python asyncio coroutines and multiprocesses.
 - Potentially splitting the project into microservices for better scalability.
 - Enhancing data analysis and reporting capabilities.
+- Applying to Twitch to become a verified bot, increasing my rate limit by two orders of magnitude.
 
 ## License
 
