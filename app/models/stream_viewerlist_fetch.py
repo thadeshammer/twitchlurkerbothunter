@@ -64,7 +64,7 @@ class StreamViewerListFetch(Base):
 
     # foreign keys
     scanning_session_id = Column(
-        CHAR(36), ForeignKey("scanning_session.scanning_session_id"), nullable=False
+        CHAR(36), ForeignKey("scanning_sessions.scanning_session_id"), nullable=False
     )
     channel_owner_id = Column(
         BigInteger, ForeignKey("twitch_user_data.twitch_account_id"), nullable=False

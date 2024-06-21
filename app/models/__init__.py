@@ -1,5 +1,6 @@
 from .scanning_session import ScanningSession
 from .secrets import Secret
+from .stream_categories import StreamCategory
 from .stream_viewerlist_fetch import StreamViewerListFetch
 from .suspected_bot import (
     SUSPICION_RANKING_THRESHOLDS,
@@ -13,6 +14,7 @@ from .viewer_sightings import ViewerSighting
 __all__ = [
     "ScanningSession",
     "Secret",
+    "StreamCategory",
     "StreamViewerListFetch",
     "SuspectedBot",
     "SUSPICION_RANKING_THRESHOLDS",

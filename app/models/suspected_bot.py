@@ -114,7 +114,7 @@ class SuspectedBot(Base):
             concerning this account.
     """
 
-    __tablename__ = "suspects"
+    __tablename__ = "suspected_bots"
 
     suspected_bot_id = Column(CHAR(36), primary_key=True, default=lambda: str(uuid4()))
 
@@ -138,4 +138,4 @@ class SuspectedBot(Base):
     twitch_user_data = relationship("TwitchUserData", back_populates="suspected_bot")
 
     # indexes
-    __table_args__ = Index("ix_twitch_account_id", "twitch_account_id")
+    __table_args__ = (Index("ix_twitch_account_id", "twitch_account_id"),)

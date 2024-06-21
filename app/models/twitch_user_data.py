@@ -49,6 +49,8 @@ class TwitchUserData(Base):
 
     __tablename__ = "twitch_user_data"
 
+    # These core fields are not nullable because they're here at row creation and required.
+
     twitch_account_id = Column(
         BigInteger, primary_key=True, autoincrement=False
     )  # 'id'
@@ -65,16 +67,16 @@ class TwitchUserData(Base):
     # NOTE Could FK in scanning_session_id for most_recent sighting AND first_sighting BUT those
     # tables will grow pretty quickly and may be subject to pruning.
 
-    # NOTE If a first encounter with a Twitch account login name is as a live stream, it will still
-    # be recorded here as a viewer because streamers appear in their own chats. I could add a catch
-    # for this (i.e. ignore the streamer in their own channel) but I prefer these fields being not
-    # nullable anyway.
+    # These columns will be populated post creation by an aggregator worker, thus they're nullable.
 
-    first_sighting_as_viewer = Column(DateTime, nullable=False)
-    most_recent_sighting_as_viewer = Column(DateTime, nullable=False)
-    most_recent_concurrent_channel_count = Column(Integer, nullable=False)
-    all_time_high_concurrent_channel_count = Column(Integer, nullable=False)
-    all_time_high_at = Column(DateTime, nullable=False)
+    first_sighting_as_viewer = Column(DateTime, nullable=True)
+    most_recent_sighting_as_viewer = Column(DateTime, nullable=True)
+    most_recent_concurrent_channel_count = Column(Integer, nullable=True)
+    all_time_high_concurrent_channel_count = Column(Integer, nullable=True)
+    all_time_high_at = Column(DateTime, nullable=True)
+
+    # suspected_bot_id is nullable for the same reason as the aggregator's columns, but this will
+    # be filled in by the classfier.
     suspected_bot_id = Column(
         CHAR(36), ForeignKey("suspected_bots.suspected_bot_id"), nullable=True
     )
@@ -82,11 +84,6 @@ class TwitchUserData(Base):
     # Relationships
     stream_viewerlist_fetch = relationship(
         "StreamViewerlistFetch", back_populates="twitch_user_data"
-    )
-
-    # One-or-none / optional one-to-one with SuspectedBot table.
-    suspected_bot = relationship(
-        "SuspectedBot", uselist=False, back_populates="twitch_user_data"
     )
 
     # indexes

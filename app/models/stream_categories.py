@@ -1,7 +1,7 @@
 # app/model/stream_categories.py
 # SQLAlchemy model serving as a local longterm store for streaming categories encountered during
 # scans.
-from sqlalchemy import BigInteger, Column, String
+from sqlalchemy import BigInteger, Column, Index, String
 from sqlalchemy.orm import relationship
 
 from app.db import Base
@@ -39,3 +39,5 @@ class StreamCategory(Base):
         "StreamViewerListFetch",
         back_populates="stream_categories",
     )
+
+    __table_args__ = (Index("ix_category_name", "category_name"),)

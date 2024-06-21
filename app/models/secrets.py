@@ -37,15 +37,15 @@ class Secret(Base):
     __tablename__ = "secrets"
     id = Column(Integer, primary_key=True)
     enforce_one_row = Column(String(15), unique=True, default="enforce_one_row")
-    access_token = Column(String(512), nullable=False)
-    refresh_token = Column(String(512), nullable=False)
-    expires_in = Column(Integer, nullable=False)
-    token_type = Column(String(64), nullable=False)
-    scope = Column(Text, nullable=False)
+    access_token = Column(String(512), nullable=True)
+    refresh_token = Column(String(512), nullable=True)
+    expires_in = Column(Integer, nullable=True)
+    token_type = Column(String(64), nullable=True)
+    scopes = Column(Text, nullable=True)
 
     # For calculating and tracking TTL and when to use refresh token
     # TODO wire this up
-    last_update_timestamp = Column(DateTime, nullable=False)
+    last_update_timestamp = Column(DateTime, nullable=True)
 
     def __init__(
         self, access_token, refresh_token, expires_in, token_type, scope

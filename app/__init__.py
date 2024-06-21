@@ -8,7 +8,14 @@ from flask import Flask
 
 from app.config import Config
 from app.db import Base, engine
-from app.models import suspected_bot, twitch_user_data, viewer_sightings
+from app.models import (
+    scanning_session,
+    secrets,
+    stream_categories,
+    suspected_bot,
+    twitch_user_data,
+    viewer_sightings,
+)
 from app.routes import register_routes
 from app.util import setup_logging
 
