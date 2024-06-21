@@ -41,7 +41,7 @@ I'm [live streaming](https://twitch.tv/thadeshammer) portions of my development 
 
 ## Project Overview
 
-See the current data model [here](uml/lurker-bot-hunter%20data%20model%20diagram.pdf).
+See the current data model [here](uml/lurker-bot-hunter%20data%20model.pdf).
 
 This application will - within the 20 channel-joins per 10 seconds ratelimit - crawl over Twitch live streams to collect their publically available viewer lists and publically available user data to help identify lurker bots. Multiple methods will be used to fingerprint lurkerbots, including:
 
