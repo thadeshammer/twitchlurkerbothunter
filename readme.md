@@ -14,11 +14,11 @@ CURRENTLY IN DEVELOPMENT
 | Viewer list fetch for target channel     | ❌     |
 | Crawl the streams.                       | ❌     |
 | Collections metrics and visualizer       | ❌     |
-| Reconsider schema needs and indexing     | ❌     |
+| Reconsider schema needs and indexing     | ✅     |
 | Documentation pass                       | ❌     |
 | white list / ignore list (for good bots) | ❌     |
 | ignore list for channels that opt-out    | ❌     |
-| Profiling (Consider a db table for it.)  | ❌     |
+| Profiling                                | ❌     |
 | Parallelization                          | ❌     |
 | Get hard-coded config stuff into config. | ✅     |
 | Unit tests                               | ❌     |
