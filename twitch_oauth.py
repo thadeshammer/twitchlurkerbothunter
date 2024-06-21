@@ -40,7 +40,7 @@ PORT = 8081
 REDIRECT_URI = f"https://localhost:{PORT}/callback"
 AUTHORIZE_URL = "https://id.twitch.tv/oauth2/authorize"
 TOKEN_URL = "https://id.twitch.tv/oauth2/token"
-SCOPES = ["user:read:email", "chat:read", "chat:edit"]
+SCOPES = ["chat:read", "chat:edit"]
 
 
 @app.route("/")
