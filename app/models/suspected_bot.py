@@ -22,9 +22,10 @@ Classes:
         Twitch accounts.
 """
 from enum import StrEnum
-from typing import Tuple
-from uuid import uuid4
+from typing import Optional, Tuple
+from uuid import UUID, uuid4
 
+from pydantic import BaseModel, Field
 from sqlalchemy import (
     BigInteger,
     Boolean,
@@ -139,3 +140,30 @@ class SuspectedBot(Base):
 
     # indexes
     __table_args__ = (Index("ix_twitch_account_id", "twitch_account_id"),)
+
+
+class SuspectedBotBase(BaseModel):
+    """Base model for Suspected Bot with shared properties."""
+
+    follower_count: int
+    following_count: int
+    is_banned_or_deleted: bool = Field(False)
+    suspicion_level: SuspicionLevel = Field(SuspicionLevel.NONE)
+    suspicion_reason: SuspicionReason = Field(SuspicionReason.UNSPECIFIED)
+    additional_notes: Optional[str]
+
+
+class SuspectedBotCreate(SuspectedBotBase):
+    """Model for creating a new Suspected Bot entry."""
+
+    twitch_account_id: int
+
+
+class SuspectedBotPydantic(SuspectedBotBase):
+    """Model for returning Suspected Bot data."""
+
+    suspected_bot_id: UUID
+    twitch_account_id: int
+
+    class Config:
+        orm_mode = True

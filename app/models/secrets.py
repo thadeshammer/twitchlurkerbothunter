@@ -44,17 +44,9 @@ class Secret(Base):
     scopes = Column(Text, nullable=True)
 
     # For calculating and tracking TTL and when to use refresh token
-    # TODO wire this up
+    # TODO wire this up, currently the response from the twitch_oauth servlet just gets hammed
+    # directly into the db. #sadfaceemoji
     last_update_timestamp = Column(DateTime, nullable=True)
-
-    def __init__(
-        self, access_token, refresh_token, expires_in, token_type, scope
-    ):  # pylint: disable=R0913
-        self.access_token = access_token
-        self.refresh_token = refresh_token
-        self.expires_in = expires_in
-        self.token_type = token_type
-        self.scope = scope
 
 
 class SecretBase(BaseModel):
@@ -62,19 +54,15 @@ class SecretBase(BaseModel):
     refresh_token: str
     expires_in: int
     token_type: str
-    scope: str
 
 
-class SecretCreate(BaseModel):
-    access_token: str
-    refresh_token: str
-    expires_in: int
-    token_type: str
-    scope: Union[str, list[str]]
+class SecretCreate(SecretBase):
+    scopes: Union[str, list[str]]
 
 
 class SecretPydantic(SecretBase):
     id: int
+    scopes: Union[str, list[str]]
 
     class Config:
         orm_mode = True

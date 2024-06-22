@@ -3,9 +3,8 @@
 from datetime import datetime
 from typing import Literal, Optional
 
-from pydantic import BaseModel, Field, constr
-from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Index, Integer, String
-from sqlalchemy.dialects.mysql import CHAR
+from pydantic import BaseModel, Field, conint, constr
+from sqlalchemy import BigInteger, Column, DateTime, Index, Integer, String
 from sqlalchemy.orm import relationship
 
 from app.db import Base
@@ -40,11 +39,6 @@ class TwitchUserData(Base):
         all_time_high_concurrent_channel_count (int): The highest count of channels this account_id
             was ever observed in across all scans it's been a part of.
         all_time_high_at (DateTime): Timestamp of the all_time_concurrent_channel_count reading.
-        suspected_bot_id (str): [FK] This accounts associated entry on the SuspectedBots table, if
-            applicable. Nullable as not all accounts are suspects.
-
-    Relationships:
-        suspected_bot
     """
 
     __tablename__ = "twitch_user_data"
@@ -75,13 +69,11 @@ class TwitchUserData(Base):
     all_time_high_concurrent_channel_count = Column(Integer, nullable=True)
     all_time_high_at = Column(DateTime, nullable=True)
 
-    # suspected_bot_id is nullable for the same reason as the aggregator's columns, but this will
-    # be filled in by the classfier.
-    suspected_bot_id = Column(
-        CHAR(36), ForeignKey("suspected_bots.suspected_bot_id"), nullable=True
+    # Relationships
+    suspected_bot = relationship(
+        "SuspectedBot", back_populates="twitch_user_data", uselist=False
     )
 
-    # Relationships
     stream_viewerlist_fetch = relationship(
         "StreamViewerlistFetch", back_populates="twitch_user_data"
     )
@@ -90,7 +82,6 @@ class TwitchUserData(Base):
     __table_args__ = (
         Index("ix_twitch_account_id", "twitch_account_id"),
         Index("ix_login_name", "login_name"),
-        Index("ix_suspected_bot_id", "suspected_bot_id"),
     )
 
 
@@ -98,42 +89,33 @@ TwitchAccountTypes = Literal["staff", "admin", "global_mod", ""]
 TwitchBroadcasterTypes = Literal["partner", "affiliate", ""]
 
 
-class TwitchUserDataAPIResponse(BaseModel):
-    """Pydantic model for the data received from the Twitch API."""
+class TwitchUserDataBase(BaseModel):
+    """Base model for TwitchUserData with shared properties."""
 
-    id: int = Field(..., alias="twitch_account_id")
-    login: constr(regex=r"^[a-z0-9_]{1,25}$") = Field(..., alias="login_name")
+    twitch_account_id: int = Field(..., alias="id")
+    login_name: constr(regex=r"^[a-z0-9_]{1,25}$") = Field(..., alias="login")
     display_name: constr(regex=r"^[a-zA-Z0-9_]{1,25}$") = Field(...)
-    type: TwitchAccountTypes = Field(..., alias="account_type")
+    account_type: TwitchAccountTypes = Field(..., alias="type")
     broadcaster_type: TwitchBroadcasterTypes = Field(...)
-    view_count: int = Field(..., alias="lifetime_view_count")
-    created_at: datetime = Field(..., alias="account_created_at")
+    lifetime_view_count: int = Field(..., alias="view_count")
+    account_created_at: datetime = Field(..., alias="created_at")
+    first_sighting_as_viewer: Optional[datetime] = Field(None)
+    most_recent_sighting_as_viewer: Optional[datetime] = Field(None)
+    most_recent_concurrent_channel_count: Optional[conint(gt=0)] = Field(None)
+    all_time_high_concurrent_channel_count: Optional[conint(gt=0)] = Field(None)
+    all_time_high_at: Optional[datetime] = Field(None)
 
     class Config:
-        # arbitrary_types_allowed = True ?? for handling of the input being 100% strings?
         allow_population_by_field_name = True
         orm_mode = True
 
 
-class TwitchUserDataCreate(BaseModel):
-    """Pydantic model for creating a new TwitchUserData entry for the SQLAlchemy model."""
+class TwitchUserDataCreate(TwitchUserDataBase):
+    """Model for creating a new TwitchUserData entry."""
 
-    twitch_account_id: int
-    login_name: str
-    display_name: str
-    account_type: str
-    broadcaster_type: str
-    lifetime_view_count: int
-    account_created_at: datetime
-    first_sighting_as_viewer: datetime
-    most_recent_sighting_as_viewer: datetime
-    most_recent_concurrent_channel_count: int
-    all_time_high_concurrent_channel_count: int
-    all_time_high_at: datetime
-    suspected_bot_id: Optional[str] = None
 
-    class Config:
-        orm_mode = True
+class TwitchUserDataAPIResponse(TwitchUserDataBase):
+    """Model for the data received from the Twitch API, to be persisted in the db."""
 
 
 # Example API response

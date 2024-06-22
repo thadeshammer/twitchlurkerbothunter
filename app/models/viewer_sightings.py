@@ -1,7 +1,8 @@
 # app/models/viewer_sighting.py
 # SQLAlchemy model representing sightings of Twitch login names in a channel.
-from uuid import uuid4
+from uuid import UUID, uuid4
 
+from pydantic import BaseModel, Field, constr
 from sqlalchemy import Column, ForeignKey, Index, String
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import relationship
@@ -55,3 +56,25 @@ class ViewerSighting(Base):
 
     # indexes
     __table_args__ = (Index("ix_viewer_login_name", "viewer_login_name"),)
+
+
+class ViewerSightingBase(BaseModel):
+    """Base model for Viewer Sighting with shared properties."""
+
+    viewer_login_name: constr(regex=r"^[a-z0-9_]{1,25}$") = Field(...)
+
+
+class ViewerSightingCreate(ViewerSightingBase):
+    """Model for creating a new Viewer Sighting entry to persist in the db."""
+
+    viewerlist_fetch_id: UUID
+
+
+class ViewerSightingPydantic(ViewerSightingBase):
+    """Model for returning Viewer Sighting data from the db."""
+
+    viewer_sighting_id: UUID
+    viewerlist_fetch_id: UUID
+
+    class Config:
+        orm_mode = True

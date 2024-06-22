@@ -2,8 +2,11 @@
 # SQLAlchemy model representing a single viewerlist fetch event of a target stream.
 # A stream_viewerlist_fetch represents the reception of the viewer list and associatd metadata.
 # For our purposes, it is a set of ViewerSightings in a given Channel during a Scan.
-from uuid import uuid4
+from datetime import datetime
+from decimal import Decimal
+from uuid import UUID, uuid4
 
+from pydantic import BaseModel, Field, condecimal, conint, constr, validator
 from sqlalchemy import (
     BigInteger,
     Boolean,
@@ -107,3 +110,42 @@ class StreamViewerListFetch(Base):
         Index("ix_channel_owner_id", "channel_owner_id"),
         Index("ix_category_id", "category_id"),
     )
+
+
+class StreamViewerListFetchBase(BaseModel):
+    """Base model for Stream Viewer List Fetch with shared properties."""
+
+    fetch_action_at: datetime = Field(...)
+    duration_of_fetch_action: condecimal(gt=Decimal(0.0)) = Field(...)
+    viewer_count: conint(ge=0) = Field(...)
+    stream_id: conint(gt=0) = Field(..., alias="id")
+    stream_started_at: datetime = Field(..., alias="started_at")
+    language: constr(regex=r"^[a-z]{2}$") = Field(...)
+    is_mature: bool = Field(...)
+    was_live: bool = Field(..., alias="type")
+
+    @validator("was_live", pre=True)
+    def convert_type_to_was_live(cls, v: str) -> bool:
+        if isinstance(v, str):
+            return v == "live"
+        return v
+
+
+class StreamViewerListFetchCreate(StreamViewerListFetchBase):
+    """Model for creating a new StreamViewerListFetch entry to persist."""
+
+    scanning_session_id: UUID = Field(...)
+    channel_owner_id: conint(gt=0) = Field(...)
+    category_id: conint(gt=0) = Field(...)
+
+
+class StreamViewerListFetchPydantic(StreamViewerListFetchBase):
+    """Model for returning StreamViewerListFetch data from the db."""
+
+    fetch_id: UUID
+    scanning_session_id: UUID
+    channel_owner_id: conint(gt=0)
+    category_id: conint(gt=0)
+
+    class Config:
+        orm_mode = True
