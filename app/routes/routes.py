@@ -33,13 +33,13 @@ def register_routes(app: Flask) -> None:
         refresh_token = secret_create.refresh_token
         expires_in = secret_create.expires_in
         token_type = secret_create.token_type
-        scope = secret_create.scope
+        scopes = secret_create.scopes
 
         # Handle scope if it's a list
-        if isinstance(scope, list):
-            scope = " ".join(scope)
+        if isinstance(scopes, list):
+            scopes = " ".join(scopes)
 
-        logger.info(f"Tokens received. {expires_in=}, {token_type=}, {scope=}")
+        logger.info(f"Tokens received. {expires_in=}, {token_type=}, {scopes=}")
 
         # Use get_db context manager to handle the database session
         with get_db() as db:
@@ -50,7 +50,7 @@ def register_routes(app: Flask) -> None:
                     refresh_token=refresh_token,
                     expires_in=expires_in,
                     token_type=token_type,
-                    scope=scope,
+                    scopes=scopes,
                 )
                 db.add(new_secret)
                 db.commit()
@@ -68,7 +68,9 @@ def register_routes(app: Flask) -> None:
                     existing_secret.refresh_token = refresh_token
                     existing_secret.expires_in = expires_in
                     existing_secret.token_type = token_type
-                    existing_secret.scope = scope
+                    existing_secret.scopes = scopes
+                    # TODO fix this, sadfaceemoji / Use the pydantic machinery
+                    # TODO add timestamp
                     db.commit()
 
         # Return the stored secret using Pydantic model for serialization

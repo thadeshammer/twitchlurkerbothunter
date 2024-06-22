@@ -25,7 +25,7 @@ from enum import StrEnum
 from typing import Optional, Tuple
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, conint, constr
 from sqlalchemy import (
     BigInteger,
     Boolean,
@@ -145,25 +145,25 @@ class SuspectedBot(Base):
 class SuspectedBotBase(BaseModel):
     """Base model for Suspected Bot with shared properties."""
 
-    follower_count: int
-    following_count: int
+    follower_count: conint(ge=0) = Field(...)
+    following_count: conint(ge=0) = Field(...)
     is_banned_or_deleted: bool = Field(False)
     suspicion_level: SuspicionLevel = Field(SuspicionLevel.NONE)
     suspicion_reason: SuspicionReason = Field(SuspicionReason.UNSPECIFIED)
-    additional_notes: Optional[str]
+    additional_notes: Optional[constr(regex=r"^[a-zA-Z0-9/\s.,!?':;-]*$")] = None
 
 
 class SuspectedBotCreate(SuspectedBotBase):
     """Model for creating a new Suspected Bot entry."""
 
-    twitch_account_id: int
+    twitch_account_id: conint(gt=0)
 
 
-class SuspectedBotPydantic(SuspectedBotBase):
+class SuspectedBotRead(SuspectedBotBase):
     """Model for returning Suspected Bot data."""
 
     suspected_bot_id: UUID
-    twitch_account_id: int
+    twitch_account_id: conint(gt=0)
 
     class Config:
         orm_mode = True

@@ -15,7 +15,7 @@ Classes:
 from datetime import datetime
 from enum import StrEnum
 from typing import Optional
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, confloat, conint
 from sqlalchemy import Column, DateTime, Float, Integer, String
@@ -114,10 +114,10 @@ class ScanningSessionCreate(ScanningSessionBase):
     """Model for creating a new ScanningSession entry."""
 
 
-class ScanningSessionPydantic(ScanningSessionBase):
+class ScanningSessionRead(ScanningSessionBase):
     """Model for returning ScanningSession data."""
 
-    scanning_session_id: str = Field(...)
+    scanning_session_id: UUID = Field(...)
 
     class Config:
         orm_mode = True

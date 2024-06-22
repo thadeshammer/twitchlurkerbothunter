@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 import pytest
 from pydantic import ValidationError
 
-from app.models.twitch_user_data import TwitchUserDataAPIResponse, TwitchUserDataCreate
+from app.models import TwitchUserDataCreate, TwitchUserDataRead
 
 # Valid data for TwitchUserDataAPIResponse
 MOCK_TWITCH_GET_USER_RESPONSE = {
@@ -33,7 +33,7 @@ BUSTED_TWITCH_GET_USER_RESPONSE = {
 def test_twitch_user_data_api_response_valid():
     """Test creating a TwitchUserDataAPIResponse with valid data."""
     try:
-        twitch_user_data = TwitchUserDataAPIResponse(**MOCK_TWITCH_GET_USER_RESPONSE)
+        twitch_user_data = TwitchUserDataRead(**MOCK_TWITCH_GET_USER_RESPONSE)
         assert (
             twitch_user_data.twitch_account_id
             == MOCK_TWITCH_GET_USER_RESPONSE["twitch_account_id"]
@@ -109,7 +109,7 @@ def test_twitch_user_data_api_response_invalid(field, value, expected_error):
     }
     data[field] = value
     with pytest.raises(ValidationError) as excinfo:
-        TwitchUserDataAPIResponse(**data)
+        TwitchUserDataRead(**data)
     assert expected_error in str(excinfo.value)
 
 

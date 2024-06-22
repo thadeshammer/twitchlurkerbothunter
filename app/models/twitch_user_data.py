@@ -92,7 +92,7 @@ TwitchBroadcasterTypes = Literal["partner", "affiliate", ""]
 class TwitchUserDataBase(BaseModel):
     """Base model for TwitchUserData with shared properties."""
 
-    twitch_account_id: int = Field(..., alias="id")
+    twitch_account_id: conint(gt=0) = Field(..., alias="id")
     login_name: constr(regex=r"^[a-z0-9_]{1,25}$") = Field(..., alias="login")
     display_name: constr(regex=r"^[a-zA-Z0-9_]{1,25}$") = Field(...)
     account_type: TwitchAccountTypes = Field(..., alias="type")
@@ -114,7 +114,7 @@ class TwitchUserDataCreate(TwitchUserDataBase):
     """Model for creating a new TwitchUserData entry."""
 
 
-class TwitchUserDataAPIResponse(TwitchUserDataBase):
+class TwitchUserDataRead(TwitchUserDataBase):
     """Model for the data received from the Twitch API, to be persisted in the db."""
 
 

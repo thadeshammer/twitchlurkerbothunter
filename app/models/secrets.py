@@ -27,7 +27,7 @@ Modules:
 """
 from typing import Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, conint, constr
 from sqlalchemy import Column, DateTime, Integer, String, Text
 
 from app.db import Base
@@ -50,18 +50,22 @@ class Secret(Base):
 
 
 class SecretBase(BaseModel):
-    access_token: str
-    refresh_token: str
-    expires_in: int
-    token_type: str
+    access_token: constr(min_length=40, max_length=512, regex=r"^[a-zA-Z0-9]+$") = (
+        Field(...)
+    )
+    refresh_token: constr(min_length=40, max_length=512, regex=r"^[a-zA-Z0-9]+$") = (
+        Field(...)
+    )
+    expires_in: conint(gt=0) = Field(...)
+    token_type: str = Field(...)
 
 
 class SecretCreate(SecretBase):
-    scopes: Union[str, list[str]]
+    scopes: Union[str, list[str]] = Field(...)
 
 
-class SecretPydantic(SecretBase):
-    id: int
+class SecretRead(SecretBase):
+    id: conint(gt=0)
     scopes: Union[str, list[str]]
 
     class Config:

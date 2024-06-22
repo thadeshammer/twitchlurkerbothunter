@@ -70,7 +70,7 @@ class ViewerSightingCreate(ViewerSightingBase):
     viewerlist_fetch_id: UUID
 
 
-class ViewerSightingPydantic(ViewerSightingBase):
+class ViewerSightingRead(ViewerSightingBase):
     """Model for returning Viewer Sighting data from the db."""
 
     viewer_sighting_id: UUID
