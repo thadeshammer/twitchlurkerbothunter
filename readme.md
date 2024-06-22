@@ -1,4 +1,4 @@
-# Twitch Lurker Bot Finder
+# Twitch Lurker Bot Hunter
 
 <div align="center">
 
@@ -21,7 +21,7 @@ CURRENTLY IN DEVELOPMENT
 | Profiling                                | ❌     |
 | Parallelization                          | ❌     |
 | Get hard-coded config stuff into config. | ✅     |
-| Unit tests                               | ❌     |
+| Unit tests                               | ✅     |
 
 </div>
 
