@@ -16,25 +16,44 @@ Classes:
         access token, refresh token, expiration time, token type, and scope.
     SecretCreate: Pydantic model for creating a new Secret, allowing the scope to be either a string
         or a list of strings.
-    SecretPydantic: Pydantic model for serializing the Secret model, including the id field and
+    SecretRead: Pydantic model for serializing the Secret model, including the id field and
         enabling ORM mode for compatibility with SQLAlchemy.
-
-Modules:
-    typing: Provides support for type hints.
-    pydantic: Used for data validation and serialization.
-    sqlalchemy: Provides the ORM capabilities for the Secret model.
-    app.db: Contains the base SQLAlchemy model for the application.
 """
+from enum import StrEnum
 from typing import Union
 
 from pydantic import BaseModel, Field, conint, constr
-from sqlalchemy import Column, DateTime, Integer, String, Text
+from sqlalchemy import Column, DateTime, Integer, String, Text, func
 
 from app.db import Base
 
+from ._validator_regexes import TWITCH_TOKEN_REGEX
+
+
+class TokenType(StrEnum):
+    BEARER = "bearer"
+
 
 class Secret(Base):
+    """Single-row table to store short-lived oauth tokens and associated metadata. Uses
+    unique/default combo to enforce there being only one row.
+
+    Args:
+        Base (_type_): _description_
+        id (int): I think this will literally always be 1. Do I need this? Probably not.
+        enforce_one_row (str): Uses the classic unique/default combo to ensure only one table row.
+        access_token (str): Twitch OAuth access token for API interactions.
+        refresh_token (str): Twitch OAuth refresh token; get a new access token after expiry.
+        expires_in (int): Time in seconds until the access token expires.
+        token_type (str): Docs say this is almost always "bearer".
+        scopes (str or list[str]): One or more scopes that spec out how much we can access with the
+            token.
+        last_update_timestamp (DateTime): The timestamp of the last time this row was updated.
+
+    """
+
     __tablename__ = "secrets"
+
     id = Column(Integer, primary_key=True)
     enforce_one_row = Column(String(15), unique=True, default="enforce_one_row")
     access_token = Column(String(512), nullable=True)
@@ -44,20 +63,20 @@ class Secret(Base):
     scopes = Column(Text, nullable=True)
 
     # For calculating and tracking TTL and when to use refresh token
-    # TODO wire this up, currently the response from the twitch_oauth servlet just gets hammed
-    # directly into the db. #sadfaceemoji
-    last_update_timestamp = Column(DateTime, nullable=True)
+    last_update_timestamp = Column(
+        DateTime, nullable=False, default=func.now(), onupdate=func.now()
+    )
 
 
 class SecretBase(BaseModel):
-    access_token: constr(min_length=40, max_length=512, regex=r"^[a-zA-Z0-9]+$") = (
+    access_token: constr(min_length=40, max_length=512, regex=TWITCH_TOKEN_REGEX) = (
         Field(...)
     )
-    refresh_token: constr(min_length=40, max_length=512, regex=r"^[a-zA-Z0-9]+$") = (
+    refresh_token: constr(min_length=40, max_length=512, regex=TWITCH_TOKEN_REGEX) = (
         Field(...)
     )
     expires_in: conint(gt=0) = Field(...)
-    token_type: str = Field(...)
+    token_type: TokenType = Field(...)
 
 
 class SecretCreate(SecretBase):

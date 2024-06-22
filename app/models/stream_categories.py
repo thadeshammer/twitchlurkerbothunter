@@ -1,6 +1,4 @@
-# app/model/stream_categories.py
-# SQLAlchemy model serving as a local longterm store for streaming categories encountered during
-# scans.
+# /app/models/stream_categories.py
 from pydantic import BaseModel, Field, conint, constr
 from sqlalchemy import BigInteger, Column, Index, String
 from sqlalchemy.orm import relationship
@@ -47,14 +45,20 @@ class StreamCategory(Base):
 class StreamCategoryBase(BaseModel):
     """Base model for StreamCategory with shared properties."""
 
-    category_id: conint(gt=0) = Field(..., alias="game_id")
-    category_name: constr(regex=r"^[A-Za-z0-9_]{1,25}$") = Field(..., alias="game_name")
+    category_id: conint(ge=-1) = Field(..., alias="game_id")
+    category_name: constr(max_length=25) = Field(..., alias="game_name")
+
+    class Config:
+        allow_population_by_field_name = True
+        orm_mode = True
 
 
 class StreamCategoryCreate(StreamCategoryBase):
-    pass
+    """Pydantic model to create a new db row for this category."""
 
 
 class StreamCategoryRead(StreamCategoryBase):
+    """Pydantic model to read a db row for this category."""
+
     class Config:
         orm_mode = True

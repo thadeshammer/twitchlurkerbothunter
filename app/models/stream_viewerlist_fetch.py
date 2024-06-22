@@ -1,7 +1,28 @@
 # app/models/stream_viewerlist_fetch.py
 # SQLAlchemy model representing a single viewerlist fetch event of a target stream.
-# A stream_viewerlist_fetch represents the reception of the viewer list and associatd metadata.
-# For our purposes, it is a set of ViewerSightings in a given Channel during a Scan.
+
+"""StreamViewerListFetch model and validators.
+
+    Each row represents a single viewer-list fetch event of a target stream: the reception of the
+    viewer list and associated metadata. (For our purposes, it is a set of ViewerSightings in a
+    given channel during a scan.)
+
+    The Pydantic BaseModels are split into two representing the relevant Twitch API Response data
+    and the in-app metadata, and they're brought together by the
+    merge_stream_viewerlist_fetch_data() function.
+
+SQLAlchemy Model:
+    StreamViewerListFetch: The SQLAlchemy model
+
+Pydantic Models:
+    StreamViewerListFetchTwitchAPIResponse: Pydantic model to validate Twitch API response data.
+    StreamViewerListFetchAppData: Pydantic model to validate app-generated data.
+    StreamViewerListFetchCreate: For making a new DB row.
+    StreamViewerListFetchRead For retrieving and working with an existing DB row.
+
+Merging Function:
+    merge_stream_viewerlist_fetch_data
+"""
 from datetime import datetime
 from typing import Optional
 from uuid import UUID, uuid4

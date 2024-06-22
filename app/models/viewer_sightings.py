@@ -1,13 +1,15 @@
 # app/models/viewer_sighting.py
-# SQLAlchemy model representing sightings of Twitch login names in a channel.
-from uuid import UUID, uuid4
+# SQLAlchemy model representing sightings of Twitch login names in a channel, and Pydantic models.
+from uuid import uuid4
 
-from pydantic import BaseModel, Field, constr
+from pydantic import UUID4, BaseModel, Field, constr
 from sqlalchemy import Column, ForeignKey, Index, String
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import relationship
 
 from app.db import Base
+
+from ._validator_regexes import TWITCH_LOGIN_NAME_REGEX
 
 
 class ViewerSighting(Base):
@@ -59,22 +61,25 @@ class ViewerSighting(Base):
 
 
 class ViewerSightingBase(BaseModel):
-    """Base model for Viewer Sighting with shared properties."""
+    """
+    Base model for Viewer Sighting with viewer_login_name validator.
 
-    viewer_login_name: constr(regex=r"^[a-z0-9_]{1,25}$") = Field(...)
+    NOTE. This login name comes from the 353 message (which is a space-seperated list) and not
+    a Helix response, hence the naming difference from the other Pydantic machines.
+    """
+
+    viewer_login_name: constr(regex=TWITCH_LOGIN_NAME_REGEX) = Field(...)
 
 
 class ViewerSightingCreate(ViewerSightingBase):
     """Model for creating a new Viewer Sighting entry to persist in the db."""
 
-    viewerlist_fetch_id: UUID
-
 
 class ViewerSightingRead(ViewerSightingBase):
     """Model for returning Viewer Sighting data from the db."""
 
-    viewer_sighting_id: UUID
-    viewerlist_fetch_id: UUID
+    viewer_sighting_id: UUID4 = Field(...)
+    viewerlist_fetch_id: UUID4 = Field(...)
 
     class Config:
         orm_mode = True

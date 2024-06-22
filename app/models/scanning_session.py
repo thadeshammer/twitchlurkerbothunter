@@ -93,7 +93,7 @@ class ScanningSession(Base):
     # reliability rate of fetches working
 
 
-class ScanningSessionBase(BaseModel):
+class ScanningSessionAppData(BaseModel):
     """Base model for ScanningSession with shared properties."""
 
     time_started: datetime = Field(...)
@@ -110,11 +110,11 @@ class ScanningSessionBase(BaseModel):
     error_count: Optional[conint(ge=0)] = Field(None)
 
 
-class ScanningSessionCreate(ScanningSessionBase):
+class ScanningSessionCreate(ScanningSessionAppData):
     """Model for creating a new ScanningSession entry."""
 
 
-class ScanningSessionRead(ScanningSessionBase):
+class ScanningSessionRead(ScanningSessionAppData):
     """Model for returning ScanningSession data."""
 
     scanning_session_id: UUID = Field(...)

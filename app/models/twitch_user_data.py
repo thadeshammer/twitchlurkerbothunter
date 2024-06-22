@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Literal, Optional
 
-from pydantic import BaseModel, Field, conint, constr
+from pydantic import BaseModel, Field, conint, constr, validator
 from sqlalchemy import BigInteger, Column, DateTime, Index, Integer, String
 from sqlalchemy.orm import relationship
 
@@ -89,7 +89,7 @@ TwitchAccountTypes = Literal["staff", "admin", "global_mod", ""]
 TwitchBroadcasterTypes = Literal["partner", "affiliate", ""]
 
 
-class TwitchUserDataBase(BaseModel):
+class TwitchUserDataHelixAPIData(BaseModel):
     """Base model for TwitchUserData with shared properties."""
 
     twitch_account_id: conint(gt=0) = Field(..., alias="id")
@@ -99,6 +99,27 @@ class TwitchUserDataBase(BaseModel):
     broadcaster_type: TwitchBroadcasterTypes = Field(...)
     lifetime_view_count: conint(ge=0) = Field(..., alias="view_count")
     account_created_at: datetime = Field(..., alias="created_at")
+
+    class Config:
+        allow_population_by_field_name = True
+        orm_mode = True
+
+    @validator("twitch_account_id", "lifetime_view_count", pre=True)
+    def str_to_int(cls, v):
+        if isinstance(v, str):
+            return int(v)
+        return v
+
+    @validator("account_created_at", pre=True)
+    def str_to_datetime(cls, v):
+        if isinstance(v, str):
+            return datetime.fromisoformat(v.replace("Z", "+00:00"))
+        return v
+
+
+class TwitchUserDataAppData(BaseModel):
+    """Base model for app-generated metrics."""
+
     first_sighting_as_viewer: Optional[datetime] = Field(None)
     most_recent_sighting_as_viewer: Optional[datetime] = Field(None)
     most_recent_concurrent_channel_count: Optional[conint(gt=0)] = Field(None)
@@ -110,12 +131,23 @@ class TwitchUserDataBase(BaseModel):
         orm_mode = True
 
 
-class TwitchUserDataCreate(TwitchUserDataBase):
-    """Model for creating a new TwitchUserData entry."""
+class TwitchUserDataCreate(TwitchUserDataHelixAPIData, TwitchUserDataAppData):
+    """Combined API and app data. I can't believe I found a usecase for multiple inheritance."""
 
 
-class TwitchUserDataRead(TwitchUserDataBase):
+class TwitchUserDataRead(TwitchUserDataCreate):
     """Model for the data received from the Twitch API, to be persisted in the db."""
+
+
+def merge_twitch_user_data(
+    api_data: TwitchUserDataHelixAPIData,
+    app_data: TwitchUserDataAppData,
+) -> TwitchUserDataCreate:
+    combined_data = {
+        **api_data.dict(),
+        **app_data.dict(),
+    }
+    return TwitchUserDataCreate(**combined_data)
 
 
 # Example API response
@@ -129,19 +161,3 @@ class TwitchUserDataRead(TwitchUserDataBase):
 #     "view_count": 1000,
 #     "created_at": "2013-06-03T19:12:02Z"
 # }
-
-# # Parse API response
-# twitch_user_data_api = TwitchUserDataAPI(**api_response)
-
-# # Create internal representation using unpacking
-# twitch_user_data_create = TwitchUserDataCreate(
-#     **twitch_user_data_api.dict(),
-#     first_sighting_as_viewer=datetime.utcnow(),
-#     most_recent_sighting_as_viewer=datetime.utcnow(),
-#     most_recent_concurrent_channel_count=1,
-#     all_time_high_concurrent_channel_count=1,
-#     all_time_high_at=datetime.utcnow()
-# )
-
-# # Marshall into database model
-# new_twitch_user_data = TwitchUserData(**twitch_user_data_create.dict())
