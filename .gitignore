@@ -1,6 +1,16 @@
 __pycache__
-logs/
 .mypy_cache
+.vscode
+
+logs/
+*.log
+
 tmux*
+
+.env
 notes.txt
 secrets/
+
+# Ignore build directories
+dist/
+build/
