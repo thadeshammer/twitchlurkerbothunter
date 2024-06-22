@@ -97,7 +97,7 @@ class TwitchUserDataBase(BaseModel):
     display_name: constr(regex=r"^[a-zA-Z0-9_]{1,25}$") = Field(...)
     account_type: TwitchAccountTypes = Field(..., alias="type")
     broadcaster_type: TwitchBroadcasterTypes = Field(...)
-    lifetime_view_count: conint(gt=0) = Field(..., alias="view_count")
+    lifetime_view_count: conint(ge=0) = Field(..., alias="view_count")
     account_created_at: datetime = Field(..., alias="created_at")
     first_sighting_as_viewer: Optional[datetime] = Field(None)
     most_recent_sighting_as_viewer: Optional[datetime] = Field(None)
