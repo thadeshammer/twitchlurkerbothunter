@@ -32,12 +32,12 @@ services:
       - .:/app
       - ./logs:/logs
     ports:
-      - "8000:80"
+      - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/test"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/test"]
       interval: 30s
       timeout: 10s
       retries: 3

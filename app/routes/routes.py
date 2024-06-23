@@ -11,21 +11,24 @@ logger = logging.getLogger(__name__)
 
 
 def register_routes(app: Flask) -> None:
-    @app.route("/test")
+    @app.route("/healthcheck")
     def test():
-        logger.info("/test route accessed.")
-        return jsonify({"test_endpoint": "achievement get"})
+        logger.info("/healthcheck route accessed.")
+        return jsonify({"healthcheck": "achievement get"})
 
     # Endpoint to receive the token
-    @app.route("/store_token", methods=["POST"])
+    @app.route("/store-token", methods=["POST"])
     def store_token():
+        logger.info("/store-token accessed.")
         if not request.json:
+            logger.error("Missing JSON payload.")
             return jsonify({"error": "Missing JSON payload"}), 400
 
         try:
             # Validate and parse the request data using Pydantic
             secret_create = SecretCreate(**request.json)
         except ValidationError as e:
+            logger.error(f"Validation error: {e.errors()}")
             return jsonify({"error": "Validation error", "details": e.errors()}), 400
 
         # Extract values from the validated Pydantic model

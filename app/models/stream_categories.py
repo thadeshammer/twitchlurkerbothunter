@@ -34,9 +34,9 @@ class StreamCategory(Base):
         String(40), unique=True, nullable=False, default=NO_CATEGORY_NAME
     )
 
-    streams_viewerlist_fetch = relationship(
-        "StreamViewerListFetch",
-        back_populates="stream_categories",
+    # relationship
+    stream_viewerlist_fetch = relationship(
+        "StreamViewerListFetch", back_populates="stream_category"
     )
 
     __table_args__ = (Index("ix_category_name", "category_name"),)

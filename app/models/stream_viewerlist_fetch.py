@@ -66,7 +66,6 @@ class StreamViewerListFetch(Base):
         stream_id (int): Twitch UUID of the given stream/broadcast. Useful for tracking different
             streams for the same channel.
         stream_started_at (DateTime): The go-live timestamp of this live stream.
-        category (str): The category that the channel was streaming under (e.g. 'Just Chatting').
         category_id (int): Twitch UUID for the category.
         language (str): ISO 639-1 lanuage code of the stream.
         is_mature (bool): Whether the given channel is flagged as "For mature audiences."
@@ -124,6 +123,9 @@ class StreamViewerListFetch(Base):
     viewer_sightings = relationship(
         "ViewerSighting", back_populates="stream_viewerlist_fetch"
     )  # many viewer_sightings to one stream_viewerlist_fetch
+    stream_category = relationship(
+        "StreamCategory", back_populates="stream_viewerlist_fetch"
+    )
 
     # indexes
     __table_args__ = (
@@ -165,7 +167,8 @@ class StreamViewerListFetchAppData(BaseModel):
         ..., alias="duration_of_fetch_action"
     )
     scanning_session_id: UUID4
-    channel_owner_id: conint(gt=0)
+    channel_owner_id: int
+    category_id: int
 
     class Config:
         orm_mode = True

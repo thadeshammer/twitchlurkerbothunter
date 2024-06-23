@@ -69,18 +69,14 @@ class Secret(Base):
 
 
 class SecretBase(BaseModel):
-    access_token: constr(min_length=40, max_length=512, regex=TWITCH_TOKEN_REGEX) = (
-        Field(...)
-    )
-    refresh_token: constr(min_length=40, max_length=512, regex=TWITCH_TOKEN_REGEX) = (
-        Field(...)
-    )
+    access_token: constr(max_length=512, regex=TWITCH_TOKEN_REGEX) = Field(...)
+    refresh_token: constr(max_length=512, regex=TWITCH_TOKEN_REGEX) = Field(...)
     expires_in: conint(gt=0) = Field(...)
     token_type: TokenType = Field(...)
 
 
 class SecretCreate(SecretBase):
-    scopes: Union[str, list[str]] = Field(...)
+    scopes: Union[str, list[str]] = Field(..., alias="scope")
 
 
 class SecretRead(SecretBase):

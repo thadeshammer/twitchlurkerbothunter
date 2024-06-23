@@ -75,7 +75,7 @@ class TwitchUserData(Base):
     )
 
     stream_viewerlist_fetch = relationship(
-        "StreamViewerlistFetch", back_populates="twitch_user_data"
+        "StreamViewerListFetch", back_populates="twitch_user_data"
     )
 
     # indexes

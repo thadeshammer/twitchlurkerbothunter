@@ -1,4 +1,6 @@
 # quick and dirty serlet to handle twitch-oauth for us
+import os
+import ssl
 import threading
 import webbrowser
 from typing import List, Union
@@ -20,6 +22,10 @@ class UnexpectedException(Exception):
     pass
 
 
+class MissingCredentials(Exception):
+    pass
+
+
 app = Flask(__name__)
 
 # Read the Flask secret key
@@ -31,11 +37,16 @@ with open("./secrets/tokens.yaml", "r", encoding="UTF8") as file:
     tokens_file: Union[dict, List, None] = yaml.safe_load(file)
 
 assert isinstance(tokens_file, dict)
+
+CERT_PASSKEY = str(os.getenv("CERT_PASSKEY"))
 client_id: str = tokens_file["TWITCH_CLIENT_ID"]
 client_secret: str = tokens_file["TWITCH_CLIENT_SECRET"]
 
+if not CERT_PASSKEY or not client_id or not client_secret:
+    raise MissingCredentials("A required credential is missing.")
+
 DOCKER_APP_PORT = 8000
-DOCKER_APP_URL = f"http://localhost:{DOCKER_APP_PORT}/store_token"
+DOCKER_APP_URL = f"http://localhost:{DOCKER_APP_PORT}/store-token"
 PORT = 8081
 REDIRECT_URI = f"https://localhost:{PORT}/callback"
 AUTHORIZE_URL = "https://id.twitch.tv/oauth2/authorize"
@@ -94,6 +105,10 @@ def callback():
         token_response = response.json()
 
         if "access_token" in token_response:
+            access_token = token_response["access_token"]
+            refresh_token = token_response["refresh_token"]
+            print(f"DEBUG >> {access_token=}, {refresh_token=}")
+
             session["oauth_token"] = token_response
             # Send the tokens to the Docker Flask app
             docker_app_response = requests.post(
@@ -150,6 +165,11 @@ def profile():
 
 
 if __name__ == "__main__":
-    app.run(
-        debug=True, ssl_context=("./secrets/cert.pem", "./secrets/key.pem"), port=PORT
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    context.load_cert_chain(
+        certfile="./secrets/cert.pem",
+        keyfile="./secrets/key.pem",
+        password=CERT_PASSKEY,
     )
+
+    app.run(debug=True, ssl_context=context, port=PORT)
