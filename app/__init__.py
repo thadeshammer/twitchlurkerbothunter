@@ -1,9 +1,7 @@
 # app/__init__.py
+import atexit
 import logging.config
-import os
-from typing import List, Union
 
-import yaml
 from flask import Flask
 
 from app.config import Config
@@ -12,12 +10,19 @@ from app.models import (
     scanning_session,
     secrets,
     stream_categories,
+    stream_viewerlist_fetch,
     suspected_bot,
     twitch_user_data,
     viewer_sightings,
 )
 from app.routes import register_routes
 from app.util import setup_logging
+
+
+def _at_shutdown() -> None:
+    """Handle any shutdown specifics for Flask."""
+    logger = logging.getLogger("app")
+    logger.info("Server is shutting down.")
 
 
 def create_app() -> Flask:
@@ -30,6 +35,8 @@ def create_app() -> Flask:
     setup_logging(Config.LOGGING_CONFIG_FILE)
     logger = logging.getLogger("app")
     logger.info("Logger is ready.")
+
+    atexit.register(_at_shutdown)
 
     with app.app_context():
         register_routes(app)

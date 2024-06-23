@@ -24,7 +24,10 @@ services:
 
   server:
     build: .
-    command: flask run --host=0.0.0.0 --port=80
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=development
+    # command: flask run --host=0.0.0.0 --port=80
     volumes:
       - .:/app
       - ./logs:/logs
@@ -34,7 +37,7 @@ services:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      test: ["CMD", "curl", "-f", "http://localhost:80/test"]
       interval: 30s
       timeout: 10s
       retries: 3
