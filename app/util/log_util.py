@@ -5,6 +5,16 @@ from typing import Union
 import yaml
 
 
+class CustomFormatter(logging.Formatter):
+    def format(self, record):
+        record.module = record.module
+        record.funcName = record.funcName
+        return super().format(record)
+
+
+_LOG_FORMAT = "%(asctime)s - %(levelname)s - %(module)s - %(funcName)s - %(message)s"
+
+
 def _extract_filenames_from_logger_config(logger_config: dict) -> list:
     filenames = []
 
@@ -28,3 +38,10 @@ def setup_logging(loggin_config_yaml_filepath: str) -> None:
     else:
         print("Log config not found, using defaults.", flush=True)
         logging.basicConfig(level=logging.DEBUG)
+
+    # Create a custom formatter with the desired format
+    custom_formatter = CustomFormatter(_LOG_FORMAT)
+
+    # Add the custom formatter to all handlers
+    for handler in logging.getLogger().handlers:
+        handler.setFormatter(custom_formatter)
