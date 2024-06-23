@@ -1,6 +1,7 @@
 # app/__init__.py
 import atexit
 import logging.config
+import os
 
 from flask import Flask
 
@@ -18,6 +19,11 @@ from app.models import (
 from app.routes import register_routes
 from app.util import setup_logging
 
+# Logger setup outside of create_app
+setup_logging(Config.LOGGING_CONFIG_FILE)
+logger = logging.getLogger("app")
+logger.info("Logger is ready.")
+
 
 def _at_shutdown() -> None:
     """Handle any shutdown specifics for Flask."""
@@ -32,11 +38,11 @@ def create_app() -> Flask:
     app.config.from_object(Config)
     app.debug = False
 
-    setup_logging(Config.LOGGING_CONFIG_FILE)
-    logger = logging.getLogger("app")
-    logger.info("Logger is ready.")
-
     atexit.register(_at_shutdown)
+
+    # Log the Gunicorn worker PID
+    worker_pid = os.getpid()
+    logger.info(f"Gunicorn worker PID: {worker_pid}")
 
     with app.app_context():
         register_routes(app)

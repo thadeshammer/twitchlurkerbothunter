@@ -23,4 +23,4 @@ ENV SECRETS_DIR="./secrets/tokens.yaml"
 # Expose the port
 EXPOSE 8000
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "run:app"]
+CMD ["gunicorn", "--workers", "1", "--bind", "0.0.0.0:8000", "run:app"]
