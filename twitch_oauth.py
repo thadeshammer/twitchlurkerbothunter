@@ -45,8 +45,8 @@ client_secret: str = tokens_file["TWITCH_CLIENT_SECRET"]
 if not CERT_PASSKEY or not client_id or not client_secret:
     raise MissingCredentials("A required credential is missing.")
 
-DOCKER_APP_PORT = 8000
-DOCKER_APP_URL = f"http://localhost:{DOCKER_APP_PORT}/store-token"
+DOCKER_APP_PORT = 443
+DOCKER_APP_URL = f"https://localhost:{DOCKER_APP_PORT}/store-token"
 PORT = 8081
 REDIRECT_URI = f"https://localhost:{PORT}/callback"
 AUTHORIZE_URL = "https://id.twitch.tv/oauth2/authorize"
@@ -121,6 +121,7 @@ def callback():
                     "scope": token_response["scope"],
                 },
                 timeout=5,
+                verify=False,
             )
             if docker_app_response.status_code == 200:
                 return redirect(url_for("profile"))
