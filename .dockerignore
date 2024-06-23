@@ -40,5 +40,9 @@ dist/
 .vscode/
 
 # Ignore any other sensitive or irrelevant files
-secrets/
 node_modules/
+secrets/
+
+# Except these files
+!secrets/cert.pem
+!secrets/key.pem

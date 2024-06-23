@@ -25,6 +25,7 @@ services:
   server:
     build: .
     environment:
+      - CERT_PASSKEY=${CERT_PASSKEY}
       - FLASK_APP=app.py
       - FLASK_ENV=development
     # command: flask run --host=0.0.0.0 --port=80
@@ -32,12 +33,12 @@ services:
       - .:/app
       - ./logs:/logs
     ports:
-      - "8000:8000"
+      - "443:443"
     depends_on:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/test"]
+      test: ["CMD", "curl", "-f", "http://localhost:443/test"]
       interval: 30s
       timeout: 10s
       retries: 3
