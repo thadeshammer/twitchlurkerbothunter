@@ -156,14 +156,14 @@ class SuspectedBotBase(BaseModel):
 class SuspectedBotCreate(SuspectedBotBase):
     """Model for creating a new Suspected Bot entry."""
 
-    twitch_account_id: conint(gt=0)
+    twitch_account_id: int
 
 
 class SuspectedBotRead(SuspectedBotBase):
     """Model for returning Suspected Bot data."""
 
     suspected_bot_id: UUID
-    twitch_account_id: conint(gt=0)
+    twitch_account_id: int
 
     class Config:
         orm_mode = True

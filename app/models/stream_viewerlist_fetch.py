@@ -177,7 +177,8 @@ class StreamViewerListFetchAppData(BaseModel):
 class StreamViewerListFetchCreate(BaseModel):
     # Combine the TwitchAPI response with the AppData using the merge function in this file.
     scanning_session_id: UUID
-    channel_owner_id: conint(gt=0)
+    channel_owner_id: int
+    category_id: int
     fetch_action_at: datetime
     duration_of_fetch_action: confloat(ge=0.0)
     viewer_count: conint(ge=0)
