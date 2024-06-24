@@ -11,13 +11,16 @@ CURRENTLY IN DEVELOPMENT
 | Test routes working                      | ✅     |
 | Twitch OAuth flow                        | ✅     |
 | Step up OAuth to HTTPS                   | ✅     |
-| Viewer list fetch for target channel     | ❌     |
-| Crawl the streams.                       | ❌     |
+| Scan Conductor                           | ❌     |
+| Stream Fetcher (multiproc                | ❌     |
+| Stream Viewer List Fetcher (multiproc)   | ❌     |
+| User Data Enricher (multiproc)           | ❌     |
+| Viewer Sightings Aggregator              | ❌     |
+| Simplistic Classifier                    | ❌     |
 | Collections metrics and visualizer       | ❌     |
 | Reconsider schema needs and indexing     | ✅     |
 | Documentation pass                       | ❌     |
 | white list / ignore list (for good bots) | ❌     |
-| ignore list for channels that opt-out    | ❌     |
 | Profiling                                | ❌     |
 | Parallelization                          | ❌     |
 | Get hard-coded config stuff into config. | ✅     |
@@ -48,7 +51,8 @@ This application will - within the 20 channel-joins per 10 seconds ratelimit - c
 - aggregate viewer list data to identify accounts (by account id) who are concurrently in large numbers of live channels;
 - account age;
 - ratios between following and follower counts;
-- comparisons of follower and following lists across suspect accounts.
+- has the account ever streamed before;
+- (EVENTUALLY) comparisons of follower and following lists across suspect accounts.
 
 This bot will not remain resident in channels, so it will be unable to track whether lurker bots speak or don't speak ever, or their specific entry and exit times; however we may estimate entry and exit times within some (potentially wide) margin of error depending on how frequently and quickly it can conduct scans. Nor will it request or record user emails from the Helix API.
 
@@ -90,25 +94,30 @@ This is very, very early development, so if you fork it, you're really just gett
 1. **Clone the repository**:
 
    ```bash
-   git clone https://github.com/yourusername/twitch-lurker-bot-recon.git
-   cd twitch-lurker-bot-recon
+   git clone https://github.com/yourusername/twitchbotfinder.git
+   cd twitchbotfinder
    ```
 
 2. **Set up the Docker environment**:
-   Ensure you have Docker and Docker Compose installed on your machine. The provided `docker-compose.yaml` will handle the setup of the MySQL database and the Flask application.
+   Ensure you have Docker and Docker Compose installed on your machine. The provided `docker-compose.yaml` will handle the setup of the MySQL database and the Flask application. You'll need to make your own self-signed cert, and get your own Twitch Developer client secret and client id. Put them in /secrets at the same level as /app (or modify the docker-compose accordingly) and inject your cert passkey into docker.
 
-3. **Start the Docker containers**:
+   Note that the twitch-oauth.py servlet script for the Twitch Oauth will need the bot to be up and running so it can pass the tokens to it via its API; they're short-lived and will be kept in the secrets table in MySQL, so they can be easily shared accross services if I scale out horizontally later in the project. Also, so they can be used after an app restart, which happens frequenty during development.
+
+4. **Start the Docker containers**:
 
    ```bash
    docker-compose up --build
    ```
 
-4. **Check the logs**:
+5. **Check the logs**:
    To verify everything is running correctly, you can check the logs:
 
    ```bash
    docker-compose logs
    ```
+
+6. **Authenticate with Twitch using twitch-oauth.py**:
+   Run twitch-oauth.py in your local. For me it runs in Windows, you may need to make slight adjustments if you're doing development in a better OS.
 
 ### Configuration
 
