@@ -129,6 +129,7 @@ class SuspectedBot(Base):
 
     follower_count = Column(Integer, nullable=False)
     following_count = Column(Integer, nullable=False)
+    has_ever_streamed = Column(Boolean, nullable=True)
     is_banned_or_deleted = Column(Boolean, nullable=False, default=False)
 
     suspicion_level = Column(String(8), default=SuspicionLevel.NONE)
