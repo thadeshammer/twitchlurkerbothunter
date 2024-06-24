@@ -3,7 +3,7 @@
 from uuid import uuid4
 
 from pydantic import UUID4, BaseModel, Field, constr
-from sqlalchemy import Column, ForeignKey, Index, String
+from sqlalchemy import Boolean, Column, ForeignKey, Index, String
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import relationship
 
@@ -50,6 +50,14 @@ class ViewerSighting(Base):
     viewer_login_name = Column(
         String(40), nullable=False
     )  # This will NOT be unique IN THIS TABLE.
+
+    # Has this been processed by the Enricher yet?
+    processed_by_user_data_enricher = Column(Boolean, nullable=False, default=False)
+
+    # Has this been processed by the Aggregator yet?
+    processed_by_user_sighting_aggregator = Column(
+        Boolean, nullable=False, default=True
+    )
 
     # Relationships
     stream_viewerlist_fetch = relationship(

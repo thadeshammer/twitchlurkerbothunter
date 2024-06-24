@@ -24,6 +24,7 @@ Merging Function:
     merge_stream_viewerlist_fetch_data
 """
 from datetime import datetime
+from enum import StrEnum
 from typing import Optional
 from uuid import UUID, uuid4
 
@@ -37,11 +38,23 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    String,
 )
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import relationship
 
 from app.db import Base
+
+
+class StreamViewerListFetchStatus(StrEnum):
+    # it's on the list to be scanned (and it has an entry in the StreamViewerListFetch table)
+    PENDING = "pending"
+    # given to a worker, i.e. it's on a "workbench" (it's in the "respect the rate limit" buffer)
+    ON_A_WORK_ORDER = "on_a_work_order"
+    # it's being worked on by the worker
+    WAITING_ON_VIEWER_LIST = "waiting_on_viewer_list"
+    # the list has been fetched
+    COMPLETE = "complete"
 
 
 class StreamViewerListFetch(Base):
@@ -84,6 +97,9 @@ class StreamViewerListFetch(Base):
     duration_of_fetch_action = Column(
         Float, nullable=False
     )  # use time.perf_counter() to measure, returns fractional seconds
+    fetch_status = Column(
+        String(25), nullable=False, default=StreamViewerListFetchStatus.PENDING
+    )
 
     # foreign keys
     scanning_session_id = Column(
@@ -162,10 +178,9 @@ class StreamViewerListFetchTwitchAPIResponse(BaseModel):
 
 
 class StreamViewerListFetchAppData(BaseModel):
-    fetch_action_at: datetime = Field(..., alias="fetch_action_at")
-    duration_of_fetch_action: confloat(ge=0.0) = Field(
-        ..., alias="duration_of_fetch_action"
-    )
+    fetch_action_at: datetime = Field(...)
+    duration_of_fetch_action: confloat(ge=0.0) = Field(...)
+    fetch_status: StreamViewerListFetchStatus = Field(...)
     scanning_session_id: UUID4
     channel_owner_id: int
     category_id: int
