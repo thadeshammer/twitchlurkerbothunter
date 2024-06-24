@@ -5,7 +5,7 @@ import signal
 from gunicorn.arbiter import Arbiter
 
 
-def on_exit(server: Arbiter):
+def on_exit(server: Arbiter):  # type: ignore
     # Your shutdown logic here
     print("Server is shutting down...")
 
