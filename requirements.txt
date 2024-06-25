@@ -1,3 +1,4 @@
+aiomysql==0.2.0
 cryptography==39.0.1
 flask-marshmallow==0.14.0
 flask-smorest==0.39.0
