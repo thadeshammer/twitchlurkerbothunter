@@ -12,7 +12,7 @@ CURRENTLY IN DEVELOPMENT
 | Twitch OAuth flow                        | ✅     |
 | Step up OAuth to HTTPS                   | ✅     |
 | Scan Conductor                           | ❌     |
-| Stream Fetcher (multiproc                | ❌     |
+| Stream Fetcher (multiproc)               | ❌     |
 | Stream Viewer List Fetcher (multiproc)   | ❌     |
 | User Data Enricher (multiproc)           | ❌     |
 | Viewer Sightings Aggregator              | ❌     |
