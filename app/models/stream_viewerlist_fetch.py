@@ -50,8 +50,8 @@ class StreamViewerListFetchStatus(StrEnum):
     # it's on the list to be scanned (and it has an entry in the StreamViewerListFetch table)
     PENDING = "pending"
     # given to a worker, i.e. it's on a "workbench" (it's in the "respect the rate limit" buffer)
-    ON_A_WORK_ORDER = "on_a_work_order"
-    # it's being worked on by the worker
+    IN_QUEUE = "in_queue"
+    # it's being worked on by the worker, "processing"
     WAITING_ON_VIEWER_LIST = "waiting_on_viewer_list"
     # the list has been fetched
     COMPLETE = "complete"
@@ -110,7 +110,7 @@ class StreamViewerListFetch(Base):
     )  # 'user_id'
     category_id = Column(
         BigInteger, ForeignKey("stream_categories.category_id"), nullable=False
-    )  # 'game_id'
+    )  # 'game_id', if it's -1 it means they didn't set a category.
     # category_name should be stored in the StreamCategories table if it's new to us.
 
     # 'Get Stream' response data
@@ -152,12 +152,14 @@ class StreamViewerListFetch(Base):
 
 
 class StreamViewerListFetchTwitchAPIResponse(BaseModel):
-    viewer_count: conint(ge=0) = Field(..., alias="viewer_count")
     stream_id: conint(gt=0) = Field(..., alias="id")
+    channel_owner_id: int = Field(..., alias="user_id")
+    category_id: int = Field(..., alias="game_id")
+    was_live: bool = Field(..., alias="type")
+    viewer_count: conint(ge=0) = Field(..., alias="viewer_count")
     stream_started_at: datetime = Field(..., alias="started_at")
     language: constr(regex=r"^[a-z]{2}$") = Field(..., alias="language")
     is_mature: bool = Field(..., alias="is_mature")
-    was_live: bool = Field(..., alias="type")
 
     @validator("was_live", pre=True)
     def convert_type_to_was_live(cls, v: Optional[str]) -> bool:
@@ -182,8 +184,6 @@ class StreamViewerListFetchAppData(BaseModel):
     duration_of_fetch_action: confloat(ge=0.0) = Field(...)
     fetch_status: StreamViewerListFetchStatus = Field(...)
     scanning_session_id: UUID4
-    channel_owner_id: int
-    category_id: int
 
     class Config:
         orm_mode = True
@@ -195,6 +195,7 @@ class StreamViewerListFetchCreate(BaseModel):
     channel_owner_id: int
     category_id: int
     fetch_action_at: datetime
+    fetch_status: StreamViewerListFetchStatus
     duration_of_fetch_action: confloat(ge=0.0)
     viewer_count: conint(ge=0)
     stream_id: conint(gt=0)

@@ -9,6 +9,7 @@ from .stream_categories import StreamCategory, StreamCategoryCreate, StreamCateg
 from .stream_viewerlist_fetch import (
     StreamViewerListFetchAppData,
     StreamViewerListFetchCreate,
+    StreamViewerListFetchStatus,
     StreamViewerListFetchTwitchAPIResponse,
     merge_stream_viewerlist_fetch_data,
 )
@@ -36,6 +37,7 @@ __all__ = [
     "StreamCategoryRead",
     "StreamViewerListFetchAppData",
     "StreamViewerListFetchCreate",
+    "StreamViewerListFetchStatus",
     "StreamViewerListFetchTwitchAPIResponse",
     "merge_stream_viewerlist_fetch_data",
     "SuspectedBot",

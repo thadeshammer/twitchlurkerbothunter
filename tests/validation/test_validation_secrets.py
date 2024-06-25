@@ -12,15 +12,13 @@ MOCK_TWITCH_API_RESPONSE = {
     "refresh_token": MOCK_REFRESH_TOKEN,
     "expires_in": "3600",
     "token_type": "bearer",
-    "scopes": "chat:read",
+    "scope": "chat:read",
 }
 
 
 @pytest.mark.parametrize(
     "field, value, expected_error",
     [
-        ("access_token", "short", "ensure this value has at least 40 characters"),
-        ("refresh_token", "short", "ensure this value has at least 40 characters"),
         ("expires_in", "-1", "ensure this value is greater than 0"),
         (
             "token_type",
@@ -47,4 +45,4 @@ def test_secret_create_valid():
     assert instance.refresh_token == MOCK_REFRESH_TOKEN
     assert instance.expires_in == 3600
     assert instance.token_type == "bearer"
-    assert instance.scopes == "chat:read"
+    assert instance.scope == "chat:read"

@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, conint, constr, validator
-from sqlalchemy import BigInteger, Column, DateTime, Index, Integer, String
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, Index, Integer, String
 from sqlalchemy.orm import relationship
 
 from app.db import Base
@@ -48,12 +48,17 @@ class TwitchUserData(Base):
     twitch_account_id = Column(
         BigInteger, primary_key=True, autoincrement=False
     )  # 'id'
-    login_name = Column(String(40), unique=True, nullable=False)  # 'login'
-    display_name = Column(String(40), unique=True, nullable=False)  # 'display_name'
-    account_type = Column(String(15), nullable=False)  # 'type'
-    broadcaster_type = Column(String(15), nullable=False)  # 'broadcaster_type'
-    lifetime_view_count = Column(Integer, nullable=False)  # 'view_count'
-    account_created_at = Column(DateTime, nullable=False)  # 'created_at'
+    has_been_enriched = Column(Boolean, default=False)
+
+    # In the specific case where first contact with a login name is a streamer who's live, their
+    # entry here will be created prior to the enrichment pass over ViewerSightings. So these need to
+    # be nullable to account for that.
+    login_name = Column(String(40), unique=True, nullable=True)  # 'login'
+    display_name = Column(String(40), unique=True, nullable=True)  # 'display_name'
+    account_type = Column(String(15), nullable=True)  # 'type'
+    broadcaster_type = Column(String(15), nullable=True)  # 'broadcaster_type'
+    lifetime_view_count = Column(Integer, nullable=True)  # 'view_count'
+    account_created_at = Column(DateTime, nullable=True)  # 'created_at'
 
     # not tracking: description, image urls, email,
 

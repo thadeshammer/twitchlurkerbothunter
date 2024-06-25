@@ -46,7 +46,7 @@ class Secret(Base):
         refresh_token (str): Twitch OAuth refresh token; get a new access token after expiry.
         expires_in (int): Time in seconds until the access token expires.
         token_type (str): Docs say this is almost always "bearer".
-        scopes (str or list[str]): One or more scopes that spec out how much we can access with the
+        scope (str or list[str]): One or more scopes that spec out how much we can access with the
             token.
         last_update_timestamp (DateTime): The timestamp of the last time this row was updated.
 
@@ -60,7 +60,7 @@ class Secret(Base):
     refresh_token = Column(String(512), nullable=True)
     expires_in = Column(Integer, nullable=True)
     token_type = Column(String(64), nullable=True)
-    scopes = Column(Text, nullable=True)
+    scope = Column(Text, nullable=True)
 
     # For calculating and tracking TTL and when to use refresh token
     last_update_timestamp = Column(
@@ -73,15 +73,15 @@ class SecretBase(BaseModel):
     refresh_token: constr(max_length=512, regex=TWITCH_TOKEN_REGEX) = Field(...)
     expires_in: conint(gt=0) = Field(...)
     token_type: TokenType = Field(...)
+    scope: Union[str, list[str]] = Field(..., alias="scope")
 
 
 class SecretCreate(SecretBase):
-    scopes: Union[str, list[str]] = Field(..., alias="scope")
+    pass
 
 
 class SecretRead(SecretBase):
     id: conint(gt=0)
-    scopes: Union[str, list[str]]
 
     class Config:
         orm_mode = True

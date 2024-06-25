@@ -7,25 +7,28 @@ from pydantic import ValidationError
 from app.models import (
     StreamViewerListFetchAppData,
     StreamViewerListFetchCreate,
+    StreamViewerListFetchStatus,
     StreamViewerListFetchTwitchAPIResponse,
     merge_stream_viewerlist_fetch_data,
 )
 
 # Mock valid responses
 MOCK_TWITCH_API_RESPONSE = {
-    "viewer_count": 1500,
     "id": 9876543210,
+    "user_id": 1234567890,
+    "game_id": 10,
+    "type": "live",
     "started_at": datetime.now(timezone.utc).isoformat(),
+    "viewer_count": 1500,
     "language": "en",
     "is_mature": True,
-    "type": "live",
 }
 
 MOCK_APP_DATA = {
     "fetch_action_at": datetime.now(timezone.utc).isoformat(),
     "duration_of_fetch_action": 2.5,
     "scanning_session_id": uuid4(),
-    "channel_owner_id": 1234567890,
+    "fetch_status": StreamViewerListFetchStatus.WAITING_ON_VIEWER_LIST,
 }
 
 
@@ -57,6 +60,10 @@ def test_stream_viewerlist_fetch_create_valid():
     assert combined_data.language == "en"
     assert combined_data.is_mature is True
     assert combined_data.was_live is True
+    assert combined_data.category_id == 10
+    assert (
+        combined_data.fetch_status == StreamViewerListFetchStatus.WAITING_ON_VIEWER_LIST
+    )
     assert combined_data.fetch_action_at == datetime.fromisoformat(
         MOCK_APP_DATA["fetch_action_at"]
     )
@@ -101,7 +108,12 @@ def test_stream_viewerlist_fetch_twitch_api_response_invalid(
             "ensure this value is greater than or equal to 0",
         ),
         ("scanning_session_id", "invalid_uuid", "value is not a valid uuid"),
-        ("channel_owner_id", "invalid_id", "value is not a valid integer"),
+        (
+            "fetch_status",
+            "invalid_enum_member",
+            "value is not a valid enumeration member",
+        ),
+        ("scanning_session_id", "invalid_uuid", "value is not a valid uuid"),
     ],
 )
 def test_stream_viewerlist_fetch_create_invalid(field, value, expected_error):
