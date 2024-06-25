@@ -13,4 +13,8 @@
 
     It could tally and cache the results in memory then commit them all as a single transaction.
     This is more volatile; does it gain us anything?
+
+    NOTE. The planned ViewerSightingsCache doesn't obviate this component but does supplement it; in
+    the event of a crash recovery, the ViewerSightingsCache can be rebuilt from the ViewerSightings
+    table and then the scan resumed.
 """
