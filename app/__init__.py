@@ -1,4 +1,5 @@
 # app/__init__.py
+import asyncio
 import atexit
 import logging.config
 import os
@@ -6,7 +7,7 @@ import os
 from flask import Flask
 
 from app.config import Config
-from app.db import Base, engine
+from app.db import async_create_all_tables
 from app.models import (
     scanning_session,
     secrets,
@@ -27,7 +28,6 @@ logger.info("Logger is ready.")
 
 def _at_shutdown() -> None:
     """Handle any shutdown specifics for Flask."""
-    logger = logging.getLogger("app")
     logger.info("Server is shutting down.")
 
 
@@ -46,5 +46,8 @@ def create_app() -> Flask:
 
     with app.app_context():
         register_routes(app)
-        Base.metadata.create_all(bind=engine)
+
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(async_create_all_tables())
+
     return app
