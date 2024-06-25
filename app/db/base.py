@@ -23,5 +23,6 @@ Base = declarative_base()
 
 
 async def async_create_all_tables():
+    """Uses run_sync so the tables are created prior to anything else happening."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

@@ -18,7 +18,7 @@ def register_routes(app: Flask) -> None:
 
     # Endpoint to receive the token
     @app.route("/store-token", methods=["POST"])
-    def store_token():
+    async def store_token():
         logger.info("/store-token accessed.")
         if not request.json:
             logger.error("Missing JSON payload.")
@@ -45,7 +45,7 @@ def register_routes(app: Flask) -> None:
         logger.info(f"Tokens received. {expires_in=}, {token_type=}, {scopes=}")
 
         # Use get_db context manager to handle the database session
-        with get_db() as db:
+        async with get_db() as db:
             try:
                 # Try to insert the new row, which will fail if the unique constraint is violated
                 new_secret = Secret(
@@ -56,10 +56,10 @@ def register_routes(app: Flask) -> None:
                     scopes=scopes,
                 )
                 db.add(new_secret)
-                db.commit()
+                await db.commit()
                 existing_secret = new_secret
             except IntegrityError:
-                db.rollback()
+                await db.rollback()
                 # If the insertion fails, update the existing row
                 existing_secret = (
                     db.query(Secret)
@@ -74,7 +74,7 @@ def register_routes(app: Flask) -> None:
                     existing_secret.scopes = scopes
                     # TODO fix this, sadfaceemoji / Use the pydantic machinery
                     # TODO add timestamp
-                    db.commit()
+                    await db.commit()
 
         # Return the stored secret using Pydantic model for serialization
         return jsonify({"message": "ok"}), 200
@@ -90,7 +90,7 @@ def register_routes(app: Flask) -> None:
         return jsonify({"fetch-channel-viewerlist": "Not yet implemented"})
 
     @app.route("/")
-    def index():
+    async def index():
         logger.info("/ route accessed.")
-        with get_db() as db:
+        async with get_db() as db:
             return jsonify({"message": "ok"})
