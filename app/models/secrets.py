@@ -47,7 +47,7 @@ class Secret(Base):
         expires_in (int): Time in seconds until the access token expires.
         token_type (str): Docs say this is almost always "bearer".
         scope (str or list[str]): One or more scopes that spec out how much we can access with the
-            token.
+            token. NOTE I went with 'scope' to be consistent with the API response lingo.
         last_update_timestamp (DateTime): The timestamp of the last time this row was updated.
 
     """

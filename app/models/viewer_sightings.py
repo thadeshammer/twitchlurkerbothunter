@@ -35,6 +35,11 @@ class ViewerSighting(Base):
             calls. The User Data Fetcher will pull data of interest on each user for the
             TwitchUserData table, which will not have a direct relationship with this table.
 
+        processed_by_user_data_enricher (bool): Flag showing whether this entry has been processed
+            by the User Data Enricher.
+        processed_by_viewer_sighting_aggregator (bool): Flag showing whether this entry has been
+            processed by the Viewer Sighting Aggregator.
+
     Relationships:
         stream_viewerlist_fetch: Many-to-One with the ChannelViewerListFetch table.
     """

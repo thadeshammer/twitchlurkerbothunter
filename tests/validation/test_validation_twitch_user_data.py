@@ -4,9 +4,10 @@ import pytest
 from pydantic import ValidationError
 
 from app.models.twitch_user_data import (
+    TwitchUserDataAPIResponse,
     TwitchUserDataAppData,
     TwitchUserDataCreate,
-    TwitchUserDataHelixAPIData,
+    TwitchUserDataFromGetStreamAPIResponse,
     TwitchUserDataRead,
     merge_twitch_user_data,
 )
@@ -14,7 +15,6 @@ from app.models.twitch_user_data import (
 MOCK_TWITCH_API_RESPONSE = {
     "id": "123456",
     "login": "example_user",
-    "display_name": "ExampleUser",
     "type": "",
     "broadcaster_type": "",
     "view_count": "1000",
@@ -32,12 +32,11 @@ MOCK_APP_DATA = {
 
 def test_twitch_user_data_create_valid():
     """Test creating a TwitchUserDataCreate with valid data."""
-    api_data = TwitchUserDataHelixAPIData(**MOCK_TWITCH_API_RESPONSE)
+    api_data = TwitchUserDataAPIResponse(**MOCK_TWITCH_API_RESPONSE)
     app_data = TwitchUserDataAppData(**MOCK_APP_DATA)
     combined_data = merge_twitch_user_data(api_data, app_data)
     assert combined_data.twitch_account_id == 123456
     assert combined_data.login_name == "example_user"
-    assert combined_data.display_name == "ExampleUser"
     assert combined_data.account_type == ""
     assert combined_data.broadcaster_type == ""
     assert combined_data.lifetime_view_count == 1000
@@ -48,7 +47,7 @@ def test_twitch_user_data_create_valid():
 
 def test_twitch_user_data_read_valid():
     """Test creating a TwitchUserDataRead with valid data."""
-    api_data = TwitchUserDataHelixAPIData(**MOCK_TWITCH_API_RESPONSE)
+    api_data = TwitchUserDataAPIResponse(**MOCK_TWITCH_API_RESPONSE)
     app_data = TwitchUserDataAppData(**MOCK_APP_DATA)
 
     data: TwitchUserDataCreate = merge_twitch_user_data(api_data, app_data)
@@ -56,7 +55,6 @@ def test_twitch_user_data_read_valid():
     instance = TwitchUserDataRead(**data.dict())
     assert instance.twitch_account_id == 123456
     assert instance.login_name == "example_user"
-    assert instance.display_name == "ExampleUser"
     assert instance.account_type == ""
     assert instance.broadcaster_type == ""
     assert instance.lifetime_view_count == 1000
@@ -70,7 +68,6 @@ def test_twitch_user_data_read_valid():
     [
         ("id", "invalid_id", "invalid literal for int() with base 10: 'invalid_id'"),
         ("login", "invalid_login!", "string does not match regex"),
-        ("display_name", "invalid_display!", "string does not match regex"),
         ("type", "invalid_type", "unexpected value; permitted"),
         ("broadcaster_type", "invalid_broadcaster", "unexpected value; permitted"),
         ("view_count", -1, "ensure this value is greater than or equal to 0"),
@@ -88,7 +85,7 @@ def test_twitch_user_data_helix_api_data_invalid(
     data: dict[str, str] = MOCK_TWITCH_API_RESPONSE.copy()
     data[field] = value
     with pytest.raises(ValidationError) as excinfo:
-        TwitchUserDataHelixAPIData(**data)
+        TwitchUserDataAPIResponse(**data)
     assert expected_error in str(excinfo.value)
 
 
@@ -101,7 +98,6 @@ def test_twitch_user_data_helix_api_data_invalid(
             "invalid literal for int() with base 10: 'invalid_id'",
         ),
         ("login_name", "invalid_login!", "string does not match regex"),
-        ("display_name", "invalid_display!", "string does not match regex"),
         ("account_type", "invalid_type", "unexpected value; permitted"),
         ("broadcaster_type", "invalid_broadcaster", "unexpected value; permitted"),
         ("lifetime_view_count", -1, "ensure this value is greater than or equal to 0"),
@@ -119,7 +115,6 @@ def test_twitch_user_data_create_invalid(
     data = {
         "twitch_account_id": 123456,
         "login_name": "validlogin",
-        "display_name": "ValidDisplay",
         "account_type": "",
         "broadcaster_type": "",
         "lifetime_view_count": 1000,
@@ -134,3 +129,30 @@ def test_twitch_user_data_create_invalid(
     with pytest.raises(ValidationError) as excinfo:
         TwitchUserDataCreate(**data)
     assert expected_error in str(excinfo.value)
+
+
+def test_twitch_user_data_app_data():
+    # Example Twitch API 'Get Stream' response
+    api_response = {
+        "id": 987654321,
+        "user_id": 123456789,
+        "user_login": "example_login",
+        "game_id": "494131",
+        "game_name": "Little Nightmares",
+        "type": "live",
+        "title": "hablamos y le damos a Little Nightmares 1",
+        "tags": ["Español"],
+        "viewer_count": 78365,
+        "started_at": "2021-03-10T15:04:21Z",
+        "language": "es",
+        "thumbnail_url": "some_url_here",
+        "tag_ids": [],
+        "is_mature": False,
+    }
+
+    # Create a TwitchUserDataAppData instance from the API response
+    user_data = TwitchUserDataFromGetStreamAPIResponse(**api_response)
+
+    # Assertions to check the model has correctly parsed the data
+    assert user_data.twitch_account_id == 123456789
+    assert user_data.login_name == "example_login"

@@ -1,5 +1,18 @@
 # /app/models/stream_categories.py
-from pydantic import BaseModel, Field, conint, constr
+"""
+StreamCategory
+
+A simple table mapping streaming category ID ('game_id') to name ('game_name').
+
+NOTE In the 'Get Stream' endpoint response, the category name is'game_name' but still includes
+categories such as "Art" and "Just Chatting"
+
+Classes:
+    StreamCategory: The SQLAlchemy model for this table.
+    StreamCategoryAPIResponse: The Pydantic BaseModel for validation.
+    StreamCategoryCreate and StreamCategoryRead: Pydantic create and read classes.
+"""
+from pydantic import BaseModel, Extra, Field, conint, constr
 from sqlalchemy import BigInteger, Column, Index, String
 from sqlalchemy.orm import relationship
 
@@ -12,9 +25,6 @@ NO_CATEGORY_NAME: str = "category unset"
 
 class StreamCategory(Base):
     """A table to track encountered Twitch categories for easy cross-referencing in our queries.
-
-    NOTE In the 'Get Stream' endpoint response, this is 'game_name' but still includes categories
-    such as "Art" and "Just Chatting"
 
     Args:
         category_id (int): Twitch's UID for this category.
@@ -42,22 +52,23 @@ class StreamCategory(Base):
     __table_args__ = (Index("ix_category_name", "category_name"),)
 
 
-class StreamCategoryBase(BaseModel):
+class StreamCategoryAPIReponse(BaseModel):
     """Base model for StreamCategory with shared properties."""
 
     category_id: conint(ge=-1) = Field(..., alias="game_id")
     category_name: constr(max_length=25) = Field(..., alias="game_name")
 
     class Config:
+        extra = Extra.allow
         allow_population_by_field_name = True
         orm_mode = True
 
 
-class StreamCategoryCreate(StreamCategoryBase):
+class StreamCategoryCreate(StreamCategoryAPIReponse):
     """Pydantic model to create a new db row for this category."""
 
 
-class StreamCategoryRead(StreamCategoryBase):
+class StreamCategoryRead(StreamCategoryAPIReponse):
     """Pydantic model to read a db row for this category."""
 
     class Config:

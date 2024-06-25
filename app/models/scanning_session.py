@@ -5,12 +5,14 @@
 A viewerlist fetch is defined to be an action where the viewerlist for a given live stream is
 retrieved by the app.
 
-A Scan is defined to be a set of viewerlist fetches targeting some number of live streams.
+A Scanning Session (or "Scan") is defined to be a set of viewerlist fetches targeting some number of
+live streams.
 
 Classes:
     ScanningSessionStopReasonEnum: Enum for categorizing why a given scanning session ended.
     ScanningSession: the SQLAlchemy model for tracking at-a-glance metrics for a given session of
         scanning.
+    ScanningSessionAppData, Create, and Read: Pydantic BaseModels for validation and serializing.
 """
 from datetime import datetime
 from enum import StrEnum
@@ -27,7 +29,7 @@ from app.db import Base
 
 class ScanningSessionStopReasonEnum(StrEnum):
     UNSPECIFIED = "unspecified"  # Either in progress or it bombed <_<
-    COMPLETE = "complete"
+    COMPLETE = "complete"  # Hopefully this is as obvious as I want it to be.
     CANCELLED = "cancelled"  # OPERATOR cancellation
     ERRORED = "errored"  # A recoverable but scan-killing error occurred.
 
@@ -48,7 +50,9 @@ class ScanningSession(Base):
         streams_in_scan (int): The quantity of streams in the list at the start of the scan.
         viewerlists_fetched (int): The count of viewerlists that have been / were fetched during
             this scanning session.
-        NOTE. Timing is measured with time.perf_counter().
+
+        NOTE. Timing is measured with time.perf_counter() unless the scale mandates a timestamp.
+
         average_time_per_fetch (float): The average time it takes the bot to get a viewerlist,
             calculated at the end of the run. I may need to segment this over stream-sizes, but for
             now, it's a single value.

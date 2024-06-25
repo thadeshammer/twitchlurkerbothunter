@@ -68,21 +68,22 @@ class StreamViewerListFetch(Base):
         scanning_session_id (str): [FK] UUID of the parent Scanning Session.
 
     Attributes from our data collection:
-        time_of_fetch (DateTime): Timestamp of when this fetch action took place.
-        time_in_channel (float): Time elapsed by the Viewer List Fetcher worker in this stream's
-            chat, clocked with time.perf_counter().
+        fetch_action_at (DateTime): Timestamp of when this fetch action took place.
+        duration_of_fetch_action (float): Time elapsed by the Viewer List Fetcher worker in this
+            stream's chat, clocked with time.perf_counter().
+        fetch_status (StreamViewerListFetchStatus): the last recorded state of this fetch action.
 
     Attributes from 'Get Streams' Twitch backend API endpoint:
-        channel_owner_id (int): [FK] Twitch UUID of the channel this Viewerlist Fetch Action took
-            place in; the broadcaster's account id.
-        viewer_count (int): The reported viewer count for the stream at the time of the fetch.
         stream_id (int): Twitch UUID of the given stream/broadcast. Useful for tracking different
             streams for the same channel.
-        stream_started_at (DateTime): The go-live timestamp of this live stream.
+        channel_owner_id (int): [FK] Twitch UUID of the channel this Viewerlist Fetch Action took
+            place in; the broadcaster's account id.
         category_id (int): Twitch UUID for the category.
+        was_live (bool): Whether the channel was (still) live when the viewerlist fetch took place.
+        viewer_count (int): The reported viewer count for the stream at the time of the fetch.
+        stream_started_at (DateTime): The go-live timestamp of this live stream.
         language (str): ISO 639-1 lanuage code of the stream.
         is_mature (bool): Whether the given channel is flagged as "For mature audiences."
-        was_live (bool): Whether the channel was (still) live when the viewerlist fetch took place.
 
     Relationships:
         scanning_session (): many stream_viewerlist_fetches to one scanning_session

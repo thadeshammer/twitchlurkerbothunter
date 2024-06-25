@@ -3,6 +3,7 @@
 """We all agree a Twitch account is a bot if:
     - it's in thousands upon thousands of channel viewerlists concurrently
     - it has 200ish followers and follows no one itself
+    - it has never streamed before and still has lots of followers
     - it never speaks in any channel
     - it remains resident for days and days, long after the stream it was in has ended
 
@@ -13,6 +14,9 @@ bot (during its scans) to be in large volumes of channels concurrently, well bey
 100 concurrent channels that Twitch's TOS allows. It will also track accounts below that level of
 concurrency as well, but as they're within TOS, they will bear a low SuspicionLevel.
 
+NOTE This particular model will probably see the most change and extension as we learn more and
+discover new questions.
+
 Classes:
     SuspicionReason: Enum for the classifier to provide a very brief reason to explain its decision.
     SuspicionLevel: Enum mapped to various levels of channel concurrency.
@@ -20,6 +24,8 @@ Classes:
         respective SuspicionLevel.
     SuspectedBots: SQLAlchemy table for tracking additional metadata and metrics for suspicious
         Twitch accounts.
+    SuspectedBotAppData, Create, and Read: Pydantic BaseModels for validation and serializing.
+    
 """
 from enum import StrEnum
 from typing import Optional, Tuple
@@ -88,7 +94,8 @@ class SuspectedBot(Base):
 
     I went back and forth on whether to track aliases (or even just a quantity of noticed name
     changes) for perhaps "only SuspicionLevel.RED bots" or something, but:
-    - the possible risks that come with compromising regular user privacy are flatly unacceptable;
+    - the possible risks that come with compromising regular user privacy are flatly unacceptable,
+    however small;
     - I have no reason to believe botters would bother changing the name as it doesn't aid in
     channel-level ban evasion, and if Twitch bans them it's at the account ID level anyway;
     - why wouldn't they just spin up a new account and fire off the servers again?
@@ -143,7 +150,7 @@ class SuspectedBot(Base):
     __table_args__ = (Index("ix_twitch_account_id", "twitch_account_id"),)
 
 
-class SuspectedBotBase(BaseModel):
+class SuspectedBotAppData(BaseModel):
     """Base model for Suspected Bot with shared properties."""
 
     follower_count: conint(ge=0) = Field(...)
@@ -154,13 +161,13 @@ class SuspectedBotBase(BaseModel):
     additional_notes: Optional[constr(regex=r"^[a-zA-Z0-9/\s.,!?':;-]*$")] = None
 
 
-class SuspectedBotCreate(SuspectedBotBase):
+class SuspectedBotCreate(SuspectedBotAppData):
     """Model for creating a new Suspected Bot entry."""
 
     twitch_account_id: int
 
 
-class SuspectedBotRead(SuspectedBotBase):
+class SuspectedBotRead(SuspectedBotAppData):
     """Model for returning Suspected Bot data."""
 
     suspected_bot_id: UUID
