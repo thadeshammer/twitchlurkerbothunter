@@ -14,14 +14,14 @@ from app.models import (
 
 # Mock valid responses
 MOCK_TWITCH_API_RESPONSE = {
-    "id": 9876543210,
-    "user_id": 1234567890,
-    "game_id": 10,
+    "id": "9876543210",
+    "user_id": "1234567890",
+    "game_id": "10",
     "type": "live",
-    "started_at": datetime.now(timezone.utc).isoformat(),
-    "viewer_count": 1500,
+    "started_at": str(datetime.now(timezone.utc).isoformat()),
+    "viewer_count": "1500",
     "language": "en",
-    "is_mature": True,
+    "is_mature": "True",
 }
 
 MOCK_APP_DATA = {

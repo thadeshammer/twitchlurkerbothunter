@@ -104,7 +104,7 @@ class TwitchUserData(Base):
     # In the specific case where first contact with a login name is a streamer who's live, their
     # entry here will be created prior to the enrichment pass over ViewerSightings. So these need to
     # be nullable to account for that.
-    login_name = Column(String(40), unique=True, nullable=True)  # 'login'
+    login_name = Column(String(40), unique=True, nullable=False)  # 'login'
     account_type = Column(String(15), nullable=True)  # 'type'
     broadcaster_type = Column(String(15), nullable=True)  # 'broadcaster_type'
     lifetime_view_count = Column(Integer, nullable=True)  # 'view_count'

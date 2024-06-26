@@ -5,7 +5,7 @@ from pydantic import ValidationError
 from app.models.stream_categories import StreamCategoryCreate, StreamCategoryRead
 
 # Mock valid responses
-MOCK_STREAM_CATEGORY_RESPONSE = {
+MOCK_STREAM_CATEGORY_API_RESPONSE = {
     "game_id": "12345",
     "game_name": "Just Chatting",
 }
@@ -24,7 +24,7 @@ MOCK_STREAM_CATEGORY_RESPONSE = {
 )
 def test_stream_category_create_invalid(field, value, expected_error):
     """Test creating a StreamCategoryCreate with invalid data."""
-    data = MOCK_STREAM_CATEGORY_RESPONSE.copy()
+    data = MOCK_STREAM_CATEGORY_API_RESPONSE.copy()
     data[field] = value
     with pytest.raises(ValidationError) as excinfo:
         StreamCategoryCreate(**data)
@@ -44,7 +44,7 @@ def test_stream_category_create_invalid(field, value, expected_error):
 )
 def test_stream_category_read_invalid(field, value, expected_error):
     """Test creating a StreamCategoryRead with invalid data."""
-    data = MOCK_STREAM_CATEGORY_RESPONSE.copy()
+    data = MOCK_STREAM_CATEGORY_API_RESPONSE.copy()
     data[field] = value
     with pytest.raises(ValidationError) as excinfo:
         StreamCategoryRead(**data)
@@ -53,7 +53,7 @@ def test_stream_category_read_invalid(field, value, expected_error):
 
 def test_stream_category_create_valid():
     """Test creating a StreamCategoryCreate with valid data."""
-    data = MOCK_STREAM_CATEGORY_RESPONSE.copy()
+    data = MOCK_STREAM_CATEGORY_API_RESPONSE.copy()
     instance = StreamCategoryCreate(**data)
     assert instance.category_id == 12345
     assert instance.category_name == "Just Chatting"
@@ -61,7 +61,7 @@ def test_stream_category_create_valid():
 
 def test_stream_category_read_valid():
     """Test creating a StreamCategoryRead with valid data."""
-    data = MOCK_STREAM_CATEGORY_RESPONSE.copy()
+    data = MOCK_STREAM_CATEGORY_API_RESPONSE.copy()
     instance = StreamCategoryRead(**data)
     assert instance.category_id == 12345
     assert instance.category_name == "Just Chatting"

@@ -134,20 +134,20 @@ def test_twitch_user_data_create_invalid(
 def test_twitch_user_data_app_data():
     # Example Twitch API 'Get Stream' response
     api_response = {
-        "id": 987654321,
-        "user_id": 123456789,
+        "id": "987654321",
+        "user_id": "123456789",
         "user_login": "example_login",
         "game_id": "494131",
         "game_name": "Little Nightmares",
         "type": "live",
         "title": "hablamos y le damos a Little Nightmares 1",
         "tags": ["Español"],
-        "viewer_count": 78365,
+        "viewer_count": "78365",
         "started_at": "2021-03-10T15:04:21Z",
         "language": "es",
         "thumbnail_url": "some_url_here",
         "tag_ids": [],
-        "is_mature": False,
+        "is_mature": "False",
     }
 
     # Create a TwitchUserDataAppData instance from the API response

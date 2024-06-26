@@ -134,9 +134,17 @@ class SuspectedBot(Base):
         nullable=False,
     )
 
-    follower_count = Column(Integer, nullable=False)
-    following_count = Column(Integer, nullable=False)
+    # need user:read:follows scope
+    # 'Get Channel Followers' - Gets a list of users that follow the specified broadcaster.
+    follower_count = Column(Integer, nullable=True)
+    # 'Get Followed Channels' - Gets a list of broadcasters that the specified user follows.
+    following_count = Column(Integer, nullable=True)
+
+    # query for vods? TODO how to check this?
     has_ever_streamed = Column(Boolean, nullable=True)
+
+    # If we query a user and it comes back as no-user, this is what it means.
+    # TODO what's the specific error code or response we get to represent this?
     is_banned_or_deleted = Column(Boolean, nullable=False, default=False)
 
     suspicion_level = Column(String(8), default=SuspicionLevel.NONE)
