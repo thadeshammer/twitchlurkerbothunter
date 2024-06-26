@@ -36,7 +36,7 @@ def register_routes(app: Flask) -> None:
         refresh_token = secret_create.refresh_token
         expires_in = secret_create.expires_in
         token_type = secret_create.token_type
-        scopes = secret_create.scopes
+        scopes = secret_create.scope
 
         # Handle scope if it's a list
         if isinstance(scopes, list):
