@@ -100,7 +100,7 @@ class TwitchViewerListFetcher(Client):
             if len(parts) > 2:
                 # msg_parts ['user!user@user.tmi.twitch.tv', '353', 'this_bot', '=', '#test_channel']
                 msg_parts = parts[1].strip().split()
-                channel_name = msg_parts[-1]
+                channel_name = msg_parts[-1].lstrip("#")
                 user_list = parts[2].split()
                 self._user_lists[channel_name].user_names.extend(user_list)
                 logger.info(
@@ -141,7 +141,7 @@ class TwitchViewerListFetcher(Client):
                 - The time this call took to join, fetch, and part from all given channels, in
                   seconds.
         """
-        assert isinstance(channels, list[str])
+        assert isinstance(channels, list) and all(isinstance(c, str) for c in channels)
         self._user_lists = {channel: ViewerListFetchData() for channel in channels}
         start_time: float = perf_counter()
 
