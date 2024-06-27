@@ -25,58 +25,49 @@ def register_routes(app: Flask) -> None:
             return jsonify({"error": "Missing JSON payload"}), 400
 
         try:
-            # Validate and parse the request data using Pydantic
             secret_create = SecretCreate(**request.json)
         except ValidationError as e:
             logger.error(f"Validation error: {e.errors()}")
             return jsonify({"error": "Validation error", "details": e.errors()}), 400
 
-        # Extract values from the validated Pydantic model
         access_token = secret_create.access_token
         refresh_token = secret_create.refresh_token
         expires_in = secret_create.expires_in
         token_type = secret_create.token_type
-        scopes = secret_create.scope
+        scope = secret_create.scope
 
-        # Handle scope if it's a list
-        if isinstance(scopes, list):
-            scopes = " ".join(scopes)
+        if isinstance(scope, list):
+            scope = " ".join(scope)
 
-        logger.info(f"Tokens received. {expires_in=}, {token_type=}, {scopes=}")
+        logger.info(f"Tokens received. {expires_in=}, {token_type=}, {scope=}")
 
-        # Use get_db context manager to handle the database session
         async with get_db() as db:
             try:
-                # Try to insert the new row, which will fail if the unique constraint is violated
                 new_secret = Secret(
                     access_token=access_token,
                     refresh_token=refresh_token,
                     expires_in=expires_in,
                     token_type=token_type,
-                    scopes=scopes,
+                    scope=scope,
                 )
                 db.add(new_secret)
                 await db.commit()
                 existing_secret = new_secret
             except IntegrityError:
                 await db.rollback()
-                # If the insertion fails, update the existing row
-                existing_secret = (
-                    db.query(Secret)
-                    .filter_by(enforce_one_row="enforce_one_row")
-                    .first()
+                # Querying the database asynchronously
+                result = await db.execute(
+                    db.query(Secret).filter_by(enforce_one_row="enforce_one_row")
                 )
+                existing_secret = result.scalar()
                 if existing_secret:
                     existing_secret.access_token = access_token
                     existing_secret.refresh_token = refresh_token
                     existing_secret.expires_in = expires_in
                     existing_secret.token_type = token_type
-                    existing_secret.scopes = scopes
-                    # TODO fix this, sadfaceemoji / Use the pydantic machinery
-                    # TODO add timestamp
+                    existing_secret.scope = scope
                     await db.commit()
 
-        # Return the stored secret using Pydantic model for serialization
         return jsonify({"message": "ok"}), 200
 
     @app.route("/start-scan")

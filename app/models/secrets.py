@@ -75,6 +75,10 @@ class SecretBase(BaseModel):
     token_type: TokenType = Field(...)
     scope: Union[str, list[str]] = Field(..., alias="scope")
 
+    class Config:
+        allow_population_by_field_name = True
+        orm_mode = True
+
 
 class SecretCreate(SecretBase):
     pass
@@ -82,6 +86,3 @@ class SecretCreate(SecretBase):
 
 class SecretRead(SecretBase):
     id: conint(gt=0)
-
-    class Config:
-        orm_mode = True

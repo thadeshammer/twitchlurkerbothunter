@@ -231,3 +231,11 @@ class TwitchUserDataFromGetStreamAPIResponse(BaseModel):
         extra = Extra.allow
         allow_population_by_field_name = True
         orm_mode = True
+
+
+# NOTE I MAY NEED THESE
+# def to_pydantic(user: User) -> UserModel:
+#     return UserModel.from_orm(user)
+
+# def from_pydantic(user_model: UserModel) -> User:
+#     return User(**user_model.dict())

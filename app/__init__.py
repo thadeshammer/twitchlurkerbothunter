@@ -22,6 +22,9 @@ from app.util import setup_logging
 
 # Logger setup outside of create_app
 setup_logging(Config.LOGGING_CONFIG_FILE)
+logging.getLogger("asyncio").setLevel(
+    logging.WARNING
+)  #  "Using selector: EpollSelector" spam
 logger = logging.getLogger("app")
 logger.info("Logger is ready.")
 

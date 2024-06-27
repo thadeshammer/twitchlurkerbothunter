@@ -27,4 +27,6 @@ ENV SECRETS_DIR="./secrets/tokens.yaml"
 # Expose the port
 EXPOSE 443
 
+# CMD ["flask", "run", "--host=0.0.0.0", "--port=443"]
 CMD ["gunicorn", "--workers", "1", "--bind", "0.0.0.0:443", "--certfile=/secrets/cert.pem", "--keyfile=/secrets/key.pem", "run:app"]
+# CMD ["gunicorn", "-w", "1", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:443", "--certfile=/secrets/cert.pem", "--keyfile=/secrets/key.pem", "run:app"]
