@@ -23,27 +23,21 @@ Classes:
     user. 
     TwitchUserDataCreate and Read: Pydantic models to create for and read from the DB respectively.
 
-    merge_twitch_user_data: Helper method to combine APIResponse and AppData. NOTE don't use this
-    when creating from the GetStream response via the StreamViewerListFetch action.
-
     TwitchUserDataFromGetStreamAPIResponse: If this is the first we've seen a login name (i.e. we've
     only seem then once and they were streaming) this call is used to create a partial entry on this
     table.
 """
 from datetime import datetime
-from typing import Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal, Optional
 
-from pydantic import BaseModel, Extra, Field, conint, constr, validator
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, Index, Integer, String
-from sqlalchemy.orm import relationship
-
-from app.db import Base
+from pydantic import conint, constr
+from sqlmodel import Field, Relationship, SQLModel
 
 from ._validator_regexes import TWITCH_LOGIN_NAME_REGEX
 
 
-class TwitchUserData(Base):
-    """SQLAlchemy model representing Twitch Users that have been spotted during scans.
+class TwitchUserDataBase(SQLModel):
+    """SQLmodel representing Twitch Users that have been spotted during scans.
 
     NOTE. This wound up being mostly nullable due to a critical edge case: if a streamer is first
     observed when they're streaming, the creation of the associated StreamViewerListFetch table row
@@ -92,150 +86,74 @@ class TwitchUserData(Base):
         all_time_high_at (DateTime): Timestamp of the all_time_concurrent_channel_count reading.
     """
 
-    __tablename__ = "twitch_user_data"
+    twitch_account_id: conint(gt=0) = Field(..., alias="id", index=True)
+    login_name: constr(pattern=TWITCH_LOGIN_NAME_REGEX) = Field(
+        ..., alias="login", index=True
+    )
+    account_type: Optional[Literal["staff", "admin", "global_mod", ""]] = Field(
+        default=None, alias="type"
+    )
+    broadcaster_type: Optional[Literal["partner", "affiliate", ""]] = Field(
+        default=None
+    )
+    lifetime_view_count: Optional[conint(ge=0)] = Field(
+        default=None, alias="view_count"
+    )
+    account_created_at: Optional[datetime] = Field(default=None, alias="created_at")
 
-    # These core fields are not nullable because they're here at row creation and required.
+    first_sighting_as_viewer: Optional[datetime] = Field(default=None)
+    most_recent_sighting_as_viewer: Optional[datetime] = Field(default=None)
+    most_recent_concurrent_channel_count: Optional[conint(gt=0)] = Field(default=None)
+    all_time_high_concurrent_channel_count: Optional[conint(gt=0)] = Field(default=None)
+    all_time_high_at: Optional[datetime] = Field(default=None)
 
-    twitch_account_id = Column(
-        BigInteger, primary_key=True, autoincrement=False
-    )  # 'id'
-    has_been_enriched = Column(Boolean, default=False)
+    def __init__(self, **data: dict[str, Any]):
+        """Handle for the case where we create from 'Get Streams' response instead of 'Get User'"""
+        if "user_id" in data:
+            data["id"] = data.pop("user_id")
+        if "user_login" in data:
+            data["login"] = data.pop("user_login")
+        super().__init__(**data)
 
-    # In the specific case where first contact with a login name is a streamer who's live, their
-    # entry here will be created prior to the enrichment pass over ViewerSightings. So these need to
-    # be nullable to account for that.
-    login_name = Column(String(40), unique=True, nullable=False)  # 'login'
-    account_type = Column(String(15), nullable=True)  # 'type'
-    broadcaster_type = Column(String(15), nullable=True)  # 'broadcaster_type'
-    lifetime_view_count = Column(Integer, nullable=True)  # 'view_count'
-    account_created_at = Column(DateTime, nullable=True)  # 'created_at'
+    class Config:
+        extra = "allow"
+        populate_by_name = True
 
-    # not tracking: description, image urls, email,
 
-    # Collected data
-    # NOTE Could FK in scanning_session_id for most_recent sighting AND first_sighting BUT those
-    # tables will grow pretty quickly and may be subject to pruning.
+class TwitchUserData(TwitchUserDataBase, table=True):
+    """Table model for TwitchUserData with additional fields and relationships."""
 
-    # These columns will be populated post creation by an aggregator worker, thus they're nullable.
+    __tablename__: str = "twitch_user_data"
 
-    first_sighting_as_viewer = Column(DateTime, nullable=True)
-    most_recent_sighting_as_viewer = Column(DateTime, nullable=True)
-    most_recent_concurrent_channel_count = Column(Integer, nullable=True)
-    all_time_high_concurrent_channel_count = Column(Integer, nullable=True)
-    all_time_high_at = Column(DateTime, nullable=True)
+    twitch_account_id: conint(gt=0) = Field(primary_key=True, alias="id")
+    has_been_enriched: bool = Field(default=False)
 
     # Relationships
-    suspected_bot = relationship(
-        "SuspectedBot", back_populates="twitch_user_data", uselist=False
-    )
+    # if TYPE_CHECKING:
+    #     from . import StreamViewerListFetch, SuspectedBot
 
-    stream_viewerlist_fetch = relationship(
-        "StreamViewerListFetch", back_populates="twitch_user_data"
-    )
-
-    # indexes
-    __table_args__ = (
-        Index("ix_twitch_account_id", "twitch_account_id"),
-        Index("ix_login_name", "login_name"),
-    )
+    # suspected_bot: Optional["SuspectedBot"] = Relationship(
+    #     back_populates="twitch_user_data"
+    # )
+    # stream_viewerlist_fetch: Optional["StreamViewerListFetch"] = Relationship(
+    #     back_populates="twitch_user_data"
+    # )
 
 
-TwitchAccountTypes = Literal["staff", "admin", "global_mod", ""]
-TwitchBroadcasterTypes = Literal["partner", "affiliate", ""]
+class TwitchUserDataCreate(TwitchUserDataBase):
+    """Model for creating a new TwitchUserData entry."""
 
 
-class TwitchUserDataAPIResponse(BaseModel):
-    """Base model for TwitchUserData with shared properties."""
-
-    twitch_account_id: conint(gt=0) = Field(..., alias="id")
-    login_name: constr(regex=TWITCH_LOGIN_NAME_REGEX) = Field(..., alias="login")
-    account_type: Optional[TwitchAccountTypes] = Field(alias="type", default=None)
-    broadcaster_type: Optional[TwitchBroadcasterTypes] = Field(default=None)
-    lifetime_view_count: Optional[conint(ge=0)] = Field(
-        alias="view_count", default=None
-    )
-    account_created_at: Optional[datetime] = Field(alias="created_at", default=None)
-
-    class Config:
-        allow_population_by_field_name = True
-        orm_mode = True
-
-    @validator("twitch_account_id", "lifetime_view_count", pre=True)
-    def str_to_int(cls, v):
-        if isinstance(v, str):
-            return int(v)
-        return v
-
-    @validator("account_created_at", pre=True)
-    def str_to_datetime(cls, v):
-        if isinstance(v, str):
-            return datetime.fromisoformat(v.replace("Z", "+00:00"))
-        return v
+class TwitchUserDataRead(TwitchUserDataBase):
+    """Model for reading TwitchUserData from the db."""
 
 
-class TwitchUserDataAppData(BaseModel):
-    """Base model for app-generated metrics."""
+# TODO cut this if the constructor works
+# class TwitchUserDataCreateFromStreamsAPIResponse(SQLModel):
+#     """Base model for user creation from the StreamViewerListFetcher."""
 
-    first_sighting_as_viewer: Optional[datetime] = Field(None)
-    most_recent_sighting_as_viewer: Optional[datetime] = Field(None)
-    most_recent_concurrent_channel_count: Optional[conint(gt=0)] = Field(None)
-    all_time_high_concurrent_channel_count: Optional[conint(gt=0)] = Field(None)
-    all_time_high_at: Optional[datetime] = Field(None)
+#     twitch_account_id: conint(gt=0) = Field(..., alias="user_id")
+#     login_name: constr(pattern=TWITCH_LOGIN_NAME_REGEX) = Field(..., alias="user_login")
 
-    class Config:
-        allow_population_by_field_name = True
-        orm_mode = True
-
-
-class TwitchUserDataCreate(TwitchUserDataAPIResponse, TwitchUserDataAppData):
-    """Combined API and app data. I can't believe I found a usecase for multiple inheritance."""
-
-
-class TwitchUserDataRead(TwitchUserDataCreate):
-    """Model for the data received from the Twitch API, to be persisted in the db."""
-
-
-def merge_twitch_user_data(
-    api_data: TwitchUserDataAPIResponse,
-    app_data: TwitchUserDataAppData,
-) -> TwitchUserDataCreate:
-    combined_data = {
-        **api_data.dict(),
-        **app_data.dict(),
-    }
-    return TwitchUserDataCreate(**combined_data)
-
-
-# Example API response
-
-# api_response = {
-#     "id": 123456,
-#     "login": "example_user",
-#     "display_name": "ExampleUser",
-#     "type": "",
-#     "broadcaster_type": "",
-#     "view_count": 1000,
-#     "created_at": "2013-06-03T19:12:02Z"
-# }
-
-
-class TwitchUserDataFromGetStreamAPIResponse(BaseModel):
-    """Base model for user creation from the StreamViewerListFetcher."""
-
-    # https://dev.twitch.tv/docs/api/reference/#get-streams
-
-    twitch_account_id: conint(gt=0) = Field(..., alias="user_id")
-    login_name: constr(regex=TWITCH_LOGIN_NAME_REGEX) = Field(..., alias="user_login")
-
-    class Config:
-        extra = Extra.allow
-        allow_population_by_field_name = True
-        orm_mode = True
-
-
-# NOTE I MAY NEED THESE
-# def to_pydantic(user: User) -> UserModel:
-#     return UserModel.from_orm(user)
-
-# def from_pydantic(user_model: UserModel) -> User:
-#     return User(**user_model.dict())
+#     class Config:
+#         extra = "allow"

@@ -16,15 +16,11 @@ Classes:
 """
 from datetime import datetime
 from enum import StrEnum
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, confloat, conint
-from sqlalchemy import Column, DateTime, Float, Integer, String
-from sqlalchemy.dialects.mysql import CHAR
-from sqlalchemy.orm import relationship
-
-from app.db import Base
+from pydantic import confloat, conint
+from sqlmodel import Field, Relationship, SQLModel
 
 
 class ScanningSessionStopReasonEnum(StrEnum):
@@ -34,7 +30,22 @@ class ScanningSessionStopReasonEnum(StrEnum):
     ERRORED = "errored"  # A recoverable but scan-killing error occurred.
 
 
-class ScanningSession(Base):
+class ScanningSessionBase(SQLModel):
+    time_started: datetime = Field(...)
+    time_ended: Optional[datetime] = Field(None)
+    reason_ended: ScanningSessionStopReasonEnum = Field(
+        default=ScanningSessionStopReasonEnum.UNSPECIFIED
+    )
+    streams_in_scan: conint(gt=0) = Field(...)
+    viewerlists_fetched: Optional[conint(ge=0)] = Field(None)
+    average_time_per_fetch: Optional[confloat(ge=0)] = Field(None)
+    average_time_for_get_user_call: Optional[confloat(ge=0)] = Field(None)
+    average_time_for_get_stream_call: Optional[confloat(ge=0)] = Field(None)
+    suspects_spotted: Optional[conint(ge=0)] = Field(None)
+    error_count: Optional[conint(ge=0)] = Field(None)
+
+
+class ScanningSession(ScanningSessionBase):
     """This table stores metrics for independent scanning session.
 
     A Scan is a series of viewerlist fetches from a (potentially very large) set of live streams.
@@ -66,62 +77,23 @@ class ScanningSession(Base):
             session.
     """
 
-    __tablename__ = "scanning_sessions"
+    __tablename__: str = "scanning_sessions"
 
-    scanning_session_id = Column(
-        CHAR(36), primary_key=True, default=lambda: str(uuid4())
-    )
+    scanning_session_id: UUID = Field(default_factory=uuid4, primary_key=True)
 
-    time_started = Column(DateTime, nullable=False)
-    time_ended = Column(DateTime, nullable=True)
-    reason_ended = Column(
-        String(12), nullable=False, default=ScanningSessionStopReasonEnum.UNSPECIFIED
-    )  # ScanningSessionStopReasonEnum
+    # if TYPE_CHECKING:
+    #     from . import StreamViewerListFetch
 
-    # channel viewerlists fetched / channels_in_scan ratio metric
-    streams_in_scan = Column(Integer, nullable=False)
-    viewerlists_fetched = Column(Integer, nullable=True)
-    average_time_per_fetch = Column(Float, nullable=True)
-    average_time_for_get_user_call = Column(Float, nullable=True)
-    average_time_for_get_stream_call = Column(Float, nullable=True)
-
-    suspects_spotted = Column(Integer, nullable=True)
-    error_count = Column(Integer, nullable=True)
-
-    stream_viewerlist_fetches = relationship(
-        "StreamViewerListFetch", back_populates="scanning_session"
-    )  # many stream_viewerlist_fetches to one scanning_session
-
-    # for later
-    # resource usage
-    # reliability rate of fetches working
+    # stream_viewerlist_fetches: list["StreamViewerListFetch"] = Relationship(
+    #     back_populates="scanning_session"
+    # )
 
 
-class ScanningSessionAppData(BaseModel):
-    """Base model for ScanningSession with shared properties."""
-
-    time_started: datetime = Field(...)
-    time_ended: Optional[datetime] = Field(None)
-    reason_ended: ScanningSessionStopReasonEnum = Field(
-        ScanningSessionStopReasonEnum.UNSPECIFIED
-    )
-    streams_in_scan: conint(gt=0) = Field(...)
-    viewerlists_fetched: Optional[conint(ge=0)] = Field(None)
-    average_time_per_fetch: Optional[confloat(ge=0)] = Field(None)
-    average_time_for_get_user_call: Optional[confloat(ge=0)] = Field(None)
-    average_time_for_get_stream_call: Optional[confloat(ge=0)] = Field(None)
-    suspects_spotted: Optional[conint(ge=0)] = Field(None)
-    error_count: Optional[conint(ge=0)] = Field(None)
+class ScanningSessionCreate(ScanningSessionBase):
+    """Pydantic model for creating a new ScanningSession entry."""
 
 
-class ScanningSessionCreate(ScanningSessionAppData):
-    """Model for creating a new ScanningSession entry."""
+class ScanningSessionRead(ScanningSessionBase):
+    """Pydantic model for returning ScanningSession data."""
 
-
-class ScanningSessionRead(ScanningSessionAppData):
-    """Model for returning ScanningSession data."""
-
-    scanning_session_id: UUID = Field(...)
-
-    class Config:
-        orm_mode = True
+    scanning_session_id: UUID

@@ -1,5 +1,5 @@
 # app/models/stream_viewerlist_fetch.py
-# SQLAlchemy model representing a single viewerlist fetch event of a target stream.
+# SQLmodel representing a single viewerlist fetch event of a target stream.
 
 """StreamViewerListFetch model and validators.
 
@@ -7,43 +7,58 @@
     viewer list and associated metadata. (For our purposes, it is a set of ViewerSightings in a
     given channel during a scan.)
 
-    The Pydantic BaseModels are split into two representing the relevant Twitch API Response data
-    and the in-app metadata, and they're brought together by the
-    merge_stream_viewerlist_fetch_data() function.
+Usage:
+    Create a StreamViewerListFetch with its required data, update its status as is appropriate, and
+    update its duration when status is set to StreamViewerListFetchStatus.COMPLETE.
 
-SQLAlchemy Model:
-    StreamViewerListFetch: The SQLAlchemy model
+    Instantiate a StreamViewerListFetch model using the constructor: pack the relevant API response
+    closure from 'Get Streams' (a single closure, not the entire list) into a dict, and pass the
+    required app meta data as well. For example, here's the api_response and the Create call:
 
-Pydantic Models:
-    StreamViewerListFetchTwitchAPIResponse: Pydantic model to validate Twitch API response data.
-    StreamViewerListFetchAppData: Pydantic model to validate app-generated data.
+    https://dev.twitch.tv/docs/api/reference/#get-streams
+
+    api_response_data == {
+        "id": "123456789",
+        "user_id": "98765",
+        "user_login": "sandysanderman",
+        "user_name": "SandySanderman",
+        "game_id": "494131",
+        "game_name": "Little Nightmares",
+        "type": "live",
+        "title": "hablamos y le damos a Little Nightmares 1",
+        "tags": ["Español"],
+        "viewer_count": 78365,
+        "started_at": "2021-03-10T15:04:21Z",
+        "language": "es",
+        "thumbnail_url": "https://blah-blah-blah.jpg",
+        "tag_ids": [],
+        "is_mature": false
+    }
+
+    viewer_list_fetch = StreamViewerListFetchCreate(
+        fetch_action_at,  # datetime
+        duration_of_fetch_action,  # float
+        fetch_status,  # StreamViewerListFetchStatus
+        scanning_session_id,  # UUID
+        **api_response_data  # dict[str, str]
+    )
+
+SQLModel constructs:
+    StreamViewerListFetchBase: SQLModel base class with shared properties
+    StreamViewerListFetch: SQLModel table model
     StreamViewerListFetchCreate: For making a new DB row.
     StreamViewerListFetchRead For retrieving and working with an existing DB row.
 
-Merging Function:
-    merge_stream_viewerlist_fetch_data
 """
 from datetime import datetime
 from enum import StrEnum
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID, uuid4
 
-from pydantic import UUID4, BaseModel, Field, confloat, conint, constr, validator
-from sqlalchemy import (
-    BigInteger,
-    Boolean,
-    Column,
-    DateTime,
-    Float,
-    ForeignKey,
-    Index,
-    Integer,
-    String,
-)
-from sqlalchemy.dialects.mysql import CHAR
-from sqlalchemy.orm import relationship
+from pydantic import confloat, conint, constr
+from sqlmodel import Field, Relationship, SQLModel
 
-from app.db import Base
+from ._validator_regexes import LANGUAGE_CODE_REGEX
 
 
 class StreamViewerListFetchStatus(StrEnum):
@@ -57,8 +72,9 @@ class StreamViewerListFetchStatus(StrEnum):
     COMPLETE = "complete"
 
 
-class StreamViewerListFetch(Base):
-    """SQLAlchemy model representing a Stream Viewlist Fetch event from the Viewer List Fetcher.
+class StreamViewerListFetchBase(SQLModel):
+    """SQLmodel representing a Stream Viewlist Fetch event from the Viewer List Fetcher.
+
     The Viewer List Fetcher will negotiate and handle the reception and parsing of the viewer list
     and will create rows in the ViewerSightings table for each name. This table tracks data of
     interest for the streams/channel(s) in question.
@@ -91,137 +107,74 @@ class StreamViewerListFetch(Base):
         viewer_sightings (): many viewer_sightings to one stream_viewerlist_fetch
     """
 
-    __tablename__ = "stream_viewerlist_fetch"
-
-    fetch_id = Column(CHAR(36), primary_key=True, default=lambda: str(uuid4()))
-    fetch_action_at = Column(DateTime, nullable=False)
-    duration_of_fetch_action = Column(
-        Float, nullable=False
-    )  # use time.perf_counter() to measure, returns fractional seconds
-    fetch_status = Column(
-        String(25), nullable=False, default=StreamViewerListFetchStatus.PENDING
+    fetch_action_at: datetime = Field(nullable=False)
+    duration_of_fetch_action: confloat(ge=0.0) = Field(nullable=False)
+    fetch_status: StreamViewerListFetchStatus = Field(
+        default=StreamViewerListFetchStatus.PENDING, nullable=False
     )
+    # scanning_session_id: UUID  # needs to be FK'd
 
-    # foreign keys
-    scanning_session_id = Column(
-        CHAR(36), ForeignKey("scanning_sessions.scanning_session_id"), nullable=False
-    )
-    channel_owner_id = Column(
-        BigInteger, ForeignKey("twitch_user_data.twitch_account_id"), nullable=False
-    )  # 'user_id'
-    category_id = Column(
-        BigInteger, ForeignKey("stream_categories.category_id"), nullable=False
-    )  # 'game_id', if it's -1 it means they didn't set a category.
-    # category_name should be stored in the StreamCategories table if it's new to us.
-
-    # 'Get Stream' response data
-    viewer_count = Column(Integer, nullable=False)  # 'viewer_count' for this broadcast
-    stream_id = Column(
-        BigInteger, unique=True, nullable=False
-    )  # 'id' UUID of this specific live-stream
-    stream_started_at = Column(DateTime, nullable=False)  # 'started_at'
-    language: Column(
-        CHAR(2), nullable=False
-    )  # 'language', ISO 639-1, always two char long.
-    is_mature: Column(Boolean, nullable=False)  # 'is_mature'
-    was_live: Column(
-        Boolean, nullable=False
-    )  # the 'type' field is either "live" or "" for down.
-
-    # not tracked: thumbnail_url, title,
-
-    # relationships
-    scanning_session = relationship(
-        "ScanningSession", back_populates="stream_viewerlist_fetches"
-    )  # many stream_viewerlist_fetches to one scanning_session
-    twitch_user_data = relationship(
-        "TwitchUserData", back_populates="stream_viewerlist_fetch"
-    )  # one-to-one (this relationship mapping is for the user of THIS STREAM)
-    viewer_sightings = relationship(
-        "ViewerSighting", back_populates="stream_viewerlist_fetch"
-    )  # many viewer_sightings to one stream_viewerlist_fetch
-    stream_category = relationship(
-        "StreamCategory", back_populates="stream_viewerlist_fetch"
-    )
-
-    # indexes
-    __table_args__ = (
-        Index("ix_scanning_session_id", "scanning_session_id"),
-        Index("ix_channel_owner_id", "channel_owner_id"),
-        Index("ix_category_id", "category_id"),
-    )
-
-
-class StreamViewerListFetchTwitchAPIResponse(BaseModel):
-    stream_id: conint(gt=0) = Field(..., alias="id")
-    channel_owner_id: int = Field(..., alias="user_id")
-    category_id: int = Field(..., alias="game_id")
-    was_live: bool = Field(..., alias="type")
-    viewer_count: conint(ge=0) = Field(..., alias="viewer_count")
-    stream_started_at: datetime = Field(..., alias="started_at")
-    language: constr(regex=r"^[a-z]{2}$") = Field(..., alias="language")
-    is_mature: bool = Field(..., alias="is_mature")
-
-    @validator("was_live", pre=True)
-    def convert_type_to_was_live(cls, v: Optional[str]) -> bool:
-        if v is None:
-            raise ValueError("'type' field in Twitch response cannot be None.")
-        if isinstance(v, str):
-            if v == "live":
-                return True
-            elif v == "":
-                return False
-        raise ValueError(
-            "Could not convert 'type' in Twitch response.",
-        )
-
-    class Config:
-        allow_population_by_field_name = True
-        orm_mode = True
-
-
-class StreamViewerListFetchAppData(BaseModel):
-    fetch_action_at: datetime = Field(...)
-    duration_of_fetch_action: confloat(ge=0.0) = Field(...)
-    fetch_status: StreamViewerListFetchStatus = Field(...)
-    scanning_session_id: UUID4
-
-    class Config:
-        orm_mode = True
-
-
-class StreamViewerListFetchCreate(BaseModel):
-    # Combine the TwitchAPI response with the AppData using the merge function in this file.
-    scanning_session_id: UUID
-    channel_owner_id: int
-    category_id: int
-    fetch_action_at: datetime
-    fetch_status: StreamViewerListFetchStatus
-    duration_of_fetch_action: confloat(ge=0.0)
+    channel_owner_id: conint(ge=0) = Field(index=True)
+    category_id: conint(ge=0) = Field(index=True)
     viewer_count: conint(ge=0)
-    stream_id: conint(gt=0)
+    stream_id: conint(ge=0)
     stream_started_at: datetime
-    language: constr(regex=r"^[a-z]{2}$")
+    language: constr(pattern=LANGUAGE_CODE_REGEX)
     is_mature: bool
     was_live: bool
 
+    def __init__(self, **kwargs):
+        """Need to convert the 'type' key into the `was_live` bool."""
+        if "type" in kwargs:
+            kwargs["was_live"] = kwargs.pop("type") == "live"
+        super().__init__(**kwargs)
+
     class Config:
-        orm_mode = True
+        extra = "allow"
 
 
-class StreamViewerListFetchRead(StreamViewerListFetchCreate):
-    fetch_id: UUID4
+class StreamViewerListFetch(StreamViewerListFetchBase, table=True):
 
-    class Config:
-        orm_mode = True
+    __tablename__: str = "stream_viewerlist_fetch"
+
+    fetch_id: UUID = Field(default_factory=uuid4, primary_key=True)
+
+    # scanning_session_id: UUID = Field(
+    #     foreign_key="scanning_sessions.scanning_session_id", nullable=False, index=True
+    # )
+    # channel_owner_id: conint(ge=0) = Field(
+    #     foreign_key="twitch_user_data.twitch_account_id", nullable=False, index=True
+    # )
+    # category_id: conint(ge=0) = Field(
+    #     foreign_key="stream_categories.category_id", nullable=False, index=True
+    # )
+    viewer_count: conint(ge=0) = Field(nullable=False)
+    stream_id: conint(ge=0) = Field(unique=True, nullable=False)
+    stream_started_at: datetime = Field(nullable=False)
+    language: constr(pattern=LANGUAGE_CODE_REGEX) = Field(nullable=False)
+    is_mature: bool = Field(nullable=False)
+    was_live: bool = Field(nullable=False)
+
+    # if TYPE_CHECKING:
+    #     from . import ScanningSession, StreamCategory, TwitchUserData, ViewerSighting
+
+    # scanning_session: Optional["ScanningSession"] = Relationship(
+    #     back_populates="stream_viewerlist_fetches"
+    # )
+    # twitch_user_data: Optional["TwitchUserData"] = Relationship(
+    #     back_populates="stream_viewerlist_fetch"
+    # )
+    # viewer_sightings: list["ViewerSighting"] = Relationship(
+    #     back_populates="stream_viewerlist_fetch"
+    # )
+    # stream_category: Optional["StreamCategory"] = Relationship(
+    #     back_populates="stream_viewerlist_fetch"
+    # )
 
 
-def merge_stream_viewerlist_fetch_data(
-    api_data: StreamViewerListFetchTwitchAPIResponse,
-    app_data: StreamViewerListFetchAppData,
-) -> StreamViewerListFetchCreate:
-    combined_data = {
-        **api_data.dict(),
-        **app_data.dict(),
-    }
-    return StreamViewerListFetchCreate(**combined_data)
+class StreamViewerListFetchCreate(StreamViewerListFetchBase):
+    """Model for creating a new Stream Viewer List Fetch entry."""
+
+
+class StreamViewerListFetchRead(StreamViewerListFetch):
+    """Model for returning Stream Viewer List Fetch data."""

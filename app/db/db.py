@@ -16,6 +16,6 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
         yield async_session
 
 
-async def async_create_all_tables():
-    async with async_engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.create_all)
+# async def async_create_all_tables():
+#     async with async_engine.begin() as conn:
+#         await conn.run_sync(SQLModel.metadata.create_all)

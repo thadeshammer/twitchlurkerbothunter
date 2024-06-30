@@ -12,18 +12,31 @@ Classes:
     StreamCategoryAPIResponse: The Pydantic BaseModel for validation.
     StreamCategoryCreate and StreamCategoryRead: Pydantic create and read classes.
 """
-from pydantic import BaseModel, Extra, Field, conint, constr
-from sqlalchemy import BigInteger, Column, Index, String
-from sqlalchemy.orm import relationship
+from typing import TYPE_CHECKING, Optional
 
-from app.db import Base
+from pydantic import conint, constr
+from sqlmodel import Field, Relationship, SQLModel
 
 # Stream categories can be left unset by the streamer, either on purpose or by accident.
 NO_CATEGORY_ID: int = -1
 NO_CATEGORY_NAME: str = "category unset"
 
 
-class StreamCategory(Base):
+class StreamCategoryBase(SQLModel):
+    """Base model for StreamCategory with shared properties."""
+
+    category_id: conint(ge=-1) = Field(
+        default=NO_CATEGORY_ID, primary_key=True, alias="game_id"
+    )
+    category_name: constr(max_length=40) = Field(
+        default=NO_CATEGORY_NAME, alias="game_name", index=True
+    )
+
+    class Config:
+        extra = "allow"
+
+
+class StreamCategory(StreamCategoryBase, table=True):
     """A table to track encountered Twitch categories for easy cross-referencing in our queries.
 
     Args:
@@ -35,41 +48,26 @@ class StreamCategory(Base):
         streams_viewerlist_fetch: one-to-one
     """
 
-    __tablename__ = "stream_categories"
-
-    category_id = Column(
-        BigInteger, primary_key=True, default=NO_CATEGORY_ID, autoincrement=False
-    )
-    category_name = Column(
-        String(40), unique=True, nullable=False, default=NO_CATEGORY_NAME
-    )
+    __tablename__: str = "stream_categories"
 
     # relationship
-    stream_viewerlist_fetch = relationship(
-        "StreamViewerListFetch", back_populates="stream_category"
-    )
+    # if TYPE_CHECKING:
+    #     from . import StreamViewerListFetch
 
-    __table_args__ = (Index("ix_category_name", "category_name"),)
-
-
-class StreamCategoryAPIReponse(BaseModel):
-    """Base model for StreamCategory with shared properties."""
-
-    category_id: conint(ge=-1) = Field(..., alias="game_id")
-    category_name: constr(max_length=25) = Field(..., alias="game_name")
-
-    class Config:
-        extra = Extra.allow
-        allow_population_by_field_name = True
-        orm_mode = True
+    # stream_viewerlist_fetch: Optional["StreamViewerListFetch"] = Relationship(
+    #     back_populates="stream_category"
+    # )
 
 
-class StreamCategoryCreate(StreamCategoryAPIReponse):
+class StreamCategoryCreate(StreamCategoryBase):
     """Pydantic model to create a new db row for this category."""
 
+    class Config:
+        populate_by_name = True
 
-class StreamCategoryRead(StreamCategoryAPIReponse):
+
+class StreamCategoryRead(StreamCategoryBase):
     """Pydantic model to read a db row for this category."""
 
     class Config:
-        orm_mode = True
+        populate_by_name = True

@@ -19,13 +19,12 @@ Classes:
     SecretRead: Pydantic model for serializing the Secret model, including the id field and
         enabling ORM mode for compatibility with SQLAlchemy.
 """
+from datetime import datetime, timezone
 from enum import StrEnum
 from typing import Union
 
-from pydantic import BaseModel, Field, conint, constr
-from sqlalchemy import Column, DateTime, Integer, String, Text, func
-
-from app.db import Base
+from pydantic import conint, constr
+from sqlmodel import Field, SQLModel
 
 from ._validator_regexes import TWITCH_TOKEN_REGEX
 
@@ -34,7 +33,15 @@ class TokenType(StrEnum):
     BEARER = "bearer"
 
 
-class Secret(Base):
+class SecretBase(SQLModel):
+    access_token: constr(max_length=512, pattern=TWITCH_TOKEN_REGEX) = Field(...)
+    refresh_token: constr(max_length=512, pattern=TWITCH_TOKEN_REGEX) = Field(...)
+    expires_in: conint(gt=0) = Field(...)
+    token_type: TokenType = Field(...)
+    scope: Union[str, list[str]] = Field(..., alias="scope")
+
+
+class Secret(SecretBase):
     """Single-row table to store short-lived oauth tokens and associated metadata. Uses
     unique/default combo to enforce there being only one row.
 
@@ -52,32 +59,13 @@ class Secret(Base):
 
     """
 
-    __tablename__ = "secrets"
+    __tablename__: str = "secrets"
 
-    id = Column(Integer, primary_key=True)
-    enforce_one_row = Column(String(15), unique=True, default="enforce_one_row")
-    access_token = Column(String(512), nullable=True)
-    refresh_token = Column(String(512), nullable=True)
-    expires_in = Column(Integer, nullable=True)
-    token_type = Column(String(64), nullable=True)
-    scope = Column(Text, nullable=True)
-
-    # For calculating and tracking TTL and when to use refresh token
-    last_update_timestamp = Column(
-        DateTime, nullable=False, default=func.now(), onupdate=func.now()
+    id: int = Field(default=None, primary_key=True)
+    enforce_one_row: str = Field(default="enforce_one_row", unique=True, nullable=False)
+    last_update_timestamp: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc), nullable=False
     )
-
-
-class SecretBase(BaseModel):
-    access_token: constr(max_length=512, regex=TWITCH_TOKEN_REGEX) = Field(...)
-    refresh_token: constr(max_length=512, regex=TWITCH_TOKEN_REGEX) = Field(...)
-    expires_in: conint(gt=0) = Field(...)
-    token_type: TokenType = Field(...)
-    scope: Union[str, list[str]] = Field(..., alias="scope")
-
-    class Config:
-        allow_population_by_field_name = True
-        orm_mode = True
 
 
 class SecretCreate(SecretBase):
@@ -85,4 +73,4 @@ class SecretCreate(SecretBase):
 
 
 class SecretRead(SecretBase):
-    id: conint(gt=0)
+    id: int
