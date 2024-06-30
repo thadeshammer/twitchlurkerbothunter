@@ -19,7 +19,6 @@ from enum import StrEnum
 from typing import Optional
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, confloat, conint
 from sqlalchemy import Column, DateTime, Float, Integer, String
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import relationship
@@ -95,33 +94,3 @@ class ScanningSession(Base):
     # for later
     # resource usage
     # reliability rate of fetches working
-
-
-class ScanningSessionAppData(BaseModel):
-    """Base model for ScanningSession with shared properties."""
-
-    time_started: datetime = Field(...)
-    time_ended: Optional[datetime] = Field(None)
-    reason_ended: ScanningSessionStopReasonEnum = Field(
-        ScanningSessionStopReasonEnum.UNSPECIFIED
-    )
-    streams_in_scan: conint(gt=0) = Field(...)
-    viewerlists_fetched: Optional[conint(ge=0)] = Field(None)
-    average_time_per_fetch: Optional[confloat(ge=0)] = Field(None)
-    average_time_for_get_user_call: Optional[confloat(ge=0)] = Field(None)
-    average_time_for_get_stream_call: Optional[confloat(ge=0)] = Field(None)
-    suspects_spotted: Optional[conint(ge=0)] = Field(None)
-    error_count: Optional[conint(ge=0)] = Field(None)
-
-
-class ScanningSessionCreate(ScanningSessionAppData):
-    """Model for creating a new ScanningSession entry."""
-
-
-class ScanningSessionRead(ScanningSessionAppData):
-    """Model for returning ScanningSession data."""
-
-    scanning_session_id: UUID = Field(...)
-
-    class Config:
-        orm_mode = True

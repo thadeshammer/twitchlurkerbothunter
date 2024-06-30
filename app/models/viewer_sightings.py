@@ -1,9 +1,11 @@
 # app/models/viewer_sighting.py
 # SQLAlchemy model representing sightings of Twitch login names in a channel, and Pydantic models.
+import re
 from uuid import uuid4
 
-from pydantic import UUID4, BaseModel, Field, constr
-from sqlalchemy import Boolean, Column, ForeignKey, Index, String
+from marshmallow import ValidationError, validates
+from marshmallow_sqlalchemy import SQLAlchemySchema, auto_field
+from sqlalchemy import Boolean, Column, ForeignKey, String
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import relationship
 
@@ -46,14 +48,12 @@ class ViewerSighting(Base):
 
     __tablename__ = "viewer_sightings"
 
-    viewer_sighting_id = Column(
-        CHAR(36), primary_key=True, default=lambda: str(uuid4())
-    )
+    id = Column(CHAR(36), primary_key=True, default=lambda: str(uuid4()))
     viewerlist_fetch_id = Column(
         CHAR(36), ForeignKey("stream_viewerlist_fetch.fetch_id"), nullable=False
     )
     viewer_login_name = Column(
-        String(40), nullable=False
+        String(40), nullable=False, index=True
     )  # This will NOT be unique IN THIS TABLE.
 
     # Has this been processed by the Enricher yet?
@@ -69,30 +69,16 @@ class ViewerSighting(Base):
         "StreamViewerListFetch", back_populates="viewer_sightings"
     )  # many viewer_sightings to one stream_viewerlist_fetch
 
-    # indexes
-    __table_args__ = (Index("ix_viewer_login_name", "viewer_login_name"),)
 
+class ViewerSightingSchema(SQLAlchemySchema):
+    class Meta:
+        model = ViewerSighting
+        load_instance = True
+        include_relationships = True
 
-class ViewerSightingBase(BaseModel):
-    """
-    Base model for Viewer Sighting with viewer_login_name validator.
+    viewer_login_name = auto_field()
 
-    NOTE. This login name comes from the 353 message (which is a space-seperated list) and not
-    a Helix response, hence the naming difference from the other Pydantic machines.
-    """
-
-    viewer_login_name: constr(regex=TWITCH_LOGIN_NAME_REGEX) = Field(...)
-
-
-class ViewerSightingCreate(ViewerSightingBase):
-    """Model for creating a new Viewer Sighting entry to persist in the db."""
-
-
-class ViewerSightingRead(ViewerSightingBase):
-    """Model for returning Viewer Sighting data from the db."""
-
-    viewer_sighting_id: UUID4 = Field(...)
-    viewerlist_fetch_id: UUID4 = Field(...)
-
-    class Config:
-        orm_mode = True
+    @validates("viewer_login_name")
+    def validate_viewer_login_name(self, value):
+        if not re.match(TWITCH_LOGIN_NAME_REGEX, value):
+            raise ValidationError("Invalid viewer login name.")

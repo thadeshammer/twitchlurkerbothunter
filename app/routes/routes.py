@@ -5,7 +5,7 @@ from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 
 from app.db import get_db
-from app.models.secrets import Secret, SecretCreate
+from app.models.secrets import Secret
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ def register_routes(app: Flask) -> None:
 
         try:
             # Validate and parse the request data using Pydantic
-            secret_create = SecretCreate(**request.json)
+            secret_create = Secret(**request.json)
         except ValidationError as e:
             logger.error(f"Validation error: {e.errors()}")
             return jsonify({"error": "Validation error", "details": e.errors()}), 400

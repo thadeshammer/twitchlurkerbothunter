@@ -97,14 +97,14 @@ class TwitchUserData(Base):
     # These core fields are not nullable because they're here at row creation and required.
 
     twitch_account_id = Column(
-        BigInteger, primary_key=True, autoincrement=False
+        BigInteger, primary_key=True, autoincrement=False, index=True
     )  # 'id'
     has_been_enriched = Column(Boolean, default=False)
 
     # In the specific case where first contact with a login name is a streamer who's live, their
     # entry here will be created prior to the enrichment pass over ViewerSightings. So these need to
     # be nullable to account for that.
-    login_name = Column(String(40), unique=True, nullable=False)  # 'login'
+    login_name = Column(String(40), unique=True, nullable=False, index=True)  # 'login'
     account_type = Column(String(15), nullable=True)  # 'type'
     broadcaster_type = Column(String(15), nullable=True)  # 'broadcaster_type'
     lifetime_view_count = Column(Integer, nullable=True)  # 'view_count'
@@ -133,77 +133,9 @@ class TwitchUserData(Base):
         "StreamViewerListFetch", back_populates="twitch_user_data"
     )
 
-    # indexes
-    __table_args__ = (
-        Index("ix_twitch_account_id", "twitch_account_id"),
-        Index("ix_login_name", "login_name"),
-    )
 
-
-TwitchAccountTypes = Literal["staff", "admin", "global_mod", ""]
-TwitchBroadcasterTypes = Literal["partner", "affiliate", ""]
-
-
-class TwitchUserDataAPIResponse(BaseModel):
-    """Base model for TwitchUserData with shared properties."""
-
-    twitch_account_id: conint(gt=0) = Field(..., alias="id")
-    login_name: constr(regex=TWITCH_LOGIN_NAME_REGEX) = Field(..., alias="login")
-    account_type: Optional[TwitchAccountTypes] = Field(alias="type", default=None)
-    broadcaster_type: Optional[TwitchBroadcasterTypes] = Field(default=None)
-    lifetime_view_count: Optional[conint(ge=0)] = Field(
-        alias="view_count", default=None
-    )
-    account_created_at: Optional[datetime] = Field(alias="created_at", default=None)
-
-    class Config:
-        allow_population_by_field_name = True
-        orm_mode = True
-
-    @validator("twitch_account_id", "lifetime_view_count", pre=True)
-    def str_to_int(cls, v):
-        if isinstance(v, str):
-            return int(v)
-        return v
-
-    @validator("account_created_at", pre=True)
-    def str_to_datetime(cls, v):
-        if isinstance(v, str):
-            return datetime.fromisoformat(v.replace("Z", "+00:00"))
-        return v
-
-
-class TwitchUserDataAppData(BaseModel):
-    """Base model for app-generated metrics."""
-
-    first_sighting_as_viewer: Optional[datetime] = Field(None)
-    most_recent_sighting_as_viewer: Optional[datetime] = Field(None)
-    most_recent_concurrent_channel_count: Optional[conint(gt=0)] = Field(None)
-    all_time_high_concurrent_channel_count: Optional[conint(gt=0)] = Field(None)
-    all_time_high_at: Optional[datetime] = Field(None)
-
-    class Config:
-        allow_population_by_field_name = True
-        orm_mode = True
-
-
-class TwitchUserDataCreate(TwitchUserDataAPIResponse, TwitchUserDataAppData):
-    """Combined API and app data. I can't believe I found a usecase for multiple inheritance."""
-
-
-class TwitchUserDataRead(TwitchUserDataCreate):
-    """Model for the data received from the Twitch API, to be persisted in the db."""
-
-
-def merge_twitch_user_data(
-    api_data: TwitchUserDataAPIResponse,
-    app_data: TwitchUserDataAppData,
-) -> TwitchUserDataCreate:
-    combined_data = {
-        **api_data.dict(),
-        **app_data.dict(),
-    }
-    return TwitchUserDataCreate(**combined_data)
+TwitchAccountTypes = ["staff", "admin", "global_mod", ""]
+TwitchBroadcasterTypes = ["partner", "affiliate", ""]
 
 
 # Example API response
@@ -217,17 +149,3 @@ def merge_twitch_user_data(
 #     "view_count": 1000,
 #     "created_at": "2013-06-03T19:12:02Z"
 # }
-
-
-class TwitchUserDataFromGetStreamAPIResponse(BaseModel):
-    """Base model for user creation from the StreamViewerListFetcher."""
-
-    # https://dev.twitch.tv/docs/api/reference/#get-streams
-
-    twitch_account_id: conint(gt=0) = Field(..., alias="user_id")
-    login_name: constr(regex=TWITCH_LOGIN_NAME_REGEX) = Field(..., alias="user_login")
-
-    class Config:
-        extra = Extra.allow
-        allow_population_by_field_name = True
-        orm_mode = True

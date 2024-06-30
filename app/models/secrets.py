@@ -14,15 +14,10 @@ Classes:
         token, refresh token, expiration time, token type, and scope.
     SecretBase: Pydantic base model for data validation and serialization, containing fields for
         access token, refresh token, expiration time, token type, and scope.
-    SecretCreate: Pydantic model for creating a new Secret, allowing the scope to be either a string
-        or a list of strings.
-    SecretRead: Pydantic model for serializing the Secret model, including the id field and
-        enabling ORM mode for compatibility with SQLAlchemy.
 """
+from datetime import datetime, timezone
 from enum import StrEnum
-from typing import Union
 
-from pydantic import BaseModel, Field, conint, constr
 from sqlalchemy import Column, DateTime, Integer, String, Text, func
 
 from app.db import Base
@@ -64,24 +59,8 @@ class Secret(Base):
 
     # For calculating and tracking TTL and when to use refresh token
     last_update_timestamp = Column(
-        DateTime, nullable=False, default=func.now(), onupdate=func.now()
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
     )
-
-
-class SecretBase(BaseModel):
-    access_token: constr(max_length=512, regex=TWITCH_TOKEN_REGEX) = Field(...)
-    refresh_token: constr(max_length=512, regex=TWITCH_TOKEN_REGEX) = Field(...)
-    expires_in: conint(gt=0) = Field(...)
-    token_type: TokenType = Field(...)
-    scope: Union[str, list[str]] = Field(..., alias="scope")
-
-
-class SecretCreate(SecretBase):
-    pass
-
-
-class SecretRead(SecretBase):
-    id: conint(gt=0)
-
-    class Config:
-        orm_mode = True

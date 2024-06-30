@@ -28,58 +28,31 @@ Version:
     1.0.0
 """
 
-from .scanning_session import (
-    ScanningSession,
-    ScanningSessionCreate,
-    ScanningSessionRead,
-    ScanningSessionStopReasonEnum,
-)
-from .secrets import Secret, SecretCreate, SecretRead
-from .stream_categories import StreamCategory, StreamCategoryCreate, StreamCategoryRead
-from .stream_viewerlist_fetch import (
-    StreamViewerListFetchAppData,
-    StreamViewerListFetchCreate,
-    StreamViewerListFetchStatus,
-    StreamViewerListFetchTwitchAPIResponse,
-    merge_stream_viewerlist_fetch_data,
-)
+from .scanning_session import ScanningSession, ScanningSessionStopReasonEnum
+from .secrets import Secret
+from .stream_categories import StreamCategory
+from .stream_viewerlist_fetch import StreamViewerListFetch, StreamViewerListFetchStatus
 from .suspected_bot import (
     SUSPICION_RANKING_THRESHOLDS,
     SuspectedBot,
-    SuspectedBotCreate,
-    SuspectedBotRead,
     SuspicionLevel,
     SuspicionReason,
 )
-from .twitch_user_data import TwitchUserData, TwitchUserDataCreate, TwitchUserDataRead
-from .viewer_sightings import ViewerSighting, ViewerSightingCreate, ViewerSightingRead
+from .twitch_user_data import TwitchUserData
+from .viewer_sightings import ViewerSighting, ViewerSightingSchema
 
 __all__ = [
     "ScanningSession",
-    "ScanningSessionCreate",
-    "ScanningSessionRead",
     "ScanningSessionStopReasonEnum",
     "Secret",
-    "SecretCreate",
-    "SecretRead",
     "StreamCategory",
-    "StreamCategoryCreate",
-    "StreamCategoryRead",
-    "StreamViewerListFetchAppData",
-    "StreamViewerListFetchCreate",
+    "StreamViewerListFetch",
     "StreamViewerListFetchStatus",
-    "StreamViewerListFetchTwitchAPIResponse",
-    "merge_stream_viewerlist_fetch_data",
     "SuspectedBot",
-    "SuspectedBotCreate",
-    "SuspectedBotRead",
     "SUSPICION_RANKING_THRESHOLDS",
     "SuspicionLevel",
     "SuspicionReason",
     "TwitchUserData",
-    "TwitchUserDataCreate",
-    "TwitchUserDataRead",
     "ViewerSighting",
-    "ViewerSightingCreate",
-    "ViewerSightingRead",
+    "ViewerSightingSchema",
 ]

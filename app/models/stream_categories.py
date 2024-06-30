@@ -12,7 +12,6 @@ Classes:
     StreamCategoryAPIResponse: The Pydantic BaseModel for validation.
     StreamCategoryCreate and StreamCategoryRead: Pydantic create and read classes.
 """
-from pydantic import BaseModel, Extra, Field, conint, constr
 from sqlalchemy import BigInteger, Column, Index, String
 from sqlalchemy.orm import relationship
 
@@ -41,35 +40,10 @@ class StreamCategory(Base):
         BigInteger, primary_key=True, default=NO_CATEGORY_ID, autoincrement=False
     )
     category_name = Column(
-        String(40), unique=True, nullable=False, default=NO_CATEGORY_NAME
+        String(40), unique=True, nullable=False, default=NO_CATEGORY_NAME, index=True
     )
 
     # relationship
     stream_viewerlist_fetch = relationship(
         "StreamViewerListFetch", back_populates="stream_category"
     )
-
-    __table_args__ = (Index("ix_category_name", "category_name"),)
-
-
-class StreamCategoryAPIReponse(BaseModel):
-    """Base model for StreamCategory with shared properties."""
-
-    category_id: conint(ge=-1) = Field(..., alias="game_id")
-    category_name: constr(max_length=25) = Field(..., alias="game_name")
-
-    class Config:
-        extra = Extra.allow
-        allow_population_by_field_name = True
-        orm_mode = True
-
-
-class StreamCategoryCreate(StreamCategoryAPIReponse):
-    """Pydantic model to create a new db row for this category."""
-
-
-class StreamCategoryRead(StreamCategoryAPIReponse):
-    """Pydantic model to read a db row for this category."""
-
-    class Config:
-        orm_mode = True

@@ -132,6 +132,7 @@ class SuspectedBot(Base):
         ForeignKey("twitch_user_data.twitch_account_id"),
         unique=True,
         nullable=False,
+        index=True,
     )
 
     # need user:read:follows scope
@@ -153,33 +154,3 @@ class SuspectedBot(Base):
 
     # relationships
     twitch_user_data = relationship("TwitchUserData", back_populates="suspected_bot")
-
-    # indexes
-    __table_args__ = (Index("ix_twitch_account_id", "twitch_account_id"),)
-
-
-class SuspectedBotAppData(BaseModel):
-    """Base model for Suspected Bot with shared properties."""
-
-    follower_count: conint(ge=0) = Field(...)
-    following_count: conint(ge=0) = Field(...)
-    is_banned_or_deleted: bool = Field(False)
-    suspicion_level: SuspicionLevel = Field(SuspicionLevel.NONE)
-    suspicion_reason: SuspicionReason = Field(SuspicionReason.UNSPECIFIED)
-    additional_notes: Optional[constr(regex=r"^[a-zA-Z0-9/\s.,!?':;-]*$")] = None
-
-
-class SuspectedBotCreate(SuspectedBotAppData):
-    """Model for creating a new Suspected Bot entry."""
-
-    twitch_account_id: int
-
-
-class SuspectedBotRead(SuspectedBotAppData):
-    """Model for returning Suspected Bot data."""
-
-    suspected_bot_id: UUID
-    twitch_account_id: int
-
-    class Config:
-        orm_mode = True
