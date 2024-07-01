@@ -80,5 +80,6 @@ class ViewerSightingSchema(SQLAlchemySchema):
 
     @validates("viewer_login_name")
     def validate_viewer_login_name(self, value):
+        assert isinstance(value, str)
         if not re.match(TWITCH_LOGIN_NAME_REGEX, value):
             raise ValidationError("Invalid viewer login name.")

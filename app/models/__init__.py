@@ -38,8 +38,8 @@ from .suspected_bot import (
     SuspicionLevel,
     SuspicionReason,
 )
-from .twitch_user_data import TwitchUserData
-from .viewer_sightings import ViewerSighting, ViewerSightingSchema
+from .twitch_user_data import TwitchUserData, TwitchUserDataSchema
+from .viewer_sighting import ViewerSighting, ViewerSightingSchema
 
 __all__ = [
     "ScanningSession",
@@ -53,6 +53,7 @@ __all__ = [
     "SuspicionLevel",
     "SuspicionReason",
     "TwitchUserData",
+    "TwitchUserDataSchema",
     "ViewerSighting",
     "ViewerSightingSchema",
 ]

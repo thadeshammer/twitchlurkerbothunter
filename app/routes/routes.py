@@ -1,7 +1,6 @@
 import logging
 
 from flask import Flask, jsonify, request
-from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 
 from app.db import get_db
@@ -24,12 +23,12 @@ def register_routes(app: Flask) -> None:
             logger.error("Missing JSON payload.")
             return jsonify({"error": "Missing JSON payload"}), 400
 
-        try:
-            # Validate and parse the request data using Pydantic
-            secret_create = Secret(**request.json)
-        except ValidationError as e:
-            logger.error(f"Validation error: {e.errors()}")
-            return jsonify({"error": "Validation error", "details": e.errors()}), 400
+        # try:
+        #     # Validate and parse the request data using Pydantic
+        secret_create = Secret(**request.json)
+        # except ValidationError as e:
+        #     logger.error(f"Validation error: {e.errors()}")
+        #     return jsonify({"error": "Validation error", "details": e.errors()}), 400
 
         # Extract values from the validated Pydantic model
         access_token = secret_create.access_token
@@ -72,7 +71,7 @@ def register_routes(app: Flask) -> None:
                     existing_secret.expires_in = expires_in
                     existing_secret.token_type = token_type
                     existing_secret.scopes = scopes
-                    # TODO fix this, sadfaceemoji / Use the pydantic machinery
+                    # TODO fix this, sadfaceemoji
                     # TODO add timestamp
                     await db.commit()
 

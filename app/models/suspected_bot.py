@@ -31,7 +31,6 @@ from enum import StrEnum
 from typing import Optional, Tuple
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, conint, constr
 from sqlalchemy import (
     BigInteger,
     Boolean,

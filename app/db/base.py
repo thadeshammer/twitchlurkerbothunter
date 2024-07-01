@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import (
     async_scoped_session,
     create_async_engine,
 )
-from sqlalchemy.orm import declarative_base, sessionmaker  # typedef: ignore
+from sqlalchemy.orm import declarative_base, sessionmaker  # type: ignore
 
 DATABASE_URL = "mysql+aiomysql://user:password@db/mydatabase"
 

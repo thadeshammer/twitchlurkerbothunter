@@ -28,7 +28,6 @@ from enum import StrEnum
 from typing import Optional
 from uuid import UUID, uuid4
 
-from pydantic import UUID4, BaseModel, Field, confloat, conint, constr, validator
 from sqlalchemy import (
     BigInteger,
     Boolean,
@@ -152,3 +151,8 @@ class StreamViewerListFetch(Base):
     stream_category = relationship(
         "StreamCategory", back_populates="stream_viewerlist_fetch"
     )
+
+    # # Relationships
+    # stream_viewerlist_fetch = relationship(
+    #     "StreamViewerListFetch", back_populates="viewer_sightings"
+    # )  # many viewer_sightings to one stream_viewerlist_fetch

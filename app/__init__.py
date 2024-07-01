@@ -8,15 +8,16 @@ from flask import Flask
 
 from app.config import Config
 from app.db import async_create_all_tables
-from app.models import (
-    scanning_session,
-    secrets,
-    stream_categories,
-    stream_viewerlist_fetch,
-    suspected_bot,
-    twitch_user_data,
-    viewer_sightings,
-)
+
+# from app.models import (
+#     scanning_session,
+#     secrets,
+#     stream_categories,
+#     stream_viewerlist_fetch,
+#     suspected_bot,
+#     twitch_user_data,
+#     viewer_sighting,
+# )
 from app.routes import register_routes
 from app.util import setup_logging
 
@@ -47,7 +48,8 @@ def create_app() -> Flask:
     with app.app_context():
         register_routes(app)
 
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(async_create_all_tables())
+        # TODO turn the db back on please
+        # loop = asyncio.get_event_loop()
+        # loop.run_until_complete(async_create_all_tables())
 
     return app

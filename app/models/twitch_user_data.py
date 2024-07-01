@@ -30,11 +30,11 @@ Classes:
     only seem then once and they were streaming) this call is used to create a partial entry on this
     table.
 """
-from datetime import datetime
-from typing import Literal, Optional
+import re
 
-from pydantic import BaseModel, Extra, Field, conint, constr, validator
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, Index, Integer, String
+from marshmallow import fields
+from marshmallow_sqlalchemy import SQLAlchemySchema
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, Integer, String
 from sqlalchemy.orm import relationship
 
 from app.db import Base
@@ -99,7 +99,7 @@ class TwitchUserData(Base):
     twitch_account_id = Column(
         BigInteger, primary_key=True, autoincrement=False, index=True
     )  # 'id'
-    has_been_enriched = Column(Boolean, default=False)
+    has_been_enriched = Column(Boolean, nullable=False, default=False)
 
     # In the specific case where first contact with a login name is a streamer who's live, their
     # entry here will be created prior to the enrichment pass over ViewerSightings. So these need to
@@ -136,6 +136,34 @@ class TwitchUserData(Base):
 
 TwitchAccountTypes = ["staff", "admin", "global_mod", ""]
 TwitchBroadcasterTypes = ["partner", "affiliate", ""]
+
+
+class TwitchUserDataSchema(SQLAlchemySchema):
+    class Meta:
+        model = TwitchUserData
+        load_instance = True
+        include_relationships = True
+
+    twitch_account_id = fields.Integer(required=True)
+    has_been_enriched = fields.Boolean(load_default=False)
+    login_name = fields.String(
+        required=True,
+        validate=lambda x: re.match(TWITCH_LOGIN_NAME_REGEX, x) is not None,
+    )
+
+    account_type = fields.String(
+        allow_none=True, validate=lambda x: x in TwitchAccountTypes
+    )
+    broadcaster_type = fields.String(
+        allow_none=True, validate=lambda x: x in TwitchBroadcasterTypes
+    )
+    lifetime_view_count = fields.Integer(allow_none=True)
+    account_created_at = fields.DateTime(allow_none=True)
+    first_sighting_as_viewer = fields.DateTime(allow_none=True)
+    most_recent_sighting_as_viewer = fields.DateTime(allow_none=True)
+    most_recent_concurrent_channel_count = fields.Integer(allow_none=True)
+    all_time_high_concurrent_channel_count = fields.Integer(allow_none=True)
+    all_time_high_at = fields.DateTime(allow_none=True)
 
 
 # Example API response
