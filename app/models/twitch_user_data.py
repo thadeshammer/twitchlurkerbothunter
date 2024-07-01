@@ -28,6 +28,7 @@ Classes:
     table.
 """
 from datetime import datetime
+from enum import Enum
 from typing import TYPE_CHECKING, Any, Literal, Optional
 
 from pydantic import conint, constr
@@ -36,7 +37,22 @@ from sqlmodel import Field, Relationship, SQLModel
 from ._validator_regexes import TWITCH_LOGIN_NAME_REGEX
 
 
-class TwitchUserDataBase(SQLModel):
+class TwitchAccountTypeValues(str, Enum):
+    # ["staff", "admin", "global_mod", ""]
+    STAFF = "staff"
+    ADMIN = "admin"
+    GLOBAL_MOD = "global_mod"
+    NORMAL = ""
+
+
+class TwitchBroadcasterType(str, Enum):
+    # ["partner", "affiliate", ""]
+    PARTNER = "partner"
+    AFFILIATE = "affiliate"
+    NORMAL = ""
+
+
+class TwitchUserDataBase(SQLModel, table=False):
     """SQLmodel representing Twitch Users that have been spotted during scans.
 
     NOTE. This wound up being mostly nullable due to a critical edge case: if a streamer is first
@@ -86,25 +102,27 @@ class TwitchUserDataBase(SQLModel):
         all_time_high_at (DateTime): Timestamp of the all_time_concurrent_channel_count reading.
     """
 
-    twitch_account_id: conint(gt=0) = Field(..., alias="id", index=True)
+    twitch_account_id: conint(gt=0) = Field(
+        ..., alias="id", index=True, primary_key=True
+    )
     login_name: constr(pattern=TWITCH_LOGIN_NAME_REGEX) = Field(
         ..., alias="login", index=True
     )
-    account_type: Optional[Literal["staff", "admin", "global_mod", ""]] = Field(
-        default=None, alias="type"
+    account_type: Optional[TwitchAccountTypeValues] = Field(
+        default=None, nullable=True, alias="type"
     )
-    broadcaster_type: Optional[Literal["partner", "affiliate", ""]] = Field(
-        default=None
+    broadcaster_type: Optional[TwitchBroadcasterType] = Field(
+        default=None, nullable=True
     )
-    lifetime_view_count: Optional[conint(ge=0)] = Field(
-        default=None, alias="view_count"
+    lifetime_view_count: Optional[int] = Field(
+        default=None, nullable=True, alias="view_count"
     )
     account_created_at: Optional[datetime] = Field(default=None, alias="created_at")
 
     first_sighting_as_viewer: Optional[datetime] = Field(default=None)
     most_recent_sighting_as_viewer: Optional[datetime] = Field(default=None)
-    most_recent_concurrent_channel_count: Optional[conint(gt=0)] = Field(default=None)
-    all_time_high_concurrent_channel_count: Optional[conint(gt=0)] = Field(default=None)
+    most_recent_concurrent_channel_count: Optional[int] = Field(default=None)
+    all_time_high_concurrent_channel_count: Optional[int] = Field(default=None)
     all_time_high_at: Optional[datetime] = Field(default=None)
 
     def __init__(self, **data: dict[str, Any]):
@@ -125,27 +143,25 @@ class TwitchUserData(TwitchUserDataBase, table=True):
 
     __tablename__: str = "twitch_user_data"
 
-    twitch_account_id: conint(gt=0) = Field(primary_key=True, alias="id")
-    has_been_enriched: bool = Field(default=False)
 
-    # Relationships
-    # if TYPE_CHECKING:
-    #     from . import StreamViewerListFetch, SuspectedBot
+# Relationships
+# if TYPE_CHECKING:
+#     from . import StreamViewerListFetch, SuspectedBot
 
-    # suspected_bot: Optional["SuspectedBot"] = Relationship(
-    #     back_populates="twitch_user_data"
-    # )
-    # stream_viewerlist_fetch: Optional["StreamViewerListFetch"] = Relationship(
-    #     back_populates="twitch_user_data"
-    # )
+# suspected_bot: Optional["SuspectedBot"] = Relationship(
+#     back_populates="twitch_user_data"
+# )
+# stream_viewerlist_fetch: Optional["StreamViewerListFetch"] = Relationship(
+#     back_populates="twitch_user_data"
+# )
 
 
 class TwitchUserDataCreate(TwitchUserDataBase):
     """Model for creating a new TwitchUserData entry."""
 
 
-class TwitchUserDataRead(TwitchUserDataBase):
-    """Model for reading TwitchUserData from the db."""
+# class TwitchUserDataRead(TwitchUserDataBase):
+#     """Model for reading TwitchUserData from the db."""
 
 
 # TODO cut this if the constructor works

@@ -109,9 +109,9 @@ class StreamViewerListFetchBase(SQLModel):
 
     fetch_action_at: datetime = Field(nullable=False)
     duration_of_fetch_action: confloat(ge=0.0) = Field(nullable=False)
-    fetch_status: StreamViewerListFetchStatus = Field(
-        default=StreamViewerListFetchStatus.PENDING, nullable=False
-    )
+    # fetch_status: StreamViewerListFetchStatus = Field(
+    #     default=StreamViewerListFetchStatus.PENDING, nullable=False
+    # )
     # scanning_session_id: UUID  # needs to be FK'd
 
     channel_owner_id: conint(ge=0) = Field(index=True)

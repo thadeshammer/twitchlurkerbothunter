@@ -3,7 +3,7 @@ from uuid import uuid4
 import pytest
 from pydantic import ValidationError
 
-from app.models.viewer_sighting import ViewerSightingCreate
+from app.models import ViewerSightingCreate
 
 
 def test_create_valid_viewer_sighting():

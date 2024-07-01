@@ -27,46 +27,31 @@ Author:
 Version:
     1.0.0
 """
+from .scanning_session import (
+    ScanningSession,
+    ScanningSessionCreate,
+    ScanningSessionRead,
+    ScanningSessionStopReasonEnum,
+)
+from .secrets import Secret, SecretCreate, SecretRead
+from .stream_categories import StreamCategory, StreamCategoryCreate, StreamCategoryRead
+from .stream_viewerlist_fetch import (
+    StreamViewerListFetch,
+    StreamViewerListFetchCreate,
+    StreamViewerListFetchRead,
+    StreamViewerListFetchStatus,
+)
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from .scanning_session import (
-        ScanningSession,
-        ScanningSessionCreate,
-        ScanningSessionRead,
-        ScanningSessionStopReasonEnum,
-    )
-    from .secrets import Secret, SecretCreate, SecretRead
-    from .stream_categories import (
-        StreamCategory,
-        StreamCategoryCreate,
-        StreamCategoryRead,
-    )
-    from .stream_viewerlist_fetch import (
-        StreamViewerListFetch,
-        StreamViewerListFetchCreate,
-        StreamViewerListFetchRead,
-        StreamViewerListFetchStatus,
-    )
-    from .suspected_bot import (
-        SUSPICION_RANKING_THRESHOLDS,
-        SuspectedBot,
-        SuspectedBotCreate,
-        SuspectedBotRead,
-        SuspicionLevel,
-        SuspicionReason,
-    )
-    from .twitch_user_data import (
-        TwitchUserData,
-        TwitchUserDataCreate,
-        TwitchUserDataRead,
-    )
-    from .viewer_sighting import (
-        ViewerSighting,
-        ViewerSightingCreate,
-        ViewerSightingRead,
-    )
+# from .suspected_bot import (
+#     SUSPICION_RANKING_THRESHOLDS,
+#     SuspectedBot,
+#     SuspectedBotCreate,
+#     SuspectedBotRead,
+#     SuspicionLevel,
+#     SuspicionReason,
+# )
+# from .twitch_user_data import TwitchUserData, TwitchUserDataCreate, TwitchUserDataRead
+from .viewer_sighting import ViewerSighting, ViewerSightingCreate, ViewerSightingRead
 
 __all__ = [
     "ScanningSession",
@@ -83,15 +68,15 @@ __all__ = [
     "StreamViewerListFetchCreate",
     "StreamViewerListFetchRead",
     "StreamViewerListFetchStatus",
-    "SuspectedBot",
-    "SuspectedBotCreate",
-    "SuspectedBotRead",
-    "SUSPICION_RANKING_THRESHOLDS",
-    "SuspicionLevel",
-    "SuspicionReason",
-    "TwitchUserData",
-    "TwitchUserDataCreate",
-    "TwitchUserDataRead",
+    # "SuspectedBot",
+    # "SuspectedBotCreate",
+    # "SuspectedBotRead",
+    # "SUSPICION_RANKING_THRESHOLDS",
+    # "SuspicionLevel",
+    # "SuspicionReason",
+    # "TwitchUserData",
+    # "TwitchUserDataCreate",
+    # "TwitchUserDataRead",
     "ViewerSighting",
     "ViewerSightingCreate",
     "ViewerSightingRead",

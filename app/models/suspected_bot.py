@@ -25,13 +25,15 @@ Classes:
     SuspectedBots: SQLAlchemy table for tracking additional metadata and metrics for suspicious
         Twitch accounts.
     SuspectedBotAppData, Create, and Read: Pydantic BaseModels for validation and serializing.
-    
+
 """
 from enum import Enum
 from typing import TYPE_CHECKING, Optional, Tuple
 from uuid import UUID, uuid4
 
 from pydantic import conint, constr
+from sqlmodel import Column
+from sqlmodel import Enum as sqlmodel_Enum
 from sqlmodel import Field, Relationship, SQLModel
 
 
@@ -113,8 +115,12 @@ class SuspectedBotBase(SQLModel):
     # app data
     suspected_bot_id: UUID = Field(default_factory=uuid4, primary_key=True)
     has_ever_streamed: Optional[bool] = Field(default=None)
-    suspicion_level: SuspicionLevel = Field(default=SuspicionLevel.NONE)
-    suspicion_reason: SuspicionReason = Field(default=SuspicionReason.UNSPECIFIED)
+    # suspicion_level: SuspicionLevel = Field(
+    #     sa_column=Column(sqlmodel_Enum(SuspicionLevel))
+    # )
+    # suspicion_reason: SuspicionReason = Field(
+    #     sa_column=Column(sqlmodel_Enum(SuspicionReason))
+    # )
     additional_notes: Optional[constr(pattern=r"^[a-zA-Z0-9/\s.,!?':;-]*$")] = None
 
     # api response data

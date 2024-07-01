@@ -33,9 +33,9 @@ class ScanningSessionStopReasonEnum(StrEnum):
 class ScanningSessionBase(SQLModel):
     time_started: datetime = Field(...)
     time_ended: Optional[datetime] = Field(None)
-    reason_ended: ScanningSessionStopReasonEnum = Field(
-        default=ScanningSessionStopReasonEnum.UNSPECIFIED
-    )
+    # reason_ended: ScanningSessionStopReasonEnum = Field(
+    #     default=ScanningSessionStopReasonEnum.UNSPECIFIED
+    # )
     streams_in_scan: conint(gt=0) = Field(...)
     viewerlists_fetched: Optional[conint(ge=0)] = Field(None)
     average_time_per_fetch: Optional[confloat(ge=0)] = Field(None)
