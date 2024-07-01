@@ -31,8 +31,11 @@ Classes:
     table.
 """
 import re
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Optional
 
-from marshmallow import fields
+from marshmallow import EXCLUDE, fields, pre_load
 from marshmallow_sqlalchemy import SQLAlchemySchema
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, Integer, String
 from sqlalchemy.orm import relationship
@@ -66,9 +69,6 @@ class TwitchUserData(Base):
     Attributes from 'Get Users' Twitch backend API endpoint:
         twitch_account_id (int): the UID Twitch uses to uniquely identify each account, persists
             across name changes.
-        has_been_enriched (bool): Whether the User Data Enricher has populated this row with a 'Get
-            Users' result.
-
         login_name (str): Unique, all lowercase: used for auth, URLs, and Twitch backend API calls.
         account_type (str): Possible values: ('staff', 'admin', 'global_mod', '') where '' is a
             normal user.
@@ -76,6 +76,9 @@ class TwitchUserData(Base):
             user.
         lifetime_view_count (int): The total number of channel views this user's channel has.
         account_created_at (DateTime): Timestamp of this account's creation.
+
+        has_been_enriched (bool): Whether the User Data Enricher has populated this row with a 'Get
+            Users' result.
 
         NOTE. We're not currently storing 'description' or profile_img urls. If we want these for
             display purposes / visualization, we can fetch them adhoc or reconsider later.
@@ -99,7 +102,6 @@ class TwitchUserData(Base):
     twitch_account_id = Column(
         BigInteger, primary_key=True, autoincrement=False, index=True
     )  # 'id'
-    has_been_enriched = Column(Boolean, nullable=False, default=False)
 
     # In the specific case where first contact with a login name is a streamer who's live, their
     # entry here will be created prior to the enrichment pass over ViewerSightings. So these need to
@@ -110,6 +112,8 @@ class TwitchUserData(Base):
     lifetime_view_count = Column(Integer, nullable=True)  # 'view_count'
     account_created_at = Column(DateTime, nullable=True)  # 'created_at'
 
+    has_been_enriched = Column(Boolean, nullable=False, default=False)
+
     # not tracking: description, image urls, email,
 
     # Collected data
@@ -117,7 +121,6 @@ class TwitchUserData(Base):
     # tables will grow pretty quickly and may be subject to pruning.
 
     # These columns will be populated post creation by an aggregator worker, thus they're nullable.
-
     first_sighting_as_viewer = Column(DateTime, nullable=True)
     most_recent_sighting_as_viewer = Column(DateTime, nullable=True)
     most_recent_concurrent_channel_count = Column(Integer, nullable=True)
@@ -138,42 +141,69 @@ TwitchAccountTypes = ["staff", "admin", "global_mod", ""]
 TwitchBroadcasterTypes = ["partner", "affiliate", ""]
 
 
+@dataclass
+class TwitchUserDataInternal:
+    first_sighting_as_viewer: Optional[datetime]
+    most_recent_sighting_as_viewer: Optional[datetime]
+    most_recent_concurrent_channel_count: Optional[int]
+    all_time_high_concurrent_channel_count: Optional[int]
+    all_time_high_at: Optional[datetime]
+
+
 class TwitchUserDataSchema(SQLAlchemySchema):
+    """Marshmallow schema. Hand it the API response dict + TwitchUserDatInternal.as_dict to
+    serialize to a TwitchUserData SQLAlchemy model to write to the DB.
+
+    NOTE. Marshamallow isn't as flexible as Pydantic in terms of aliasing; "data_key" is an absolute
+    so if this isn't being built from an API response, you'll have to convert the keys prior to
+    using it.
+
+    Example API response:
+
+    api_response = {
+        "id": 123456,
+        "login": "example_user",
+        "display_name": "ExampleUser",
+        "type": "",
+        "broadcaster_type": "",
+        "view_count": 1000,
+        "created_at": "2013-06-03T19:12:02Z"
+    }
+    """
+
     class Meta:
         model = TwitchUserData
         load_instance = True
         include_relationships = True
+        unknown = EXCLUDE
 
-    twitch_account_id = fields.Integer(required=True)
-    has_been_enriched = fields.Boolean(load_default=False)
+    twitch_account_id = fields.Integer(required=True, data_key="id")
     login_name = fields.String(
         required=True,
         validate=lambda x: re.match(TWITCH_LOGIN_NAME_REGEX, x) is not None,
+        data_key="login",
     )
 
     account_type = fields.String(
-        allow_none=True, validate=lambda x: x in TwitchAccountTypes
+        allow_none=True, validate=lambda x: x in TwitchAccountTypes, data_key="type"
     )
     broadcaster_type = fields.String(
-        allow_none=True, validate=lambda x: x in TwitchBroadcasterTypes
+        allow_none=True,
+        validate=lambda x: x in TwitchBroadcasterTypes,
+        data_key="broadcaster_type",
     )
-    lifetime_view_count = fields.Integer(allow_none=True)
-    account_created_at = fields.DateTime(allow_none=True)
+    lifetime_view_count = fields.Integer(allow_none=True, data_key="view_count")
+    account_created_at = fields.DateTime(allow_none=True, data_key="created_at")
+
+    has_been_enriched = fields.Boolean(load_default=False)
     first_sighting_as_viewer = fields.DateTime(allow_none=True)
     most_recent_sighting_as_viewer = fields.DateTime(allow_none=True)
     most_recent_concurrent_channel_count = fields.Integer(allow_none=True)
     all_time_high_concurrent_channel_count = fields.Integer(allow_none=True)
     all_time_high_at = fields.DateTime(allow_none=True)
 
-
-# Example API response
-
-# api_response = {
-#     "id": 123456,
-#     "login": "example_user",
-#     "display_name": "ExampleUser",
-#     "type": "",
-#     "broadcaster_type": "",
-#     "view_count": 1000,
-#     "created_at": "2013-06-03T19:12:02Z"
-# }
+    @pre_load
+    def remove_display_name(self, data, **kwargs):
+        if isinstance(data, dict):
+            data.pop("display_name", None)
+        return data
