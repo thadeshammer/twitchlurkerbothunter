@@ -14,7 +14,6 @@ TWITCH_TOKEN_REGEX = r"^[a-zA-Z0-9]+$"
 
 def matches_regex(value: Any, pattern: str) -> str:
     """Check if the given value matches the provided regex pattern."""
-    print(">>> In the matcher", flush=True)
     if not isinstance(value, str) or not bool(re.match(pattern, value)):
         raise ValueError
     return value

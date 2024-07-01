@@ -3,38 +3,48 @@ from uuid import uuid4
 import pytest
 from pydantic import ValidationError
 
-from app.models.viewer_sightings import ViewerSighting
+from app.models.viewer_sightings import ViewerSightingCreate
 
 
 def test_create_valid_viewer_sighting():
+    uid = uuid4()
+
     valid_data = {
         "viewer_login_name": "valid_username",
         "processed_by_user_data_enricher": False,
         "processed_by_user_sighting_aggregator": False,
-        "viewerlist_fetch_id": uuid4(),
+        "viewerlist_fetch_id": uid,
     }
 
-    viewer_sighting = ViewerSighting(**valid_data)
+    viewer_sighting = ViewerSightingCreate(**valid_data)
     assert viewer_sighting.viewer_login_name == "valid_username"
     assert viewer_sighting.processed_by_user_data_enricher is False
     assert viewer_sighting.processed_by_user_sighting_aggregator is False
-    assert viewer_sighting.viewerlist_fetch_id is not None
-    assert viewer_sighting.id is not None
+    assert viewer_sighting.viewerlist_fetch_id == uid
 
 
-def test_create_invalid_viewer_sighting_username():
+@pytest.mark.parametrize(
+    ("key", "value"),
+    [
+        ("viewer_login_name", ""),
+        ("viewer_login_name", "this!shouldnt'work!"),
+        ("viewer_login_name", "spaces are no good"),
+        ("viewer_login_name", "名字"),
+        ("viewer_login_name", "имя"),
+        ("viewer_login_name", "ชื่อ"),
+        ("viewerlist_fetch_id", ""),
+        ("viewerlist_fetch_id", "nope"),
+    ],
+)
+def test_create_invalid_viewer_sighting(key, value):
     invalid_data = {
-        "viewer_login_name": "invalid!username!",
-        "processed_by_user_data_enricher": False,
-        "processed_by_user_sighting_aggregator": False,
+        "viewer_login_name": "legit_user",
         "viewerlist_fetch_id": uuid4(),
     }
+    invalid_data[key] = value
 
     with pytest.raises((ValueError, ValidationError)):
-        print(f"\n > > > {invalid_data=} < < < \n")
-        vs = ViewerSighting(**invalid_data)
-        print(f"\n > > > {vs.viewer_login_name=} < < < \n")
-    assert vs.viewer_login_name != invalid_data["viewer_login_name"]
+        ViewerSightingCreate(**invalid_data)
 
 
 def test_create_invalid_viewer_sighting_missing_field():
@@ -46,4 +56,4 @@ def test_create_invalid_viewer_sighting_missing_field():
     }
 
     with pytest.raises(ValidationError):
-        ViewerSighting(**invalid_data)
+        ViewerSightingCreate(**invalid_data)

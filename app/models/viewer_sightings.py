@@ -3,7 +3,7 @@
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID, uuid4
 
-from pydantic import validator
+from pydantic import ValidationInfo
 from pydantic.functional_validators import field_validator
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -16,6 +16,12 @@ class ViewerSightingBase(SQLModel, table=False):
     processed_by_user_sighting_aggregator: bool = Field(default=False, nullable=False)
 
     viewerlist_fetch_id: UUID  # TODO fk")
+
+    @field_validator("viewer_login_name")
+    def validate_viewer_login_name(cls, v: str) -> str:
+        if not isinstance(v, str) or not matches_regex(v, TWITCH_LOGIN_NAME_REGEX):
+            raise ValueError("viewer_login_name failed validation.")
+        return v
 
 
 class ViewerSighting(ViewerSightingBase, table=True):
@@ -54,18 +60,17 @@ class ViewerSighting(ViewerSightingBase, table=True):
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
-    # viewerlist_fetch_id: UUID = Field(
-    #     foreign_key="stream_viewerlist_fetch.fetch_id", nullable=False
-    # )
+    viewerlist_fetch_id: UUID = Field(
+        foreign_key="stream_viewerlist_fetch.fetch_id", nullable=False
+    )
 
     # # Relationships
+    if TYPE_CHECKING:
+        from . import StreamViewerListFetch
 
-    # if TYPE_CHECKING:
-    #     from . import StreamViewerListFetch
-
-    # stream_viewerlist_fetch: Optional["StreamViewerListFetch"] = Relationship(
-    #     back_populates="viewer_sightings"
-    # )
+    stream_viewerlist_fetch: Optional["StreamViewerListFetch"] = Relationship(
+        back_populates="viewer_sightings"
+    )
 
 
 class ViewerSightingCreate(ViewerSightingBase):
