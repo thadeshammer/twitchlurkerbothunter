@@ -3,25 +3,18 @@
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID, uuid4
 
-from pydantic import ValidationInfo
-from pydantic.functional_validators import field_validator
+from pydantic import constr
 from sqlmodel import Field, Relationship, SQLModel
 
-from ._validator_regexes import TWITCH_LOGIN_NAME_REGEX, matches_regex
+from ._validator_regexes import TWITCH_LOGIN_NAME_REGEX
 
 
 class ViewerSightingBase(SQLModel, table=False):
-    viewer_login_name: str = Field(..., regex=TWITCH_LOGIN_NAME_REGEX, index=True)
+    viewer_login_name: constr(pattern=TWITCH_LOGIN_NAME_REGEX) = Field(
+        ..., regex=TWITCH_LOGIN_NAME_REGEX, index=True
+    )
     processed_by_user_data_enricher: bool = Field(default=False, nullable=False)
     processed_by_user_sighting_aggregator: bool = Field(default=False, nullable=False)
-
-    viewerlist_fetch_id: UUID  # TODO fk")
-
-    @field_validator("viewer_login_name")
-    def validate_viewer_login_name(cls, v: str) -> str:
-        if not isinstance(v, str) or not matches_regex(v, TWITCH_LOGIN_NAME_REGEX):
-            raise ValueError("viewer_login_name failed validation.")
-        return v
 
 
 class ViewerSighting(ViewerSightingBase, table=True):

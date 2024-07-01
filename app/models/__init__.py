@@ -62,7 +62,7 @@ if TYPE_CHECKING:
         TwitchUserDataCreate,
         TwitchUserDataRead,
     )
-    from .viewer_sightings import (
+    from .viewer_sighting import (
         ViewerSighting,
         ViewerSightingCreate,
         ViewerSightingRead,

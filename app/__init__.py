@@ -16,7 +16,7 @@ from app.config import Config
 #     stream_viewerlist_fetch,
 #     suspected_bot,
 #     twitch_user_data,
-#     viewer_sightings,
+#     viewer_sighting,
 # )
 from app.routes import register_routes
 from app.util import setup_logging
