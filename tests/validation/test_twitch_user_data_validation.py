@@ -37,8 +37,20 @@ GET_STREAM_MOCK = {
 }
 
 
+TWITCH_USER_DATA_MOCK = {
+    "twitch_account_id": "141981764",
+    "login_name": "weepwop1337socks",
+    "account_type": "",
+    "broadcaster_type": "affiliate",
+    "view_count": "5980557",
+    "created_at": "2016-12-14T20:32:28Z",
+}
+
+
 def test_create_from_get_user():
-    tud = TwitchUserDataCreate(**GET_USER_MOCK)
+    data = GET_USER_MOCK.copy()
+    assert isinstance(data, dict)
+    tud = TwitchUserDataCreate(**data)
 
     assert tud.twitch_account_id == int(GET_USER_MOCK["id"])
     assert tud.login_name == GET_USER_MOCK["login"]
@@ -59,20 +71,21 @@ def test_create_from_get_user():
         ("id", "not_a_number"),
         ("id", "-4"),
         ("id", "3.1416"),
-        ("login_name", "invalid characters!"),
-        ("login_name", "名字"),
-        ("login_name", "имя"),
-        ("login_name", "ชื่อ"),
-        ("account_type", "bestboi"),
+        ("login", "invalid characters!"),
+        ("login", "名字"),
+        ("login", "имя"),
+        ("login", "ชื่อ"),
+        ("type", "bestboi"),
         ("broadcaster_type", "afiliate"),
     ],
 )
-def test_create_from_get_user_invalid(key, value):
+def test_create_against_invalid_data_get_user(key, value):
+    assert isinstance(GET_USER_MOCK, dict)
     invalid_data = GET_USER_MOCK.copy()
     invalid_data[key] = value
 
     with pytest.raises(ValidationError):
-        TwitchUserDataCreate(**invalid_data)
+        tud = TwitchUserDataCreate(**invalid_data)
 
 
 def test_create_from_get_stream():
@@ -80,3 +93,42 @@ def test_create_from_get_stream():
 
     assert tud.twitch_account_id == int(GET_STREAM_MOCK["user_id"])
     assert tud.login_name == GET_STREAM_MOCK["user_login"]
+
+
+@pytest.mark.parametrize(
+    "key, value",
+    [
+        ("user_id", "#!%^^!"),
+        ("user_id", "not_a_number"),
+        ("user_id", "-4"),
+        ("user_id", "3.1416"),
+        ("user_login", "invalid characters!"),
+        ("user_login", "名字"),
+        ("user_login", "имя"),
+        ("user_login", "ชื่อ"),
+    ],
+)
+def test_create_against_invalid_data_get_stream(key, value):
+    invalid_data = GET_STREAM_MOCK.copy()
+    invalid_data[key] = value
+
+    with pytest.raises(ValidationError):
+        TwitchUserDataCreate(**invalid_data)
+
+
+@pytest.mark.parametrize(
+    "key, value",
+    [
+        ("login_name", "invalid characters!"),
+        ("login_name", "名字"),
+        ("login_name", "имя"),
+        ("login_name", "ชื่อ"),
+        ("twitch_account_id", "not a number"),
+    ],
+)
+def test_create_against_invalid_data_internal_definition(key, value):
+    invalid_data = TWITCH_USER_DATA_MOCK.copy()
+    invalid_data[key] = value
+
+    with pytest.raises(ValidationError):
+        TwitchUserDataCreate(**invalid_data)

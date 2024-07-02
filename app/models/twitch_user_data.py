@@ -38,7 +38,7 @@ from sqlmodel._compat import SQLModelConfig
 from ._validator_regexes import TWITCH_LOGIN_NAME_REGEX
 
 
-class TwitchAccountTypeValues(str, Enum):
+class TwitchAccountType(str, Enum):
     # ["staff", "admin", "global_mod", ""]
     STAFF = "staff"
     ADMIN = "admin"
@@ -105,7 +105,7 @@ class TwitchUserDataBase(SQLModel, table=False):
 
     twitch_account_id: conint(gt=0) = Field(..., index=True, primary_key=True)
     login_name: constr(pattern=TWITCH_LOGIN_NAME_REGEX) = Field(..., index=True)
-    account_type: Optional[TwitchAccountTypeValues] = Field(default=None, nullable=True)
+    account_type: Optional[TwitchAccountType] = Field(default=None, nullable=True)
     broadcaster_type: Optional[TwitchBroadcasterType] = Field(
         default=None, nullable=True
     )
@@ -119,7 +119,7 @@ class TwitchUserDataBase(SQLModel, table=False):
     all_time_high_at: Optional[datetime] = Field(default=None)
 
     @model_validator(mode="before")
-    def handle_aliasing(cls, data: dict[str, Any]):
+    def handle_aliasing(cls, data: dict[str, Any]) -> dict[str, Any]:
         """Handle multiple aliases.
 
         In Pydantic V1, coupling Field(alias=) and Config's populate_by_name would allow me to push
@@ -135,25 +135,28 @@ class TwitchUserDataBase(SQLModel, table=False):
         So for now we'll handle it manually here, manually fingerprinting each response and
         converting accordingly.
         """
+        assert data is not None
+        assert isinstance(data, dict)
+
         if all(
             key in data for key in ["user_id", "user_login", "game_id", "game_name"]
         ):
             # 'Get Streams' fingerprint
-            print(f"TwitchUserData from Get Streams: {data}")
             data["twitch_account_id"] = data.pop("user_id")
             data["login_name"] = data.pop("user_login")
         elif all(key in data for key in ["id", "login", "type", "broadcaster_type"]):
             # 'Get Users' fingerprint
-            print(f"TwitchUserData from Get Users: {data}")
             data["twitch_account_id"] = data.pop("id")
             data["login_name"] = data.pop("login")
             data["account_type"] = data.pop("type")
             data["lifetime_view_count"] = data.pop("view_count")
             data["account_created_at"] = data.pop("created_at")
 
+        return data
+
     model_config = cast(
         SQLModelConfig,
-        {"extra": "allow"},
+        {"extra": "allow", "populate_by_name": "True"},
     )
 
 
