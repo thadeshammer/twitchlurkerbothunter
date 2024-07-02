@@ -1,18 +1,20 @@
 # app/models/viewer_sighting.py
 # SQLModel representing sightings of Twitch login names in a given channel.
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Annotated, Optional
 from uuid import UUID, uuid4
 
-from pydantic import constr
+from pydantic import StringConstraints
 from sqlmodel import Field, Relationship, SQLModel
 
 from ._validator_regexes import TWITCH_LOGIN_NAME_REGEX
 
 
 class ViewerSightingBase(SQLModel, table=False):
-    viewer_login_name: constr(pattern=TWITCH_LOGIN_NAME_REGEX) = Field(
-        ..., regex=TWITCH_LOGIN_NAME_REGEX, index=True
-    )
+    viewer_login_name: Annotated[
+        str,
+        StringConstraints(pattern=TWITCH_LOGIN_NAME_REGEX),
+        Field(..., index=True),
+    ]
     processed_by_user_data_enricher: bool = Field(default=False, nullable=False)
     processed_by_user_sighting_aggregator: bool = Field(default=False, nullable=False)
 

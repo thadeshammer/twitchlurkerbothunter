@@ -29,9 +29,9 @@ Classes:
 """
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Literal, Optional, cast
+from typing import TYPE_CHECKING, Annotated, Any, Optional, cast
 
-from pydantic import conint, constr, model_validator
+from pydantic import StringConstraints, model_validator
 from sqlmodel import Field, Relationship, SQLModel
 from sqlmodel._compat import SQLModelConfig
 
@@ -103,19 +103,27 @@ class TwitchUserDataBase(SQLModel, table=False):
         all_time_high_at (DateTime): Timestamp of the all_time_concurrent_channel_count reading.
     """
 
-    twitch_account_id: conint(gt=0) = Field(..., index=True, primary_key=True)
-    login_name: constr(pattern=TWITCH_LOGIN_NAME_REGEX) = Field(..., index=True)
+    twitch_account_id: Annotated[int, Field(..., index=True, primary_key=True, gt=0)]
+    login_name: Annotated[
+        str, StringConstraints(pattern=TWITCH_LOGIN_NAME_REGEX), Field(..., index=True)
+    ]
     account_type: Optional[TwitchAccountType] = Field(default=None, nullable=True)
     broadcaster_type: Optional[TwitchBroadcasterType] = Field(
         default=None, nullable=True
     )
-    lifetime_view_count: Optional[int] = Field(default=None, nullable=True)
+    lifetime_view_count: Annotated[
+        Optional[int], Field(default=None, nullable=True, gt=0)
+    ]
     account_created_at: Optional[datetime] = Field(default=None)
 
     first_sighting_as_viewer: Optional[datetime] = Field(default=None)
     most_recent_sighting_as_viewer: Optional[datetime] = Field(default=None)
-    most_recent_concurrent_channel_count: Optional[int] = Field(default=None)
-    all_time_high_concurrent_channel_count: Optional[int] = Field(default=None)
+    most_recent_concurrent_channel_count: Annotated[
+        Optional[int], Field(default=None, gt=0)
+    ]
+    all_time_high_concurrent_channel_count: Annotated[
+        Optional[int], Field(default=None, gt=0)
+    ]
     all_time_high_at: Optional[datetime] = Field(default=None)
 
     @model_validator(mode="before")
@@ -166,15 +174,15 @@ class TwitchUserData(TwitchUserDataBase, table=True):
     __tablename__: str = "twitch_user_data"
 
     # Relationships
-    # if TYPE_CHECKING:
-    #     from . import StreamViewerListFetch, SuspectedBot
+    if TYPE_CHECKING:
+        from . import StreamViewerListFetch, SuspectedBot
 
-    # suspected_bot: Optional["SuspectedBot"] = Relationship(
-    #     back_populates="twitch_user_data"
-    # )
-    # stream_viewerlist_fetch: Optional["StreamViewerListFetch"] = Relationship(
-    #     back_populates="twitch_user_data"
-    # )
+    suspected_bot: Optional["SuspectedBot"] = Relationship(
+        back_populates="twitch_user_data"
+    )
+    stream_viewerlist_fetch: Optional["StreamViewerListFetch"] = Relationship(
+        back_populates="twitch_user_data"
+    )
 
 
 class TwitchUserDataCreate(TwitchUserDataBase):
