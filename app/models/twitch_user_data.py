@@ -29,10 +29,11 @@ Classes:
 """
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal, Optional, cast
 
 from pydantic import conint, constr
 from sqlmodel import Field, Relationship, SQLModel
+from sqlmodel._compat import SQLModelConfig
 
 from ._validator_regexes import TWITCH_LOGIN_NAME_REGEX
 
@@ -102,17 +103,13 @@ class TwitchUserDataBase(SQLModel, table=False):
         all_time_high_at (DateTime): Timestamp of the all_time_concurrent_channel_count reading.
     """
 
-    twitch_account_id: conint(gt=0) = Field(
-        ..., alias="id", index=True, primary_key=True
-    )
-    login_name: constr(pattern=TWITCH_LOGIN_NAME_REGEX) = Field(
-        ..., alias="login", index=True
-    )
+    twitch_account_id: conint(gt=0) = Field(..., index=True, primary_key=True)
+    login_name: constr(pattern=TWITCH_LOGIN_NAME_REGEX) = Field(..., index=True)
     account_type: Optional[TwitchAccountTypeValues] = Field(
         default=None, nullable=True, alias="type"
     )
     broadcaster_type: Optional[TwitchBroadcasterType] = Field(
-        default=None, nullable=True
+        default=None, nullable=True, alias="broadcaster_type"
     )
     lifetime_view_count: Optional[int] = Field(
         default=None, nullable=True, alias="view_count"
@@ -126,16 +123,40 @@ class TwitchUserDataBase(SQLModel, table=False):
     all_time_high_at: Optional[datetime] = Field(default=None)
 
     def __init__(self, **data: dict[str, Any]):
-        """Handle for the case where we create from 'Get Streams' response instead of 'Get User'"""
-        if "user_id" in data:
-            data["id"] = data.pop("user_id")
-        if "user_login" in data:
-            data["login"] = data.pop("user_login")
+        """Handle multiple aliases.
+
+        In Pydantic V1, coupling Field(alias=) and Config's populate_by_name would allow me to push
+        in several different formats for this data with only one class to worry about handling it.
+        For example:
+            - twitch_login_id <- 'id' in 'Get User' response
+            - twitch_login_id <- 'user_id' in 'Get Stream' response
+            - twitch_login_id would still map to itself
+
+        Pydantic V2 this is documented to be inconsistent and there's plans to address this in V3.
+        See: https://github.com/pydantic/pydantic/issues/8379
+
+        So for now we'll handle it manually here.
+        """
+        # 'Get Users' fingerprint
+        if all(key in data for key in ["id", "login", "type"]):
+            data["twitch_account_id"] = data.pop("id")
+            data["login_name"] = data.pop("login")
+            data["account_type"] = data.pop("type")
+
+        # 'Get Streams' fingerprint
+        if "user_id" in data and "user_login" in data:
+            data["twitch_account_id"] = data.pop("user_id")
+            data["login_name"] = data.pop("user_login")
+
         super().__init__(**data)
 
-    class Config:
-        extra = "allow"
-        populate_by_name = True
+    model_config = cast(
+        SQLModelConfig,
+        {
+            "extra": "allow",
+            "populate_by_name": True,
+        },
+    )
 
 
 class TwitchUserData(TwitchUserDataBase, table=True):
@@ -143,25 +164,24 @@ class TwitchUserData(TwitchUserDataBase, table=True):
 
     __tablename__: str = "twitch_user_data"
 
+    # Relationships
+    # if TYPE_CHECKING:
+    #     from . import StreamViewerListFetch, SuspectedBot
 
-# Relationships
-# if TYPE_CHECKING:
-#     from . import StreamViewerListFetch, SuspectedBot
-
-# suspected_bot: Optional["SuspectedBot"] = Relationship(
-#     back_populates="twitch_user_data"
-# )
-# stream_viewerlist_fetch: Optional["StreamViewerListFetch"] = Relationship(
-#     back_populates="twitch_user_data"
-# )
+    # suspected_bot: Optional["SuspectedBot"] = Relationship(
+    #     back_populates="twitch_user_data"
+    # )
+    # stream_viewerlist_fetch: Optional["StreamViewerListFetch"] = Relationship(
+    #     back_populates="twitch_user_data"
+    # )
 
 
 class TwitchUserDataCreate(TwitchUserDataBase):
     """Model for creating a new TwitchUserData entry."""
 
 
-# class TwitchUserDataRead(TwitchUserDataBase):
-#     """Model for reading TwitchUserData from the db."""
+class TwitchUserDataRead(TwitchUserDataBase):
+    """Model for reading TwitchUserData from the db."""
 
 
 # TODO cut this if the constructor works

@@ -50,7 +50,7 @@ from .stream_viewerlist_fetch import (
 #     SuspicionLevel,
 #     SuspicionReason,
 # )
-# from .twitch_user_data import TwitchUserData, TwitchUserDataCreate, TwitchUserDataRead
+from .twitch_user_data import TwitchUserData, TwitchUserDataCreate, TwitchUserDataRead
 from .viewer_sighting import ViewerSighting, ViewerSightingCreate, ViewerSightingRead
 
 __all__ = [
@@ -74,9 +74,9 @@ __all__ = [
     # "SUSPICION_RANKING_THRESHOLDS",
     # "SuspicionLevel",
     # "SuspicionReason",
-    # "TwitchUserData",
-    # "TwitchUserDataCreate",
-    # "TwitchUserDataRead",
+    "TwitchUserData",
+    "TwitchUserDataCreate",
+    "TwitchUserDataRead",
     "ViewerSighting",
     "ViewerSightingCreate",
     "ViewerSightingRead",
