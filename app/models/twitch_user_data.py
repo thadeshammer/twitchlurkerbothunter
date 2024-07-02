@@ -31,7 +31,7 @@ from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Literal, Optional, cast
 
-from pydantic import conint, constr
+from pydantic import conint, constr, model_validator
 from sqlmodel import Field, Relationship, SQLModel
 from sqlmodel._compat import SQLModelConfig
 
@@ -109,10 +109,8 @@ class TwitchUserDataBase(SQLModel, table=False):
     broadcaster_type: Optional[TwitchBroadcasterType] = Field(
         default=None, nullable=True
     )
-    lifetime_view_count: Optional[int] = Field(
-        default=None, nullable=True, alias="view_count"
-    )
-    account_created_at: Optional[datetime] = Field(default=None, alias="created_at")
+    lifetime_view_count: Optional[int] = Field(default=None, nullable=True)
+    account_created_at: Optional[datetime] = Field(default=None)
 
     first_sighting_as_viewer: Optional[datetime] = Field(default=None)
     most_recent_sighting_as_viewer: Optional[datetime] = Field(default=None)
@@ -120,7 +118,8 @@ class TwitchUserDataBase(SQLModel, table=False):
     all_time_high_concurrent_channel_count: Optional[int] = Field(default=None)
     all_time_high_at: Optional[datetime] = Field(default=None)
 
-    def __init__(self, **data: dict[str, Any]):
+    @model_validator(mode="before")
+    def handle_aliasing(cls, data: dict[str, Any]):
         """Handle multiple aliases.
 
         In Pydantic V1, coupling Field(alias=) and Config's populate_by_name would allow me to push
@@ -133,22 +132,24 @@ class TwitchUserDataBase(SQLModel, table=False):
         Pydantic V2 this is documented to be inconsistent and there's plans to address this in V3.
         See: https://github.com/pydantic/pydantic/issues/8379
 
-        So for now we'll handle it manually here.
+        So for now we'll handle it manually here, manually fingerprinting each response and
+        converting accordingly.
         """
-        # 'Get Users' fingerprint
-        if all(key in data for key in ["id", "login", "type"]):
+        if all(
+            key in data for key in ["user_id", "user_login", "game_id", "game_name"]
+        ):
+            # 'Get Streams' fingerprint
+            print(f"TwitchUserData from Get Streams: {data}")
+            data["twitch_account_id"] = data.pop("user_id")
+            data["login_name"] = data.pop("user_login")
+        elif all(key in data for key in ["id", "login", "type", "broadcaster_type"]):
+            # 'Get Users' fingerprint
+            print(f"TwitchUserData from Get Users: {data}")
             data["twitch_account_id"] = data.pop("id")
             data["login_name"] = data.pop("login")
             data["account_type"] = data.pop("type")
             data["lifetime_view_count"] = data.pop("view_count")
             data["account_created_at"] = data.pop("created_at")
-
-        # 'Get Streams' fingerprint
-        if "user_id" in data and "user_login" in data:
-            data["twitch_account_id"] = data.pop("user_id")
-            data["login_name"] = data.pop("user_login")
-
-        super().__init__(**data)
 
     model_config = cast(
         SQLModelConfig,

@@ -1,5 +1,5 @@
-# import pytest
-from datetime import datetime
+import pytest
+from pydantic import ValidationError
 
 from app.models.twitch_user_data import TwitchUserDataCreate
 from app.util import convert_timestamp_from_twitch
@@ -50,3 +50,33 @@ def test_create_from_get_user():
     expected_timestamp = convert_timestamp_from_twitch(GET_USER_MOCK["created_at"])
     result_timestamp = tud.account_created_at.strftime("%Y-%m-%d %H:%M:%S%z")
     assert expected_timestamp == result_timestamp
+
+
+@pytest.mark.parametrize(
+    "key, value",
+    [
+        ("id", "#!%^^!"),
+        ("id", "not_a_number"),
+        ("id", "-4"),
+        ("id", "3.1416"),
+        ("login_name", "invalid characters!"),
+        ("login_name", "名字"),
+        ("login_name", "имя"),
+        ("login_name", "ชื่อ"),
+        ("account_type", "bestboi"),
+        ("broadcaster_type", "afiliate"),
+    ],
+)
+def test_create_from_get_user_invalid(key, value):
+    invalid_data = GET_USER_MOCK.copy()
+    invalid_data[key] = value
+
+    with pytest.raises(ValidationError):
+        TwitchUserDataCreate(**invalid_data)
+
+
+def test_create_from_get_stream():
+    tud = TwitchUserDataCreate(**GET_STREAM_MOCK)
+
+    assert tud.twitch_account_id == int(GET_STREAM_MOCK["user_id"])
+    assert tud.login_name == GET_STREAM_MOCK["user_login"]
