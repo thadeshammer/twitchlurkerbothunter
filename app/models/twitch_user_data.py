@@ -105,11 +105,9 @@ class TwitchUserDataBase(SQLModel, table=False):
 
     twitch_account_id: conint(gt=0) = Field(..., index=True, primary_key=True)
     login_name: constr(pattern=TWITCH_LOGIN_NAME_REGEX) = Field(..., index=True)
-    account_type: Optional[TwitchAccountTypeValues] = Field(
-        default=None, nullable=True, alias="type"
-    )
+    account_type: Optional[TwitchAccountTypeValues] = Field(default=None, nullable=True)
     broadcaster_type: Optional[TwitchBroadcasterType] = Field(
-        default=None, nullable=True, alias="broadcaster_type"
+        default=None, nullable=True
     )
     lifetime_view_count: Optional[int] = Field(
         default=None, nullable=True, alias="view_count"
@@ -142,6 +140,8 @@ class TwitchUserDataBase(SQLModel, table=False):
             data["twitch_account_id"] = data.pop("id")
             data["login_name"] = data.pop("login")
             data["account_type"] = data.pop("type")
+            data["lifetime_view_count"] = data.pop("view_count")
+            data["account_created_at"] = data.pop("created_at")
 
         # 'Get Streams' fingerprint
         if "user_id" in data and "user_login" in data:
@@ -152,10 +152,7 @@ class TwitchUserDataBase(SQLModel, table=False):
 
     model_config = cast(
         SQLModelConfig,
-        {
-            "extra": "allow",
-            "populate_by_name": True,
-        },
+        {"extra": "allow"},
     )
 
 

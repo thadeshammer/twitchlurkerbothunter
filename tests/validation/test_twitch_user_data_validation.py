@@ -1,6 +1,8 @@
 # import pytest
+from datetime import datetime
 
 from app.models.twitch_user_data import TwitchUserDataCreate
+from app.util import convert_timestamp_from_twitch
 
 GET_USER_MOCK = {
     "id": "141981764",
@@ -16,7 +18,7 @@ GET_USER_MOCK = {
     "created_at": "2016-12-14T20:32:28Z",
 }
 
-GET_STREAMS_MOCK = {
+GET_STREAM_MOCK = {
     "id": "123456789",
     "user_id": "98765",
     "user_login": "sandysanderman",
@@ -40,3 +42,11 @@ def test_create_from_get_user():
 
     assert tud.twitch_account_id == int(GET_USER_MOCK["id"])
     assert tud.login_name == GET_USER_MOCK["login"]
+    assert tud.account_type == GET_USER_MOCK["type"]
+    assert tud.broadcaster_type == GET_USER_MOCK["broadcaster_type"]
+    assert tud.lifetime_view_count == int(GET_USER_MOCK["view_count"])
+
+    assert tud.account_created_at is not None
+    expected_timestamp = convert_timestamp_from_twitch(GET_USER_MOCK["created_at"])
+    result_timestamp = tud.account_created_at.strftime("%Y-%m-%d %H:%M:%S%z")
+    assert expected_timestamp == result_timestamp
