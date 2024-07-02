@@ -85,7 +85,7 @@ def test_create_against_invalid_data_get_user(key, value):
     invalid_data[key] = value
 
     with pytest.raises(ValidationError):
-        tud = TwitchUserDataCreate(**invalid_data)
+        TwitchUserDataCreate(**invalid_data)
 
 
 def test_create_from_get_stream():
