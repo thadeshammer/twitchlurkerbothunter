@@ -28,10 +28,10 @@ Classes:
 
 """
 from enum import Enum
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, Annotated, Optional, Tuple
 from uuid import UUID, uuid4
 
-from pydantic import conint, constr
+from pydantic import StringConstraints
 from sqlmodel import Column
 from sqlmodel import Enum as sqlmodel_Enum
 from sqlmodel import Field, Relationship, SQLModel
@@ -113,22 +113,24 @@ Args:
 
 class SuspectedBotBase(SQLModel):
     # app data
-    suspected_bot_id: UUID = Field(default_factory=uuid4, primary_key=True)
-    has_ever_streamed: Optional[bool] = Field(default=None)
-    # suspicion_level: SuspicionLevel = Field(
-    #     sa_column=Column(sqlmodel_Enum(SuspicionLevel))
-    # )
-    # suspicion_reason: SuspicionReason = Field(
-    #     sa_column=Column(sqlmodel_Enum(SuspicionReason))
-    # )
-    additional_notes: Optional[constr(pattern=r"^[a-zA-Z0-9/\s.,!?':;-]*$")] = None
+    suspected_bot_id: Annotated[UUID, Field(default_factory=uuid4, primary_key=True)]
+    has_ever_streamed: Annotated[Optional[bool], Field(default=None)]
+    suspicion_level: Annotated[
+        SuspicionLevel, Field(sa_column=Column(sqlmodel_Enum(SuspicionLevel)))
+    ]
+    suspicion_reason: Annotated[
+        SuspicionReason, Field(sa_column=Column(sqlmodel_Enum(SuspicionReason)))
+    ]
 
+    additional_notes: Annotated[
+        Optional[str], StringConstraints(pattern=r"^[a-zA-Z0-9/\s.,!?':;-]*$")
+    ]
     # api response data
-    follower_count: Optional[conint(ge=0)] = Field(default=None)
-    following_count: Optional[conint(ge=0)] = Field(default=None)
+    follower_count: Annotated[Optional[int], Field(default=None, ge=0)]
+    following_count: Annotated[Optional[int], Field(default=None, ge=0)]
 
     # banned vs deleted is extrapolated
-    is_banned_or_deleted: bool = Field(default=False)
+    is_banned_or_deleted: Annotated[bool, Field(default=False)]
 
 
 # Table Model

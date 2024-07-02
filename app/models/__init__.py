@@ -41,15 +41,14 @@ from .stream_viewerlist_fetch import (
     StreamViewerListFetchRead,
     StreamViewerListFetchStatus,
 )
-
-# from .suspected_bot import (
-#     SUSPICION_RANKING_THRESHOLDS,
-#     SuspectedBot,
-#     SuspectedBotCreate,
-#     SuspectedBotRead,
-#     SuspicionLevel,
-#     SuspicionReason,
-# )
+from .suspected_bot import (
+    SUSPICION_RANKING_THRESHOLDS,
+    SuspectedBot,
+    SuspectedBotCreate,
+    SuspectedBotRead,
+    SuspicionLevel,
+    SuspicionReason,
+)
 from .twitch_user_data import TwitchUserData, TwitchUserDataCreate, TwitchUserDataRead
 from .viewer_sighting import ViewerSighting, ViewerSightingCreate, ViewerSightingRead
 
@@ -68,12 +67,12 @@ __all__ = [
     "StreamViewerListFetchCreate",
     "StreamViewerListFetchRead",
     "StreamViewerListFetchStatus",
-    # "SuspectedBot",
-    # "SuspectedBotCreate",
-    # "SuspectedBotRead",
-    # "SUSPICION_RANKING_THRESHOLDS",
-    # "SuspicionLevel",
-    # "SuspicionReason",
+    "SuspectedBot",
+    "SuspectedBotCreate",
+    "SuspectedBotRead",
+    "SUSPICION_RANKING_THRESHOLDS",
+    "SuspicionLevel",
+    "SuspicionReason",
     "TwitchUserData",
     "TwitchUserDataCreate",
     "TwitchUserDataRead",
