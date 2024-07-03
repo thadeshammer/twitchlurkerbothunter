@@ -1,7 +1,13 @@
+from datetime import datetime
+
 import pytest
 from pydantic import ValidationError
 
-from app.models.twitch_user_data import TwitchUserDataCreate
+from app.models.twitch_user_data import (
+    TwitchUserData,
+    TwitchUserDataCreate,
+    TwitchUserDataRead,
+)
 from app.util import convert_timestamp_from_twitch
 
 GET_USER_MOCK = {
@@ -37,13 +43,27 @@ GET_STREAM_MOCK = {
 }
 
 
-TWITCH_USER_DATA_MOCK = {
+TWITCH_USER_DATA_PARTIAL = {
     "twitch_account_id": "141981764",
     "login_name": "weepwop1337socks",
     "account_type": "",
     "broadcaster_type": "affiliate",
     "view_count": "5980557",
     "created_at": "2016-12-14T20:32:28Z",
+}
+
+TWITCH_USER_DATA_FULL = {
+    "twitch_account_id": 12345,
+    "login_name": "sampleuser",
+    "account_type": "",
+    "broadcaster_type": "affiliate",
+    "lifetime_view_count": 1000,
+    "account_created_at": datetime.now(),
+    "first_sighting_as_viewer": datetime.now(),
+    "most_recent_sighting_as_viewer": datetime.now(),
+    "most_recent_concurrent_channel_count": 10,
+    "all_time_high_concurrent_channel_count": 20,
+    "all_time_high_at": datetime.now(),
 }
 
 
@@ -127,8 +147,19 @@ def test_create_against_invalid_data_get_stream(key, value):
     ],
 )
 def test_create_against_invalid_data_internal_definition(key, value):
-    invalid_data = TWITCH_USER_DATA_MOCK.copy()
+    invalid_data = TWITCH_USER_DATA_PARTIAL.copy()
     invalid_data[key] = value
 
     with pytest.raises(ValidationError):
         TwitchUserDataCreate(**invalid_data)
+
+
+def test_create_full_override():
+    data = TWITCH_USER_DATA_FULL.copy()
+    TwitchUserDataCreate(**data)
+
+
+def test_create_via_twitch_user_data_read():
+    data = TWITCH_USER_DATA_FULL.copy()
+    tud = TwitchUserData(**data)
+    TwitchUserDataRead(**tud.model_dump())

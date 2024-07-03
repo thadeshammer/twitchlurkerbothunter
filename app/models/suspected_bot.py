@@ -36,6 +36,9 @@ from sqlmodel import Column
 from sqlmodel import Enum as sqlmodel_Enum
 from sqlmodel import Field, Relationship, SQLModel
 
+if TYPE_CHECKING:
+    from . import TwitchUserData
+
 
 class SuspicionReason(str, Enum):
     UNSPECIFIED = "unspecified"
@@ -160,12 +163,7 @@ class SuspectedBot(SuspectedBotBase, table=True):
         ),
     ]
 
-    if TYPE_CHECKING:
-        from . import TwitchUserData
-
-    # twitch_user_data: Optional["TwitchUserData"] = Relationship(
-    #     back_populates="suspected_bot"
-    # )
+    twitch_user_data: "TwitchUserData" = Relationship(back_populates="suspected_bot")
 
 
 # Create and Read Models

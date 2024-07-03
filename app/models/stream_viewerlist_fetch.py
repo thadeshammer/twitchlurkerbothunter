@@ -63,6 +63,9 @@ from sqlmodel._compat import SQLModelConfig
 
 from ._validator_regexes import LANGUAGE_CODE_REGEX
 
+if TYPE_CHECKING:
+    from . import ScanningSession, StreamCategory, TwitchUserData, ViewerSighting
+
 
 class StreamViewerListFetchStatus(StrEnum):
     # it's on the list to be scanned (and it has an entry in the StreamViewerListFetch table)
@@ -176,14 +179,11 @@ class StreamViewerListFetch(StreamViewerListFetchBase, table=True):
     #     ),
     # ]
 
-    if TYPE_CHECKING:
-        from . import ScanningSession, StreamCategory, TwitchUserData, ViewerSighting
-
     # scanning_session: Optional["ScanningSession"] = Relationship(
     #     back_populates="stream_viewerlist_fetches"
     # )
-    # twitch_user_data: Optional["TwitchUserData"] = Relationship(
-    #     back_populates="stream_viewerlist_fetch"
+    # twitch_user_data: "TwitchUserData" = Relationship(
+    #     back_populates="stream_viewerlist_fetches"
     # )
     # viewer_sightings: list["ViewerSighting"] = Relationship(
     #     back_populates="stream_viewerlist_fetch"

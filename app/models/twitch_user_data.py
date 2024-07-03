@@ -28,7 +28,7 @@ Classes:
     table.
 """
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING, Annotated, Any, Optional, cast
 
 from pydantic import StringConstraints, model_validator
@@ -37,8 +37,11 @@ from sqlmodel._compat import SQLModelConfig
 
 from ._validator_regexes import TWITCH_LOGIN_NAME_REGEX
 
+if TYPE_CHECKING:
+    from . import StreamViewerListFetch, SuspectedBot
 
-class TwitchAccountType(str, Enum):
+
+class TwitchAccountType(StrEnum):
     # ["staff", "admin", "global_mod", ""]
     STAFF = "staff"
     ADMIN = "admin"
@@ -46,7 +49,7 @@ class TwitchAccountType(str, Enum):
     NORMAL = ""
 
 
-class TwitchBroadcasterType(str, Enum):
+class TwitchBroadcasterType(StrEnum):
     # ["partner", "affiliate", ""]
     PARTNER = "partner"
     AFFILIATE = "affiliate"
@@ -103,14 +106,12 @@ class TwitchUserDataBase(SQLModel, table=False):
         all_time_high_at (DateTime): Timestamp of the all_time_concurrent_channel_count reading.
     """
 
-    twitch_account_id: Annotated[int, Field(..., index=True, primary_key=True, gt=0)]
+    twitch_account_id: Annotated[int, Field(..., index=True, primary_key=True, ge=0)]
     login_name: Annotated[
         str, StringConstraints(pattern=TWITCH_LOGIN_NAME_REGEX), Field(..., index=True)
     ]
-    account_type: Optional[TwitchAccountType] = Field(default=None, nullable=True)
-    broadcaster_type: Optional[TwitchBroadcasterType] = Field(
-        default=None, nullable=True
-    )
+    account_type: Optional[str] = Field(default=None, nullable=True)
+    broadcaster_type: Optional[str] = Field(default=None, nullable=True)
     lifetime_view_count: Annotated[
         Optional[int], Field(default=None, nullable=True, gt=0)
     ]
@@ -162,6 +163,38 @@ class TwitchUserDataBase(SQLModel, table=False):
 
         return data
 
+    @model_validator(mode="before")
+    def convert_enums(cls, data: dict[str, Any]) -> dict[str, Any]:
+        """Explicitly convert enums to string values to store in the DB.
+
+        NOTE. We don't give the DB enums because of these outstanding issue:
+            - https://github.com/pydantic/pydantic-core/issues/1336
+            - https://github.com/pydantic/pydantic/discussions/9270
+        """
+        if "account_type" in data and isinstance(
+            data["account_type"], TwitchAccountType
+        ):
+            data["account_type"] = TwitchAccountType(data["account_type"])
+            assert isinstance(data["account_type"], str)
+
+        if "broadcaster_type" in data and isinstance(
+            data["broadcaster_type"], TwitchBroadcasterType
+        ):
+            data["broadcaster_type"] = TwitchBroadcasterType(data["broadcaster_type"])
+            assert isinstance(data["broadcaster_type"], str)
+        return data
+
+    @model_validator(mode="after")
+    @classmethod
+    def convert_str_to_enums(cls, data: "TwitchUserDataBase") -> "TwitchUserDataBase":
+        if data:
+            if data.account_type and isinstance(data.account_type, str):
+                data.account_type = TwitchAccountType(data.account_type)
+            if data.broadcaster_type and isinstance(data.broadcaster_type, str):
+                data.broadcaster_type = TwitchBroadcasterType(data.broadcaster_type)
+
+        return data
+
     model_config = cast(
         SQLModelConfig,
         {
@@ -178,15 +211,12 @@ class TwitchUserData(TwitchUserDataBase, table=True):
     __tablename__: str = "twitch_user_data"
 
     # Relationships
-    if TYPE_CHECKING:
-        from . import StreamViewerListFetch, SuspectedBot
-
-    # suspected_bot: Optional["SuspectedBot"] = Relationship(
+    suspected_bot: Optional["SuspectedBot"] = Relationship(
+        back_populates="twitch_user_data"
+    )
+    # stream_viewerlist_fetches: list["StreamViewerListFetch"] = Relationship(
     #     back_populates="twitch_user_data"
-    # )
-    # stream_viewerlist_fetch: Optional["StreamViewerListFetch"] = Relationship(
-    #     back_populates="twitch_user_data"
-    # )
+    # )  # TODO figure out why this causes circular import issues
 
 
 class TwitchUserDataCreate(TwitchUserDataBase):
