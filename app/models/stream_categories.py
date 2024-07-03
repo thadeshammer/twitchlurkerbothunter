@@ -12,10 +12,11 @@ Classes:
     StreamCategoryAPIResponse: The Pydantic BaseModel for validation.
     StreamCategoryCreate and StreamCategoryRead: Pydantic create and read classes.
 """
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, cast
 
 from pydantic import conint, constr
 from sqlmodel import Field, Relationship, SQLModel
+from sqlmodel._compat import SQLModelConfig
 
 # Stream categories can be left unset by the streamer, either on purpose or by accident.
 NO_CATEGORY_ID: int = -1
@@ -32,8 +33,14 @@ class StreamCategoryBase(SQLModel):
         default=NO_CATEGORY_NAME, alias="game_name", index=True
     )
 
-    class Config:
-        extra = "allow"
+    model_config = cast(
+        SQLModelConfig,
+        {
+            "extra": "allow",
+            "populate_by_name": "True",
+            "arbitrary_types_allowed": "True",
+        },
+    )
 
 
 class StreamCategory(StreamCategoryBase, table=True):
@@ -62,12 +69,6 @@ class StreamCategory(StreamCategoryBase, table=True):
 class StreamCategoryCreate(StreamCategoryBase):
     """Pydantic model to create a new db row for this category."""
 
-    class Config:
-        populate_by_name = True
-
 
 class StreamCategoryRead(StreamCategoryBase):
     """Pydantic model to read a db row for this category."""
-
-    class Config:
-        populate_by_name = True
