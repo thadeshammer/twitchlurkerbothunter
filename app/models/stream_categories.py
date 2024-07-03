@@ -51,8 +51,8 @@ class StreamCategory(StreamCategoryBase, table=True):
     __tablename__: str = "stream_categories"
 
     # relationship
-    # if TYPE_CHECKING:
-    #     from . import StreamViewerListFetch
+    if TYPE_CHECKING:
+        from . import StreamViewerListFetch
 
     # stream_viewerlist_fetch: Optional["StreamViewerListFetch"] = Relationship(
     #     back_populates="stream_category"

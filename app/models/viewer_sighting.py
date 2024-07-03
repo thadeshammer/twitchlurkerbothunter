@@ -63,9 +63,9 @@ class ViewerSighting(ViewerSightingBase, table=True):
     if TYPE_CHECKING:
         from . import StreamViewerListFetch
 
-    stream_viewerlist_fetch: Optional["StreamViewerListFetch"] = Relationship(
-        back_populates="viewer_sightings"
-    )
+    # stream_viewerlist_fetch: Optional["StreamViewerListFetch"] = Relationship(
+    #     back_populates="viewer_sightings"
+    # )
 
 
 class ViewerSightingCreate(ViewerSightingBase):

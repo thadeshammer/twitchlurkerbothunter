@@ -81,8 +81,8 @@ class ScanningSession(ScanningSessionBase):
 
     scanning_session_id: UUID = Field(default_factory=uuid4, primary_key=True)
 
-    # if TYPE_CHECKING:
-    #     from . import StreamViewerListFetch
+    if TYPE_CHECKING:
+        from . import StreamViewerListFetch
 
     # stream_viewerlist_fetches: list["StreamViewerListFetch"] = Relationship(
     #     back_populates="scanning_session"

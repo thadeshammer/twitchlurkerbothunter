@@ -164,7 +164,11 @@ class TwitchUserDataBase(SQLModel, table=False):
 
     model_config = cast(
         SQLModelConfig,
-        {"extra": "allow", "populate_by_name": "True"},
+        {
+            "extra": "allow",
+            "populate_by_name": "True",
+            "arbitrary_types_allowed": "True",
+        },
     )
 
 
@@ -177,12 +181,12 @@ class TwitchUserData(TwitchUserDataBase, table=True):
     if TYPE_CHECKING:
         from . import StreamViewerListFetch, SuspectedBot
 
-    suspected_bot: Optional["SuspectedBot"] = Relationship(
-        back_populates="twitch_user_data"
-    )
-    stream_viewerlist_fetch: Optional["StreamViewerListFetch"] = Relationship(
-        back_populates="twitch_user_data"
-    )
+    # suspected_bot: Optional["SuspectedBot"] = Relationship(
+    #     back_populates="twitch_user_data"
+    # )
+    # stream_viewerlist_fetch: Optional["StreamViewerListFetch"] = Relationship(
+    #     back_populates="twitch_user_data"
+    # )
 
 
 class TwitchUserDataCreate(TwitchUserDataBase):

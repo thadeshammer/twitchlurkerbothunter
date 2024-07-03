@@ -163,9 +163,9 @@ class SuspectedBot(SuspectedBotBase, table=True):
     if TYPE_CHECKING:
         from . import TwitchUserData
 
-    twitch_user_data: Optional["TwitchUserData"] = Relationship(
-        back_populates="suspected_bot"
-    )
+    # twitch_user_data: Optional["TwitchUserData"] = Relationship(
+    #     back_populates="suspected_bot"
+    # )
 
 
 # Create and Read Models
