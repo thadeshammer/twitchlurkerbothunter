@@ -115,7 +115,7 @@ Args:
 
 
 class SuspectedBotBase(SQLModel):
-    # app data
+    # app data - from the classfier
     suspicion_level: Annotated[
         SuspicionLevel, Field(sa_column=Column(sqlmodel_Enum(SuspicionLevel)))
     ]
@@ -123,28 +123,24 @@ class SuspectedBotBase(SQLModel):
         SuspicionReason, Field(sa_column=Column(sqlmodel_Enum(SuspicionReason)))
     ]
 
-    has_ever_streamed: Annotated[Optional[bool], Field(default=None)]
-    additional_notes: Annotated[
-        Optional[str],
-        StringConstraints(pattern=r"^[a-zA-Z0-9/\s.,!?':;-]*$"),
-        Field(default=None),
-    ]
+    additional_notes: Optional[str] = Field(
+        default=None,
+        description="Additional notes about the suspected bot.",
+        regex=r"^[a-zA-Z0-9/\s.,!?':;-]*$",
+    )
     # api response data
+    # for follows and followers:
     # See: https://dev.twitch.tv/docs/api/reference/#get-followed-channels
     # See: https://dev.twitch.tv/docs/api/reference/#get-channel-followers
     # Both come back with `total` in at least the first page of the response.
+    # for has_ever_streamed, can use 'Get Videos' and if non-empty, the answer is yes.
 
-    follower_count: Annotated[Optional[int], Field(default=None, ge=0)]
-    following_count: Annotated[Optional[int], Field(default=None, ge=0)]
+    has_ever_streamed: Optional[bool] = Field(default=None)
+    follower_count: Optional[int] = Field(default=None, ge=0)
+    following_count: Optional[int] = Field(default=None, ge=0)
 
     # banned vs deleted is extrapolated
     is_banned_or_deleted: Optional[bool] = Field(default=False)
-
-    @model_validator(mode="before")
-    def set_defaults(cls, data: dict[str, Any]) -> dict[str, Any]:
-        """Defaults for (str, Enum) want for special care."""
-
-        return data
 
 
 # Table Model
