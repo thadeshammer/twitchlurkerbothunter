@@ -52,11 +52,14 @@ SQLModel constructs:
 """
 from datetime import datetime
 from enum import StrEnum
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Annotated, Any, Optional, cast
 from uuid import UUID, uuid4
 
-from pydantic import confloat, conint, constr
+from pydantic import StringConstraints, model_validator
+from sqlmodel import Column
+from sqlmodel import Enum as sqlmodel_Enum
 from sqlmodel import Field, Relationship, SQLModel
+from sqlmodel._compat import SQLModelConfig
 
 from ._validator_regexes import LANGUAGE_CODE_REGEX
 
@@ -108,29 +111,39 @@ class StreamViewerListFetchBase(SQLModel):
     """
 
     fetch_action_at: datetime = Field(nullable=False)
-    duration_of_fetch_action: confloat(ge=0.0) = Field(nullable=False)
-    # fetch_status: StreamViewerListFetchStatus = Field(
-    #     default=StreamViewerListFetchStatus.PENDING, nullable=False
-    # )
-    # scanning_session_id: UUID  # needs to be FK'd
+    duration_of_fetch_action: Annotated[Optional[float], Field(nullable=False, ge=0.0)]
+    fetch_status: Annotated[
+        StreamViewerListFetchStatus,
+        Field(
+            sa_column=Column(
+                sqlmodel_Enum(StreamViewerListFetchStatus),
+                nullable=False,
+                default=StreamViewerListFetchStatus.PENDING,
+            )
+        ),
+    ]
 
-    channel_owner_id: conint(ge=0) = Field(index=True)
-    category_id: conint(ge=0) = Field(index=True)
-    viewer_count: conint(ge=0)
-    stream_id: conint(ge=0)
-    stream_started_at: datetime
-    language: constr(pattern=LANGUAGE_CODE_REGEX)
-    is_mature: bool
-    was_live: bool
+    channel_owner_id: Annotated[int, Field(index=True, ge=0)]
+    category_id: Annotated[int, Field(index=True, ge=0)]
+    viewer_count: Annotated[int, Field(..., ge=0)]
+    stream_id: Annotated[int, Field(..., ge=0)]
+    stream_started_at: datetime = Field(...)
+    language: Annotated[str, StringConstraints(pattern=LANGUAGE_CODE_REGEX)]
+    is_mature: bool = Field(...)
+    was_live: bool = Field(...)
 
-    def __init__(self, **kwargs):
+    @model_validator(mode="before")
+    def transform_type_to_was_life(cls, data: dict[str, Any]) -> dict[str, Any]:
         """Need to convert the 'type' key into the `was_live` bool."""
-        if "type" in kwargs:
-            kwargs["was_live"] = kwargs.pop("type") == "live"
-        super().__init__(**kwargs)
+        if "type" in data.keys():
+            data["was_live"] = data.pop("type") == "live"
 
-    class Config:
-        extra = "allow"
+        return data
+
+    model_config = cast(
+        SQLModelConfig,
+        {"extra": "allow", "populate_by_name": "True"},
+    )
 
 
 class StreamViewerListFetch(StreamViewerListFetchBase, table=True):
@@ -142,21 +155,25 @@ class StreamViewerListFetch(StreamViewerListFetchBase, table=True):
     # scanning_session_id: UUID = Field(
     #     foreign_key="scanning_sessions.scanning_session_id", nullable=False, index=True
     # )
-    # channel_owner_id: conint(ge=0) = Field(
-    #     foreign_key="twitch_user_data.twitch_account_id", nullable=False, index=True
-    # )
-    # category_id: conint(ge=0) = Field(
-    #     foreign_key="stream_categories.category_id", nullable=False, index=True
-    # )
-    viewer_count: conint(ge=0) = Field(nullable=False)
-    stream_id: conint(ge=0) = Field(unique=True, nullable=False)
-    stream_started_at: datetime = Field(nullable=False)
-    language: constr(pattern=LANGUAGE_CODE_REGEX) = Field(nullable=False)
-    is_mature: bool = Field(nullable=False)
-    was_live: bool = Field(nullable=False)
+    channel_owner_id: Annotated[
+        int,
+        Field(
+            foreign_key="twitch_user_data.twitch_account_id",
+            nullable=False,
+            index=True,
+        ),
+    ]
+    # category_id: Annotated[
+    #     int,
+    #     Field(
+    #         foreign_key="stream_categories.category_id",
+    #         nullable=False,
+    #         index=True,
+    #     ),
+    # ]
 
-    # if TYPE_CHECKING:
-    #     from . import ScanningSession, StreamCategory, TwitchUserData, ViewerSighting
+    if TYPE_CHECKING:
+        from . import ScanningSession, StreamCategory, TwitchUserData, ViewerSighting
 
     # scanning_session: Optional["ScanningSession"] = Relationship(
     #     back_populates="stream_viewerlist_fetches"

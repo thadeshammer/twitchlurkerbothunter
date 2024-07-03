@@ -28,10 +28,10 @@ Classes:
 
 """
 from enum import Enum
-from typing import TYPE_CHECKING, Annotated, Optional, Tuple
+from typing import TYPE_CHECKING, Annotated, Any, Optional, Tuple
 from uuid import UUID, uuid4
 
-from pydantic import StringConstraints
+from pydantic import StringConstraints, model_validator
 from sqlmodel import Column
 from sqlmodel import Enum as sqlmodel_Enum
 from sqlmodel import Field, Relationship, SQLModel
@@ -113,8 +113,6 @@ Args:
 
 class SuspectedBotBase(SQLModel):
     # app data
-    suspected_bot_id: Annotated[UUID, Field(default_factory=uuid4, primary_key=True)]
-    has_ever_streamed: Annotated[Optional[bool], Field(default=None)]
     suspicion_level: Annotated[
         SuspicionLevel, Field(sa_column=Column(sqlmodel_Enum(SuspicionLevel)))
     ]
@@ -122,31 +120,52 @@ class SuspectedBotBase(SQLModel):
         SuspicionReason, Field(sa_column=Column(sqlmodel_Enum(SuspicionReason)))
     ]
 
+    has_ever_streamed: Annotated[Optional[bool], Field(default=None)]
     additional_notes: Annotated[
-        Optional[str], StringConstraints(pattern=r"^[a-zA-Z0-9/\s.,!?':;-]*$")
+        Optional[str],
+        StringConstraints(pattern=r"^[a-zA-Z0-9/\s.,!?':;-]*$"),
+        Field(default=None),
     ]
     # api response data
+    # See: https://dev.twitch.tv/docs/api/reference/#get-followed-channels
+    # See: https://dev.twitch.tv/docs/api/reference/#get-channel-followers
+    # Both come back with `total` in at least the first page of the response.
+
     follower_count: Annotated[Optional[int], Field(default=None, ge=0)]
     following_count: Annotated[Optional[int], Field(default=None, ge=0)]
 
     # banned vs deleted is extrapolated
-    is_banned_or_deleted: Annotated[bool, Field(default=False)]
+    is_banned_or_deleted: Optional[bool] = Field(default=False)
+
+    @model_validator(mode="before")
+    def set_defaults(cls, data: dict[str, Any]) -> dict[str, Any]:
+        """Defaults for (str, Enum) want for special care."""
+
+        return data
 
 
 # Table Model
 class SuspectedBot(SuspectedBotBase, table=True):
     __tablename__: str = "suspected_bots"
 
-    # twitch_account_id: conint(ge=0) = Field(
-    #     foreign_key="twitch_user_data.twitch_account_id", nullable=False, unique=True, index=True
-    # )
+    suspected_bot_id: Annotated[UUID, Field(default_factory=uuid4, primary_key=True)]
 
-    # if TYPE_CHECKING:
-    #     from . import TwitchUserData
+    twitch_account_id: Annotated[
+        int,
+        Field(
+            foreign_key="twitch_user_data.twitch_account_id",
+            nullable=False,
+            unique=True,
+            index=True,
+        ),
+    ]
 
-    # twitch_user_data: Optional["TwitchUserData"] = Relationship(
-    #     back_populates="suspected_bot"
-    # )
+    if TYPE_CHECKING:
+        from . import TwitchUserData
+
+    twitch_user_data: Optional["TwitchUserData"] = Relationship(
+        back_populates="suspected_bot"
+    )
 
 
 # Create and Read Models

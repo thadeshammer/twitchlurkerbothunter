@@ -191,14 +191,3 @@ class TwitchUserDataCreate(TwitchUserDataBase):
 
 class TwitchUserDataRead(TwitchUserDataBase):
     """Model for reading TwitchUserData from the db."""
-
-
-# TODO cut this if the constructor works
-# class TwitchUserDataCreateFromStreamsAPIResponse(SQLModel):
-#     """Base model for user creation from the StreamViewerListFetcher."""
-
-#     twitch_account_id: conint(gt=0) = Field(..., alias="user_id")
-#     login_name: constr(pattern=TWITCH_LOGIN_NAME_REGEX) = Field(..., alias="user_login")
-
-#     class Config:
-#         extra = "allow"
