@@ -12,10 +12,10 @@ Classes:
     StreamCategoryAPIResponse: The Pydantic BaseModel for validation.
     StreamCategoryCreate and StreamCategoryRead: Pydantic create and read classes.
 """
-from typing import TYPE_CHECKING, Optional, cast
+from typing import Annotated, Any, cast
 
-from pydantic import conint, constr
-from sqlmodel import Field, Relationship, SQLModel
+from pydantic import StringConstraints, model_validator
+from sqlmodel import Field, SQLModel
 from sqlmodel._compat import SQLModelConfig
 
 # Stream categories can be left unset by the streamer, either on purpose or by accident.
@@ -26,12 +26,22 @@ NO_CATEGORY_NAME: str = "category unset"
 class StreamCategoryBase(SQLModel):
     """Base model for StreamCategory with shared properties."""
 
-    category_id: conint(ge=-1) = Field(
-        default=NO_CATEGORY_ID, primary_key=True, alias="game_id"
-    )
-    category_name: constr(max_length=40) = Field(
-        default=NO_CATEGORY_NAME, alias="game_name", index=True
-    )
+    category_id: Annotated[
+        int, Field(default=NO_CATEGORY_ID, primary_key=True, ge=NO_CATEGORY_ID)
+    ]  #  alias="game_id",
+    category_name: Annotated[
+        str,
+        StringConstraints(max_length=40),
+        Field(default=NO_CATEGORY_NAME, index=True),
+    ]  # alias="game_name",
+
+    @model_validator(mode="before")
+    def handle_aliases(cls, data: dict[str, Any]) -> dict[str, Any]:
+        if "game_id" in data.keys():
+            data["category_id"] = data.pop("game_id")
+        if "game_name" in data.keys():
+            data["category_name"] = data.pop("game_name")
+        return data
 
     model_config = cast(
         SQLModelConfig,
@@ -56,14 +66,6 @@ class StreamCategory(StreamCategoryBase, table=True):
     """
 
     __tablename__: str = "stream_categories"
-
-    # relationship
-    if TYPE_CHECKING:
-        from . import StreamViewerListFetch
-
-    # stream_viewerlist_fetch: Optional["StreamViewerListFetch"] = Relationship(
-    #     back_populates="stream_category"
-    # )
 
 
 class StreamCategoryCreate(StreamCategoryBase):

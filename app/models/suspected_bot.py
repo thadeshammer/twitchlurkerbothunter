@@ -28,16 +28,12 @@ Classes:
 
 """
 from enum import Enum
-from typing import TYPE_CHECKING, Annotated, Any, Optional, Tuple
+from typing import Annotated, Optional, Tuple
 from uuid import UUID, uuid4
 
-from pydantic import StringConstraints, model_validator
 from sqlmodel import Column
 from sqlmodel import Enum as sqlmodel_Enum
-from sqlmodel import Field, Relationship, SQLModel
-
-if TYPE_CHECKING:
-    from . import TwitchUserData
+from sqlmodel import Field, SQLModel
 
 
 class SuspicionReason(str, Enum):
@@ -147,7 +143,7 @@ class SuspectedBotBase(SQLModel):
 class SuspectedBot(SuspectedBotBase, table=True):
     __tablename__: str = "suspected_bots"
 
-    suspected_bot_id: Annotated[UUID, Field(default_factory=uuid4, primary_key=True)]
+    id: Annotated[UUID, Field(default_factory=uuid4, primary_key=True)]
 
     twitch_account_id: Annotated[
         int,
@@ -158,8 +154,6 @@ class SuspectedBot(SuspectedBotBase, table=True):
             index=True,
         ),
     ]
-
-    twitch_user_data: "TwitchUserData" = Relationship(back_populates="suspected_bot")
 
 
 # Create and Read Models

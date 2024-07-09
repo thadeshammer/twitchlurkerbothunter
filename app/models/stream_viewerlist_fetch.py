@@ -52,19 +52,16 @@ SQLModel constructs:
 """
 from datetime import datetime
 from enum import StrEnum
-from typing import TYPE_CHECKING, Annotated, Any, Optional, cast
+from typing import Annotated, Any, Optional, cast
 from uuid import UUID, uuid4
 
 from pydantic import StringConstraints, model_validator
 from sqlmodel import Column
 from sqlmodel import Enum as sqlmodel_Enum
-from sqlmodel import Field, Relationship, SQLModel
+from sqlmodel import Field, SQLModel
 from sqlmodel._compat import SQLModelConfig
 
 from ._validator_regexes import LANGUAGE_CODE_REGEX
-
-if TYPE_CHECKING:
-    from . import ScanningSession, StreamCategory, TwitchUserData, ViewerSighting
 
 
 class StreamViewerListFetchStatus(StrEnum):
@@ -159,9 +156,9 @@ class StreamViewerListFetch(StreamViewerListFetchBase, table=True):
 
     fetch_id: UUID = Field(default_factory=uuid4, primary_key=True)
 
-    # scanning_session_id: UUID = Field(
-    #     foreign_key="scanning_sessions.scanning_session_id", nullable=False, index=True
-    # )
+    scanning_session_id: UUID = Field(
+        foreign_key="scanning_sessions.id", nullable=False, index=True
+    )
     channel_owner_id: Annotated[
         int,
         Field(
@@ -170,27 +167,14 @@ class StreamViewerListFetch(StreamViewerListFetchBase, table=True):
             index=True,
         ),
     ]
-    # category_id: Annotated[
-    #     int,
-    #     Field(
-    #         foreign_key="stream_categories.category_id",
-    #         nullable=False,
-    #         index=True,
-    #     ),
-    # ]
-
-    # scanning_session: Optional["ScanningSession"] = Relationship(
-    #     back_populates="stream_viewerlist_fetches"
-    # )
-    # twitch_user_data: "TwitchUserData" = Relationship(
-    #     back_populates="stream_viewerlist_fetches"
-    # )
-    # viewer_sightings: list["ViewerSighting"] = Relationship(
-    #     back_populates="stream_viewerlist_fetch"
-    # )
-    # stream_category: Optional["StreamCategory"] = Relationship(
-    #     back_populates="stream_viewerlist_fetch"
-    # )
+    category_id: Annotated[
+        int,
+        Field(
+            foreign_key="stream_categories.category_id",
+            nullable=False,
+            index=True,
+        ),
+    ]
 
 
 class StreamViewerListFetchCreate(StreamViewerListFetchBase):

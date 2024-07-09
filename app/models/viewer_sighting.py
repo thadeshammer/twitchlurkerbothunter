@@ -1,10 +1,10 @@
 # app/models/viewer_sighting.py
 # SQLModel representing sightings of Twitch login names in a given channel.
-from typing import TYPE_CHECKING, Annotated, Optional
+from typing import Annotated
 from uuid import UUID, uuid4
 
 from pydantic import StringConstraints
-from sqlmodel import Field, Relationship, SQLModel
+from sqlmodel import Field, SQLModel
 
 from ._validator_regexes import TWITCH_LOGIN_NAME_REGEX
 
@@ -58,14 +58,6 @@ class ViewerSighting(ViewerSightingBase, table=True):
     viewerlist_fetch_id: UUID = Field(
         foreign_key="stream_viewerlist_fetch.fetch_id", nullable=False
     )
-
-    # # Relationships
-    if TYPE_CHECKING:
-        from . import StreamViewerListFetch
-
-    # stream_viewerlist_fetch: Optional["StreamViewerListFetch"] = Relationship(
-    #     back_populates="viewer_sightings"
-    # )
 
 
 class ViewerSightingCreate(ViewerSightingBase):

@@ -29,16 +29,13 @@ Classes:
 """
 from datetime import datetime
 from enum import StrEnum
-from typing import TYPE_CHECKING, Annotated, Any, Optional, cast
+from typing import Annotated, Any, Optional, cast
 
 from pydantic import StringConstraints, model_validator
-from sqlmodel import Field, Relationship, SQLModel
+from sqlmodel import Field, SQLModel
 from sqlmodel._compat import SQLModelConfig
 
 from ._validator_regexes import TWITCH_LOGIN_NAME_REGEX
-
-if TYPE_CHECKING:
-    from . import StreamViewerListFetch, SuspectedBot
 
 
 class TwitchAccountType(StrEnum):
@@ -209,14 +206,6 @@ class TwitchUserData(TwitchUserDataBase, table=True):
     """Table model for TwitchUserData with additional fields and relationships."""
 
     __tablename__: str = "twitch_user_data"
-
-    # Relationships
-    suspected_bot: Optional["SuspectedBot"] = Relationship(
-        back_populates="twitch_user_data"
-    )
-    # stream_viewerlist_fetches: list["StreamViewerListFetch"] = Relationship(
-    #     back_populates="twitch_user_data"
-    # )  # TODO figure out why this causes circular import issues
 
 
 class TwitchUserDataCreate(TwitchUserDataBase):

@@ -16,11 +16,10 @@ Classes:
 """
 from datetime import datetime
 from enum import StrEnum
-from typing import TYPE_CHECKING, Optional
+from typing import Annotated, Optional
 from uuid import UUID, uuid4
 
-from pydantic import confloat, conint
-from sqlmodel import Field, Relationship, SQLModel
+from sqlmodel import Field, SQLModel
 
 
 class ScanningSessionStopReasonEnum(StrEnum):
@@ -36,16 +35,28 @@ class ScanningSessionBase(SQLModel):
     # reason_ended: ScanningSessionStopReasonEnum = Field(
     #     default=ScanningSessionStopReasonEnum.UNSPECIFIED
     # )
-    streams_in_scan: conint(gt=0) = Field(...)
-    viewerlists_fetched: Optional[conint(ge=0)] = Field(None)
-    average_time_per_fetch: Optional[confloat(ge=0)] = Field(None)
-    average_time_for_get_user_call: Optional[confloat(ge=0)] = Field(None)
-    average_time_for_get_stream_call: Optional[confloat(ge=0)] = Field(None)
-    suspects_spotted: Optional[conint(ge=0)] = Field(None)
-    error_count: Optional[conint(ge=0)] = Field(None)
+    reason_ended: Annotated[
+        Optional[str], Field(default=ScanningSessionStopReasonEnum.UNSPECIFIED)
+    ]  # TODO add handling for this a la SuspectedBot
+    streams_in_scan: Annotated[int, Field(..., gt=0)]  # total number of targets
+    viewerlists_fetched: Annotated[
+        Optional[int], Field(default=None, ge=0)
+    ]  # total fetched so far
+    average_time_per_fetch: Annotated[Optional[float], Field(default=None, ge=0.0)]
+    average_time_for_get_user_call: Annotated[
+        Optional[float], Field(default=None, ge=0.0)
+    ]
+    average_time_for_get_stream_call: Annotated[
+        Optional[float], Field(default=None, ge=0.0)
+    ]
+
+    # eventually will have an in-mem cache of known suspects that we may want to showcase in
+    # active monitoring, so here's a counter
+    suspects_spotted: Annotated[Optional[int], Field(default=None, ge=0)]
+    error_count: Annotated[Optional[int], Field(default=None, ge=0)]
 
 
-class ScanningSession(ScanningSessionBase):
+class ScanningSession(ScanningSessionBase, table=True):
     """This table stores metrics for independent scanning session.
 
     A Scan is a series of viewerlist fetches from a (potentially very large) set of live streams.
@@ -79,14 +90,7 @@ class ScanningSession(ScanningSessionBase):
 
     __tablename__: str = "scanning_sessions"
 
-    scanning_session_id: UUID = Field(default_factory=uuid4, primary_key=True)
-
-    if TYPE_CHECKING:
-        from . import StreamViewerListFetch
-
-    # stream_viewerlist_fetches: list["StreamViewerListFetch"] = Relationship(
-    #     back_populates="scanning_session"
-    # )
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
 
 
 class ScanningSessionCreate(ScanningSessionBase):
