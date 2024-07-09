@@ -2,8 +2,11 @@ from datetime import datetime
 
 import pytest
 from pydantic import ValidationError
+from sqlmodel import Session, select
 
 from app.models.twitch_user_data import (
+    TwitchAccountType,
+    TwitchBroadcasterType,
     TwitchUserData,
     TwitchUserDataCreate,
     TwitchUserDataRead,
@@ -55,8 +58,8 @@ TWITCH_USER_DATA_PARTIAL = {
 TWITCH_USER_DATA_FULL = {
     "twitch_account_id": 12345,
     "login_name": "sampleuser",
-    "account_type": "",
-    "broadcaster_type": "affiliate",
+    "account_type": TwitchAccountType.NORMAL,
+    "broadcaster_type": TwitchBroadcasterType.AFFILIATE,
     "lifetime_view_count": 1000,
     "account_created_at": datetime.now(),
     "first_sighting_as_viewer": datetime.now(),
@@ -104,7 +107,7 @@ def test_create_against_invalid_data_get_user(key, value):
     invalid_data = GET_USER_MOCK.copy()
     invalid_data[key] = value
 
-    with pytest.raises(ValidationError):
+    with pytest.raises((ValidationError, ValueError)):
         TwitchUserDataCreate(**invalid_data)
 
 

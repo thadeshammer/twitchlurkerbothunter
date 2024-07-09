@@ -19,6 +19,7 @@ from enum import StrEnum
 from typing import Annotated, Optional
 from uuid import UUID, uuid4
 
+from pydantic import model_validator
 from sqlmodel import Field, SQLModel
 
 
@@ -32,12 +33,9 @@ class ScanningSessionStopReasonEnum(StrEnum):
 class ScanningSessionBase(SQLModel):
     time_started: datetime = Field(...)
     time_ended: Optional[datetime] = Field(None)
-    # reason_ended: ScanningSessionStopReasonEnum = Field(
-    #     default=ScanningSessionStopReasonEnum.UNSPECIFIED
-    # )
     reason_ended: Annotated[
         Optional[str], Field(default=ScanningSessionStopReasonEnum.UNSPECIFIED)
-    ]  # TODO add handling for this a la SuspectedBot
+    ]
     streams_in_scan: Annotated[int, Field(..., gt=0)]  # total number of targets
     viewerlists_fetched: Annotated[
         Optional[int], Field(default=None, ge=0)
@@ -101,3 +99,11 @@ class ScanningSessionRead(ScanningSessionBase):
     """Pydantic model for returning ScanningSession data."""
 
     scanning_session_id: UUID
+
+    @model_validator(mode="after")
+    @classmethod
+    def convert_enums(cls, data: "ScanningSessionRead") -> "ScanningSessionRead":
+        """Explicitly convert strs to enum values."""
+        if isinstance(data.reason_ended, str):
+            data.reason_ended = ScanningSessionStopReasonEnum(data.reason_ended)
+        return data
