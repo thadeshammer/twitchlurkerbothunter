@@ -2,7 +2,6 @@ from datetime import datetime
 
 import pytest
 from pydantic import ValidationError
-from sqlmodel import Session, select
 
 from app.models.twitch_user_data import (
     TwitchAccountType,

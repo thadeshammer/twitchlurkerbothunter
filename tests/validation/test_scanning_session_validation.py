@@ -1,13 +1,10 @@
 from datetime import datetime, timedelta
-from uuid import uuid4
 
 import pytest
 from pydantic import ValidationError
 
 from app.models.scanning_session import (
-    ScanningSession,
     ScanningSessionCreate,
-    ScanningSessionRead,
     ScanningSessionStopReasonEnum,
 )
 

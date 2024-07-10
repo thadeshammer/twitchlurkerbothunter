@@ -16,10 +16,10 @@ Classes:
 """
 from datetime import datetime
 from enum import StrEnum
-from typing import Annotated, Optional
+from typing import Annotated, Any, Optional
 from uuid import UUID, uuid4
 
-from pydantic import model_validator
+from pydantic import ValidationError, model_validator
 from sqlmodel import Field, SQLModel
 
 
@@ -94,6 +94,20 @@ class ScanningSession(ScanningSessionBase, table=True):
 class ScanningSessionCreate(ScanningSessionBase):
     """Pydantic model for creating a new ScanningSession entry."""
 
+    @model_validator(mode="after")
+    @classmethod
+    def validate_enum(cls, data: "ScanningSessionCreate") -> "ScanningSessionCreate":
+        if isinstance(data.reason_ended, str):
+            try:
+                assert (
+                    data.reason_ended
+                    in ScanningSessionStopReasonEnum.__members__.values()
+                )
+                data.reason_ended = ScanningSessionStopReasonEnum(data.reason_ended)
+            except ValueError as e:
+                raise ValidationError from e
+        return data
+
 
 class ScanningSessionRead(ScanningSessionBase):
     """Pydantic model for returning ScanningSession data."""
@@ -103,7 +117,7 @@ class ScanningSessionRead(ScanningSessionBase):
     @model_validator(mode="after")
     @classmethod
     def convert_enums(cls, data: "ScanningSessionRead") -> "ScanningSessionRead":
-        """Explicitly convert strs to enum values."""
+        """Explicitly convert strs from db to enum values."""
         if isinstance(data.reason_ended, str):
             data.reason_ended = ScanningSessionStopReasonEnum(data.reason_ended)
         return data
