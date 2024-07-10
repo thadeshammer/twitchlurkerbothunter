@@ -55,7 +55,7 @@ from enum import StrEnum
 from typing import Annotated, Any, Optional, cast
 from uuid import UUID, uuid4
 
-from pydantic import StringConstraints, model_validator
+from pydantic import StringConstraints, ValidationError, model_validator
 from sqlmodel import Column
 from sqlmodel import Enum as sqlmodel_Enum
 from sqlmodel import Field, SQLModel
@@ -134,9 +134,23 @@ class StreamViewerListFetchBase(SQLModel):
 
     @model_validator(mode="before")
     def transform_type_to_was_life(cls, data: dict[str, Any]) -> dict[str, Any]:
-        """Need to convert the 'type' key into the `was_live` bool."""
+        """Need to convert the 'type' key into the `was_live` bool.
+
+        if 'type' == "live":
+            was_live = True
+        elif type == "":
+            was_live = False
+        """
         if "type" in data.keys():
-            data["was_live"] = data.pop("type") == "live"
+            assert isinstance(data["was_live"], str)
+            if data["was_live"] == "live":
+                data["was_live"] = True
+            elif data["was_live"] == "":
+                data["was_live"] = False
+            else:
+                raise ValidationError("Invalid value for type / was_live.")
+
+            data.pop("type")
 
         return data
 
@@ -180,6 +194,27 @@ class StreamViewerListFetch(StreamViewerListFetchBase, table=True):
 class StreamViewerListFetchCreate(StreamViewerListFetchBase):
     """Model for creating a new Stream Viewer List Fetch entry."""
 
+    @model_validator(mode="after")
+    @classmethod
+    def validate_enums(
+        cls, data: "StreamViewerListFetchCreate"
+    ) -> "StreamViewerListFetchCreate":
+        assert data.fetch_status is not None
+        assert data.fetch_status in StreamViewerListFetchStatus.__members__.values()
+        return data
 
-class StreamViewerListFetchRead(StreamViewerListFetch):
+
+class StreamViewerListFetchRead(StreamViewerListFetchBase):
     """Model for returning Stream Viewer List Fetch data."""
+
+    fetch_id: UUID
+    scanning_session_id: UUID
+
+    @model_validator(mode="after")
+    @classmethod
+    def convert_enums(
+        cls, data: "StreamViewerListFetchRead"
+    ) -> "StreamViewerListFetchRead":
+        if isinstance(data.fetch_status, str):
+            data.fetch_status = StreamViewerListFetchStatus(data.fetch_status)
+        return data

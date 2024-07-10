@@ -6,6 +6,8 @@
 
     Procedure:
         - Select TARGET_STREAM from workbench. (If none, wait.)
+        - Create a new partial TwitchUserData row for the streamer OR update existing.
+        - Create a new StreamCategory row if necessary.
         - Create a new StreamViewerListFetch for TARGET_STREAM with stream data.
         - Join the IRC chat for TARGET_STREAM.
         - Receive the 353 message.
