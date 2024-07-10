@@ -4,8 +4,9 @@ TwitchViewerListFetcher
 RESPECT THE RATE LIMIT. (See below.)
 
 Given a list of channel names, will asynchronously (asyncio) attempt to join them, parse the
-user lists from the 353 message, then part from each channel immediately. Once it's done, it
-will return a dict with channel_names mapped to lists of login names from the viewerlist.
+user lists from the 353 messages, then part from each channel immediately upon receiving the 366,
+ignoring all other messages. Once it's done, it will return a dict with channel_names mapped to
+lists of login names from the viewerlist.
 
 This class uses TwitchIO to handle the noodly parts of interfacing with Twitch's IRC.
 
@@ -33,6 +34,11 @@ Usage:
     Minding the rate limit, call fetch_viewer_list_for_channels() with a list of channel names. It
     will return a copy of its internal _user_list dict that it will freshly construct each time you
     call fetch_viewer_list_for_channels().
+
+References:
+    Clear explanation - https://discuss.dev.twitch.com/t/chatbot-and-353-user-message/44968/4
+    RFC-1459 - https://www.rfc-editor.org/rfc/rfc1459
+    Example Parser - https://dev.twitch.tv/docs/irc/example-parser/
 """
 
 import asyncio
@@ -52,6 +58,11 @@ from twitchio.errors import (
 )
 
 logger = logging.getLogger("app")
+
+
+# These correspond to RFC 1459 / IRC protocol
+IRC_CHATTER_LIST_MSG = "353"
+IRC_END_OF_NAMES_MSG = "366"
 
 
 @dataclass
@@ -84,21 +95,21 @@ class TwitchViewerListFetcher(Client):
         logger.info(f"{self._name} is ready.")
 
     async def event_raw_data(self, data: str):
-        if "353" in data:
+        if IRC_CHATTER_LIST_MSG in data:
             # The "353" will only appear in raw event data if at least one channel has been joined.
             # So, until fetch_viewer_list_for_channels() is called with a list of channels, this
             # code here under the if can't fire, and the self._user_lists reference won't blow us
             # up.
 
             # Extract the channel name and user list from the 353 message. Here's a sample:
-            # ":user!user@user.tmi.twitch.tv 353 this_bot = #test_channel :user1 user2 user3"
+            # ":user!user@user.tmi.twitch.tv 353 this_bot = #channel :jane jack jill"
             # We split on the colons
             # [0] = ""
             # [1] = the prefix including the 353 and the name of our bot here.
             # [2] = the space-separated user list
             parts = data.split(":")
             if len(parts) > 2:
-                # msg_parts ['user!user@user.tmi.twitch.tv', '353', 'this_bot', '=', '#test_channel']
+                # msg_parts ['user!user@user.tmi.twitch.tv', '353', 'this_bot', '=', '#channel']
                 msg_parts = parts[1].strip().split()
                 channel_name = msg_parts[-1].lstrip("#")
                 user_list = parts[2].split()
@@ -107,22 +118,35 @@ class TwitchViewerListFetcher(Client):
                     f"User list for {channel_name}: {self._user_lists[channel_name].user_names}"
                 )
 
-                # Part from the channel after receiving the user list
-                try:
-                    await self.part_channels(channel_name)
-                except (
-                    HTTPException,
-                    InvalidContent,
-                    AuthenticationError,
-                    IRCCooldownError,
-                    TwitchIOException,
-                    Unauthorized,
-                ) as e:
-                    logger.error(f"Error fetching viewer list for channels: {e}")
-                    raise e
+        if IRC_END_OF_NAMES_MSG in data:
+            # Part from the channel after receiving the 366 indicating end-of-353 messages.
+            # We split as above, except this time [2] is the end of names message.
+            parts = data.split(":")
+            if len(parts) > 2:
+                # message = ":tmi.twitch.tv 366 this_bot channel :End of /NAMES list"
+                # parts == ['', 'tmi.twitch.tv 366 this_bot my_channel ', 'End of /NAMES list']
+                # msg_parts == ['tmi.twitch.tv', '366', 'this_bot', 'channel']
+                msg_parts = parts[1].strip().split()
+                channel_name = msg_parts[-1].lstrip("#")
 
-                self._user_lists[channel_name].end_time = perf_counter()
-                self._user_lists[channel_name].calculate_time_elapsed()
+                end_of_names_msg = parts[2].split()
+                logger.info(f"Parting from {channel_name} because {end_of_names_msg}")
+
+            try:
+                await self.part_channels(channel_name)
+            except (
+                HTTPException,
+                InvalidContent,
+                AuthenticationError,
+                IRCCooldownError,
+                TwitchIOException,
+                Unauthorized,
+            ) as e:
+                logger.error(f"Error fetching viewer list for channels: {e}")
+                raise e
+
+            self._user_lists[channel_name].end_time = perf_counter()
+            self._user_lists[channel_name].calculate_time_elapsed()
 
     async def fetch_viewer_list_for_channels(
         self, channels: list[str]
