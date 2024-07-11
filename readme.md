@@ -46,7 +46,7 @@ I'm [live streaming](https://twitch.tv/thadeshammer) portions of my development 
 
 See the current data model [here](uml/lurker-bot-hunter%20data%20model.pdf).
 
-This application will - within the 20 channel-joins per 10 seconds ratelimit - crawl over Twitch live streams to collect their publically available viewer lists and publically available user data to help identify lurker bots. Multiple methods will be used to fingerprint lurkerbots, including:
+This application will - within the 20 channel-joins per 10 seconds ratelimit - crawl over Twitch live streams to collect their publically available viewer lists via the IRC 353 messages, as well as publically available user data (but NOT their email addresses) to help identify lurker bots. Multiple methods will be used to fingerprint lurkerbots, including:
 
 - aggregate viewer list data to identify accounts (by account id) who are concurrently in large numbers of live channels;
 - account age;
@@ -58,24 +58,30 @@ This bot will not remain resident in channels, so it will be unable to track whe
 
 The bot will also randomize when it performs as scan and what channels/categories are included in a given scan so as to be less predictable to those that wish to evade its detection.
 
-The bot utilizes Flask, SQLAlchemy, Docker, and Pydantic to validate and manage data from Twitch. The project adheres to Twitch's TOS by using the Twitch IRC interface to scrape viewer lists manually without using undocumented endpoints or exceeding prescribed ratelimits.
+The bot utilizes FastAPI, SQLModel, Docker, and Pydantic V2 to validate and manage data from Twitch. The project adheres to Twitch's TOS by using the Twitch IRC interface to scrape viewer lists manually without using undocumented endpoints or exceeding prescribed ratelimits.
 
 There's a second app - a single file Flask servlet - whose only job is to take care of the Twitch OAuth flow and secure a token. I did this for the experience; it was painful because the fetch_token() method wasn't recognizing the access_token was in fact in the response, and this ate a couple of my hours. Unless you also want the experience, may I recommend you just use [Twitch Token Generator](https://twitchtokengenerator.com/) as needed. Or write a tiny Node.js app, that was way less painful.
 
-## Frameworks and Features
+## Frameworks
 
-- **Flask**: Web framework used to create the backend API.
-- **SQLAlchemy**: ORM for interacting with the MySQL database.
-- **Docker**: Containerization for easy deployment and management.
+- **FastAPI**: Web framework used to create the backend API.
+- **SQLModel**: ORM for interacting with the MySQL database.
 - **Pydantic**: Data validation and settings management.
 - **Twitch IRC Interface**: For collecting viewer lists in compliance with Twitch's TOS.
 - **Twitch Helix API**: For collecting additional data on viewers and channels.
-- **Parallel Processing**: Considering using Python coroutines, multiprocesses, or microservices for parallelizing tasks.
+
+## Supporting Apps
+
+- **Docker**: Containerization for easy deployment and management.
+- **Redis**: (UPCOMING) Simple caching for viewer-list fetching and async safe data sharing between processes.
+
+## Features
+- **Parallel Processing**: Will be using using Python coroutines and multiprocesses.
 
 ## Regarding foundational tech choices
 
 - **Why Python?**: Python as an ecosystem and community has a lot of well documented and maintained projects that are useful in data analysis. In addition, I wanted to use Python because I want to keep my Python skills sharp in the current market. And I happen to enjoy Python. Mostly.
-- **Why Flask?**: There are several twitch-api Python modules I came across that seem to be geared towards Flask, which is in part why we're here. In addition, I wanted recent work with Flask since it's been a year since I've used it, and this is my first time setting up a Flask app from the studs, which was a valuable if painful experience.
+- **Why FastAPI?**: I tried Flask (because several twitch-api Python modules I came across that seem to be geared towards Flask) but I wasn't able to jury rig it to be happy with async in a way that satisfied. FastAPI is just easier and will allow me to grow the app out to allow others to interface with it some day. Maybe.
 - **Why not JavaScript?**: The honest answer is, I already have a JS project in-flight right now and wanted a balance. The availability of stats analysis tools in Python was also important, but was secondary.
 - **Why not Rust?**: I will no doubt continue asking myself this question as the project goes on.
 
