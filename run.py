@@ -1,3 +1,4 @@
+import asyncio
 import logging.config
 import os
 import ssl
@@ -21,14 +22,21 @@ logging.getLogger("asyncio").setLevel(
 logger = logging.getLogger("app")
 logger.info("Logger is ready.")
 
-app = create_app()
+
+async def create_flask_app():
+    flask_app = await create_app()
+
+    @flask_app.teardown_appcontext
+    def shutdown_event(exception=None):
+        logger.info("Server is shutting down...")
+        if exception is not None:
+            logger.error(f"Shutdown error: {exception}")
+
+    return flask_app
 
 
-@app.teardown_appcontext
-def shutdown_event(exception=None):
-    logger.info("Server is shutting down...")
-    if exception is not None:
-        logger.error(f"Shutdown error: {exception}")
+def get_app():
+    return asyncio.ensure_future(create_flask_app())
 
 
 if __name__ == "__main__":
@@ -39,4 +47,5 @@ if __name__ == "__main__":
         password=CERT_PASSKEY,
     )
 
+    app = get_app()
     app.run(debug=True, ssl_context=context, port=443)

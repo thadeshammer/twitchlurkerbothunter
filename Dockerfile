@@ -28,4 +28,4 @@ ENV SECRETS_DIR="./secrets/tokens.yaml"
 # Expose the port
 EXPOSE 443
 
-CMD ["uvicorn", "run:app", "--host", "0.0.0.0", "--port", "443", "--ssl-certfile", "/secrets/cert.pem", "--ssl-keyfile", "/secrets/key.pem"]
+CMD ["uvicorn", "run:get_app", "--host", "0.0.0.0", "--port", "443", "--ssl-certfile", "/secrets/cert.pem", "--ssl-keyfile", "/secrets/key.pem"]
