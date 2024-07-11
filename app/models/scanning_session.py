@@ -94,18 +94,13 @@ class ScanningSession(ScanningSessionBase, table=True):
 class ScanningSessionCreate(ScanningSessionBase):
     """Pydantic model for creating a new ScanningSession entry."""
 
-    @model_validator(mode="after")
-    @classmethod
-    def validate_enum(cls, data: "ScanningSessionCreate") -> "ScanningSessionCreate":
-        if isinstance(data.reason_ended, str):
-            try:
-                assert (
-                    data.reason_ended
-                    in ScanningSessionStopReasonEnum.__members__.values()
-                )
-                data.reason_ended = ScanningSessionStopReasonEnum(data.reason_ended)
-            except ValueError as e:
-                raise ValidationError from e
+    @model_validator(mode="before")
+    def check_enum(cls, data: dict[str, Any]) -> dict[str, Any]:
+        if "reason_ended" in data:
+            assert (
+                data["reason_ended"]
+                in ScanningSessionStopReasonEnum.__members__.values()
+            )
         return data
 
 
@@ -113,11 +108,3 @@ class ScanningSessionRead(ScanningSessionBase):
     """Pydantic model for returning ScanningSession data."""
 
     scanning_session_id: UUID
-
-    @model_validator(mode="after")
-    @classmethod
-    def convert_enums(cls, data: "ScanningSessionRead") -> "ScanningSessionRead":
-        """Explicitly convert strs from db to enum values."""
-        if isinstance(data.reason_ended, str):
-            data.reason_ended = ScanningSessionStopReasonEnum(data.reason_ended)
-        return data

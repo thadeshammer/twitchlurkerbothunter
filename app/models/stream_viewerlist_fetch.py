@@ -56,8 +56,6 @@ from typing import Annotated, Any, Optional, cast
 from uuid import UUID, uuid4
 
 from pydantic import StringConstraints, ValidationError, model_validator
-from sqlmodel import Column
-from sqlmodel import Enum as sqlmodel_Enum
 from sqlmodel import Field, SQLModel
 from sqlmodel._compat import SQLModelConfig
 
@@ -112,16 +110,7 @@ class StreamViewerListFetchBase(SQLModel):
 
     fetch_action_at: datetime = Field(nullable=False)
     duration_of_fetch_action: Annotated[Optional[float], Field(nullable=False, ge=0.0)]
-    fetch_status: Annotated[
-        StreamViewerListFetchStatus,
-        Field(
-            sa_column=Column(
-                sqlmodel_Enum(StreamViewerListFetchStatus),
-                nullable=False,
-                default=StreamViewerListFetchStatus.PENDING,
-            )
-        ),
-    ]
+    fetch_status: str = Field(default=StreamViewerListFetchStatus.PENDING)
 
     channel_owner_id: Annotated[int, Field(index=True, ge=0)]
     category_id: Annotated[int, Field(index=True, ge=0)]
@@ -131,28 +120,6 @@ class StreamViewerListFetchBase(SQLModel):
     language: Annotated[str, StringConstraints(pattern=LANGUAGE_CODE_REGEX)]
     is_mature: bool = Field(...)
     was_live: bool = Field(...)
-
-    @model_validator(mode="before")
-    def transform_type_to_was_life(cls, data: dict[str, Any]) -> dict[str, Any]:
-        """Need to convert the 'type' key into the `was_live` bool.
-
-        if 'type' == "live":
-            was_live = True
-        elif type == "":
-            was_live = False
-        """
-        if "type" in data.keys():
-            assert isinstance(data["was_live"], str)
-            if data["was_live"] == "live":
-                data["was_live"] = True
-            elif data["was_live"] == "":
-                data["was_live"] = False
-            else:
-                raise ValidationError("Invalid value for type / was_live.")
-
-            data.pop("type")
-
-        return data
 
     model_config = cast(
         SQLModelConfig,
@@ -194,13 +161,29 @@ class StreamViewerListFetch(StreamViewerListFetchBase, table=True):
 class StreamViewerListFetchCreate(StreamViewerListFetchBase):
     """Model for creating a new Stream Viewer List Fetch entry."""
 
-    @model_validator(mode="after")
+    @model_validator(mode="before")
     @classmethod
-    def validate_enums(
-        cls, data: "StreamViewerListFetchCreate"
-    ) -> "StreamViewerListFetchCreate":
-        assert data.fetch_status is not None
-        assert data.fetch_status in StreamViewerListFetchStatus.__members__.values()
+    def prep_and_validate_fields(cls, data: dict[str, Any]) -> dict[str, Any]:
+        """Need to convert the 'type' key into the `was_live` bool.
+
+        if 'type' == "live":
+            was_live = True
+        elif type == "":
+            was_live = False
+        """
+        if "type" in data.keys():
+            assert isinstance(data["was_live"], str)
+            if data["was_live"] == "live":
+                data["was_live"] = True
+            elif data["was_live"] == "":
+                data["was_live"] = False
+            else:
+                raise ValidationError("Invalid value for type / was_live.")
+
+            data.pop("type")
+
+        assert data["fetch_status"] in StreamViewerListFetchStatus.__members__.values()
+
         return data
 
 
@@ -209,12 +192,3 @@ class StreamViewerListFetchRead(StreamViewerListFetchBase):
 
     fetch_id: UUID
     scanning_session_id: UUID
-
-    @model_validator(mode="after")
-    @classmethod
-    def convert_enums(
-        cls, data: "StreamViewerListFetchRead"
-    ) -> "StreamViewerListFetchRead":
-        if isinstance(data.fetch_status, str):
-            data.fetch_status = StreamViewerListFetchStatus(data.fetch_status)
-        return data

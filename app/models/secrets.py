@@ -21,9 +21,9 @@ Classes:
 """
 from datetime import datetime, timezone
 from enum import StrEnum
-from typing import Union
+from typing import Annotated, Any, Union
 
-from pydantic import conint, constr
+from pydantic import StringConstraints, model_validator
 from sqlmodel import Field, SQLModel
 
 from ._validator_regexes import TWITCH_TOKEN_REGEX
@@ -34,11 +34,15 @@ class TokenType(StrEnum):
 
 
 class SecretBase(SQLModel):
-    access_token: constr(max_length=512, pattern=TWITCH_TOKEN_REGEX) = Field(...)
-    refresh_token: constr(max_length=512, pattern=TWITCH_TOKEN_REGEX) = Field(...)
-    expires_in: conint(gt=0) = Field(...)
-    token_type: TokenType = Field(...)
-    scope: Union[str, list[str]] = Field(..., alias="scope")
+    access_token: Annotated[
+        str, StringConstraints(max_length=512, pattern=TWITCH_TOKEN_REGEX), Field(...)
+    ]
+    refresh_token: Annotated[
+        str, StringConstraints(max_length=512, pattern=TWITCH_TOKEN_REGEX), Field(...)
+    ]
+    expires_in: int = Field(..., gt=0)
+    token_type: str = Field(...)  # usually "bearer" but irrelevant, really
+    scope: Annotated[Union[str, list[str]], StringConstraints(min_length=7), Field(...)]
 
 
 class Secret(SecretBase):
@@ -69,8 +73,19 @@ class Secret(SecretBase):
 
 
 class SecretCreate(SecretBase):
-    pass
+    @model_validator(mode="before")
+    def validate_fields(cls, data: dict[str, Any]) -> dict[str, Any]:
+        assert "token_type" in data
+        assert data["token_type"] in TokenType.__members__.values()
+
+        assert "scope" in data
+        if isinstance(data["scope"], list):
+            # This will be a VERY small number of scopes, usually one, at most three.
+            data["scope"] = " ".join(data["scope"])
+
+        return data
 
 
 class SecretRead(SecretBase):
     id: int
+    last_update_timestamp: datetime

@@ -28,12 +28,13 @@ Classes:
 
 """
 from enum import Enum
-from typing import Annotated, Optional, Tuple
+from typing import Annotated, Any, Optional, Tuple
 from uuid import UUID, uuid4
 
-from sqlmodel import Column
-from sqlmodel import Enum as sqlmodel_Enum
+from pydantic import StringConstraints, model_validator
 from sqlmodel import Field, SQLModel
+
+from ._validator_regexes import IN_APP_NOTES_REGEX
 
 
 class SuspicionReason(str, Enum):
@@ -112,18 +113,18 @@ Args:
 
 class SuspectedBotBase(SQLModel):
     # app data - from the classfier
-    suspicion_level: Annotated[
-        SuspicionLevel, Field(sa_column=Column(sqlmodel_Enum(SuspicionLevel)))
-    ]
-    suspicion_reason: Annotated[
-        SuspicionReason, Field(sa_column=Column(sqlmodel_Enum(SuspicionReason)))
-    ]
+    suspicion_level: str = Field(...)
+    suspicion_reason: str = Field(...)
 
-    additional_notes: Optional[str] = Field(
-        default=None,
-        description="Additional notes about the suspected bot.",
-        regex=r"^[a-zA-Z0-9/\s.,!?':;-]*$",
-    )
+    additional_notes: Annotated[
+        Optional[str],
+        StringConstraints(pattern=IN_APP_NOTES_REGEX),
+        Field(
+            default=None,
+            description="Additional notes about the suspected bot.",
+            regex=IN_APP_NOTES_REGEX,
+        ),
+    ]
     # api response data
     # for follows and followers:
     # See: https://dev.twitch.tv/docs/api/reference/#get-followed-channels
@@ -137,6 +138,14 @@ class SuspectedBotBase(SQLModel):
 
     # banned vs deleted is extrapolated
     is_banned_or_deleted: Optional[bool] = Field(default=False)
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_fields(cls, data: dict[str, Any]) -> dict[str, Any]:
+        """Ensure that the enum values provided are legit."""
+        assert data["suspicion_level"] in SuspicionLevel.__members__.values()
+        assert data["suspicion_reason"] in SuspicionReason.__members__.values()
+        return data
 
 
 # Table Model

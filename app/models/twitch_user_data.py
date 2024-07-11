@@ -108,6 +108,9 @@ class TwitchUserDataBase(SQLModel, table=False):
         str, StringConstraints(pattern=TWITCH_LOGIN_NAME_REGEX), Field(..., index=True)
     ]
 
+    # NOTE In the edgecase where we create a a partial row from 'Get Stream' data, these fields
+    # below are optional; they'll be updated during enrichment.
+
     # NOTE. We don't give the DB enums because of these outstanding issue:
     # - https://github.com/pydantic/pydantic-core/issues/1336
     # - https://github.com/pydantic/pydantic/discussions/9270
@@ -129,9 +132,9 @@ class TwitchUserDataBase(SQLModel, table=False):
     ]
     all_time_high_at: Optional[datetime] = Field(default=None)
 
-    @classmethod
-    def handle_aliasing(cls, data: dict[str, Any]) -> dict[str, Any]:
-        """Handle multiple aliases.
+    @model_validator(mode="before")
+    def validate_fields(cls, data: dict[str, Any]) -> dict[str, Any]:
+        """Handle multiple aliases and check enums in 'type' and 'broadcaster_type' if applicable.
 
         In Pydantic V1, coupling Field(alias=) and Config's populate_by_name would allow me to push
         in several different formats for this data with only one class to worry about handling it.
@@ -163,26 +166,11 @@ class TwitchUserDataBase(SQLModel, table=False):
             data["lifetime_view_count"] = data.pop("view_count")
             data["account_created_at"] = data.pop("created_at")
 
-        return data
+            assert data["account_type"] in TwitchAccountType.__members__.values()
+            assert (
+                data["broadcaster_type"] in TwitchBroadcasterType.__members__.values()
+            )
 
-    @classmethod
-    def convert_enums(cls, data: dict[str, Any]) -> dict[str, Any]:
-        """Explicitly convert to enums from string values for in-app handling.
-
-        Since the DB is typed for strings the conversion to str is handled.
-        """
-        # Handle to-enum conversion / will trip ValueError if its not in the StrEnum
-        if "account_type" in data and isinstance(data["account_type"], str):
-            data["account_type"] = TwitchAccountType(data["account_type"])
-        if "broadcaster_type" in data and isinstance(data["broadcaster_type"], str):
-            data["broadcaster_type"] = TwitchBroadcasterType(data["broadcaster_type"])
-
-        return data
-
-    @model_validator(mode="before")
-    def run_validators(cls, data: dict[str, Any]) -> dict[str, Any]:
-        data = TwitchUserDataBase.handle_aliasing(data)
-        data = TwitchUserDataBase.convert_enums(data)
         return data
 
     model_config = cast(
@@ -207,14 +195,3 @@ class TwitchUserDataCreate(TwitchUserDataBase):
 
 class TwitchUserDataRead(TwitchUserDataBase):
     """Model for reading TwitchUserData from the db."""
-
-    @model_validator(mode="after")
-    @classmethod
-    def convert_str_to_enums(cls, data: "TwitchUserDataBase") -> "TwitchUserDataBase":
-        if data:
-            if data.account_type and isinstance(data.account_type, str):
-                data.account_type = TwitchAccountType(data.account_type)
-            if data.broadcaster_type and isinstance(data.broadcaster_type, str):
-                data.broadcaster_type = TwitchBroadcasterType(data.broadcaster_type)
-
-        return data
