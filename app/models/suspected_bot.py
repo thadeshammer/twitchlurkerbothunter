@@ -116,15 +116,22 @@ class SuspectedBotBase(SQLModel):
     suspicion_level: str = Field(...)
     suspicion_reason: str = Field(...)
 
-    additional_notes: Annotated[
-        Optional[str],
-        StringConstraints(pattern=IN_APP_NOTES_REGEX),
+    additional_notes: Optional[str] = Field(
+        default=None,
+        description="Additional notes about the suspected bot.",
+        regex=IN_APP_NOTES_REGEX,
+    )
+
+    twitch_account_id: Annotated[
+        int,
         Field(
-            default=None,
-            description="Additional notes about the suspected bot.",
-            regex=IN_APP_NOTES_REGEX,
+            foreign_key="twitch_user_data.twitch_account_id",
+            nullable=False,
+            unique=True,
+            index=True,
         ),
     ]
+
     # api response data
     # for follows and followers:
     # See: https://dev.twitch.tv/docs/api/reference/#get-followed-channels
@@ -153,16 +160,6 @@ class SuspectedBot(SuspectedBotBase, table=True):
     __tablename__: str = "suspected_bots"
 
     id: Annotated[UUID, Field(default_factory=uuid4, primary_key=True)]
-
-    twitch_account_id: Annotated[
-        int,
-        Field(
-            foreign_key="twitch_user_data.twitch_account_id",
-            nullable=False,
-            unique=True,
-            index=True,
-        ),
-    ]
 
 
 # Create and Read Models
