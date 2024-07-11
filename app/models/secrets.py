@@ -42,10 +42,12 @@ class SecretBase(SQLModel):
     ]
     expires_in: int = Field(..., gt=0)
     token_type: str = Field(...)  # usually "bearer" but irrelevant, really
-    scope: Annotated[Union[str, list[str]], StringConstraints(min_length=7), Field(...)]
+    scope: Annotated[
+        str, StringConstraints(min_length=7), Field(...)
+    ]  # space-delimited
 
 
-class Secret(SecretBase):
+class Secret(SecretBase, table=True):
     """Single-row table to store short-lived oauth tokens and associated metadata. Uses
     unique/default combo to enforce there being only one row.
 
@@ -78,7 +80,7 @@ class SecretCreate(SecretBase):
         assert "token_type" in data
         assert data["token_type"] in TokenType.__members__.values()
 
-        assert "scope" in data
+        assert "scope" in data and data["scope"] is not None
         if isinstance(data["scope"], list):
             # This will be a VERY small number of scopes, usually one, at most three.
             data["scope"] = " ".join(data["scope"])
