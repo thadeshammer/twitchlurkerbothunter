@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.lurkerbot_hunter_components.twitch_viewerlist_fetcher import (
+from server.lurkerbot_hunter_components.twitch_viewerlist_fetcher import (
     TwitchViewerListFetcher,
     ViewerListFetchData,
 )
@@ -25,22 +25,34 @@ async def test_event_ready(_fetcher):
 
 
 @pytest.mark.asyncio
-async def test_event_raw_data(_fetcher):
+async def test_event_raw_data_chatter_list_message(_fetcher):
     with patch(
         "app.lurkerbot_hunter_components.twitch_viewerlist_fetcher.logger"
-    ) as mock_logger, patch.object(
-        _fetcher, "part_channels", new_callable=AsyncMock
-    ) as mock_part_channels:
+    ) as mock_logger:
 
         _fetcher._user_lists = {"test_channel": ViewerListFetchData()}
-        data = ":user!user@user.tmi.twitch.tv 353 this_bot = #test_channel :user1 user2 user3"
+        message = ":tmi.twitch.tv 353 this_bot = #test_channel :user1 user2 user3"
 
-        await _fetcher.event_raw_data(data)
+        await _fetcher.event_raw_data(message)
 
-        mock_part_channels.assert_called_with("test_channel")
         mock_logger.info.assert_called_with(
             "User list for test_channel: ['user1', 'user2', 'user3']"
         )
+
+
+@pytest.mark.asyncio
+async def test_event_raw_data_part_message(_fetcher):
+    with patch.object(
+        _fetcher, "part_channels", new_callable=AsyncMock
+    ) as mock_part_channels:
+
+        channel = "test_channel"
+        _fetcher._user_lists = {channel: ViewerListFetchData()}
+        message = f":tmi.twitch.tv 366 lurkerbot {channel} :End of /NAMES list"
+
+        await _fetcher.event_raw_data(message)
+
+        mock_part_channels.assert_called_with(channel)
 
 
 @pytest.mark.asyncio

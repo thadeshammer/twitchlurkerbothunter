@@ -4,7 +4,6 @@ WORKDIR /app
 
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
-RUN pip install gunicorn
 
 RUN apt-get update && apt-get install -y default-mysql-client
 
@@ -18,6 +17,8 @@ COPY secrets/key.pem /secrets/key.pem
 RUN mkdir -p /logs
 
 # Set environment variables
+# ENV PYTHONDONTWRITEBYTECODE 1
+# ENV PYTHONUNBUFFERED 1
 ENV FLASK_APP=app.py
 ENV FLASK_ENV=development
 ENV LOG_CFG="logging_config.yaml"
@@ -27,4 +28,4 @@ ENV SECRETS_DIR="./secrets/tokens.yaml"
 # Expose the port
 EXPOSE 443
 
-CMD ["gunicorn", "--workers", "1", "--bind", "0.0.0.0:443", "--certfile=/secrets/cert.pem", "--keyfile=/secrets/key.pem", "run:app"]
+CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "443", "--ssl-keyfile", "/secrets/key.pem", "--ssl-certfile", "/secrets/cert.pem"]
