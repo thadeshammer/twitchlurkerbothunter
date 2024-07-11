@@ -12,7 +12,8 @@ from app.models.twitch_user_data import (
 )
 from app.util import convert_timestamp_from_twitch
 
-GET_USER_MOCK = {
+# NOTE. 'Get User' doesn't have the email key unless we scope for it. It's included below for ref.
+GET_USER_RESPONSE = {
     "id": "141981764",
     "login": "weepwop1337socks",
     "display_name": "wEEpwOp1337socks",
@@ -22,11 +23,11 @@ GET_USER_MOCK = {
     "profile_image_url": "https://static-cdn.jtvnw.net/jtv_user_pictures/profile_image-300x300.png",
     "offline_image_url": "https://static-cdn.jtvnw.net/jtv_user_pictures/channel_offline.png",
     "view_count": "5980557",
-    "email": "not-real@email.com",  # NOTE we do NOT scope for this; response will lack email.
+    # "email": "not-real@email.com",  # NOTE we do NOT scope for this; response will lack email.
     "created_at": "2016-12-14T20:32:28Z",
 }
 
-GET_STREAM_MOCK = {
+GET_STREAM_RESPONSE = {
     "id": "123456789",
     "user_id": "98765",
     "user_login": "sandysanderman",
@@ -70,18 +71,18 @@ TWITCH_USER_DATA_FULL = {
 
 
 def test_create_from_get_user():
-    data = GET_USER_MOCK.copy()
+    data = GET_USER_RESPONSE.copy()
     assert isinstance(data, dict)
     tud = TwitchUserDataCreate(**data)
 
-    assert tud.twitch_account_id == int(GET_USER_MOCK["id"])
-    assert tud.login_name == GET_USER_MOCK["login"]
-    assert tud.account_type == GET_USER_MOCK["type"]
-    assert tud.broadcaster_type == GET_USER_MOCK["broadcaster_type"]
-    assert tud.lifetime_view_count == int(GET_USER_MOCK["view_count"])
+    assert tud.twitch_account_id == int(GET_USER_RESPONSE["id"])
+    assert tud.login_name == GET_USER_RESPONSE["login"]
+    assert tud.account_type == GET_USER_RESPONSE["type"]
+    assert tud.broadcaster_type == GET_USER_RESPONSE["broadcaster_type"]
+    assert tud.lifetime_view_count == int(GET_USER_RESPONSE["view_count"])
 
     assert tud.account_created_at is not None
-    expected_timestamp = convert_timestamp_from_twitch(GET_USER_MOCK["created_at"])
+    expected_timestamp = convert_timestamp_from_twitch(GET_USER_RESPONSE["created_at"])
     result_timestamp = tud.account_created_at.strftime("%Y-%m-%d %H:%M:%S%z")
     assert expected_timestamp == result_timestamp
 
@@ -102,8 +103,8 @@ def test_create_from_get_user():
     ],
 )
 def test_create_against_invalid_data_get_user(key, value):
-    assert isinstance(GET_USER_MOCK, dict)
-    invalid_data = GET_USER_MOCK.copy()
+    assert isinstance(GET_USER_RESPONSE, dict)
+    invalid_data = GET_USER_RESPONSE.copy()
     invalid_data[key] = value
 
     with pytest.raises((ValidationError, ValueError)):
@@ -111,10 +112,10 @@ def test_create_against_invalid_data_get_user(key, value):
 
 
 def test_create_from_get_stream():
-    tud = TwitchUserDataCreate(**GET_STREAM_MOCK)
+    tud = TwitchUserDataCreate(**GET_STREAM_RESPONSE)
 
-    assert tud.twitch_account_id == int(GET_STREAM_MOCK["user_id"])
-    assert tud.login_name == GET_STREAM_MOCK["user_login"]
+    assert tud.twitch_account_id == int(GET_STREAM_RESPONSE["user_id"])
+    assert tud.login_name == GET_STREAM_RESPONSE["user_login"]
 
 
 @pytest.mark.parametrize(
@@ -131,7 +132,7 @@ def test_create_from_get_stream():
     ],
 )
 def test_create_against_invalid_data_get_stream(key, value):
-    invalid_data = GET_STREAM_MOCK.copy()
+    invalid_data = GET_STREAM_RESPONSE.copy()
     invalid_data[key] = value
 
     with pytest.raises(ValidationError):
