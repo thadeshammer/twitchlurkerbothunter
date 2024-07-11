@@ -3,12 +3,12 @@ import logging
 import pytest
 from sqlmodel import Session, SQLModel, create_engine
 
-from app.models.scanning_session import ScanningSession
-from app.models.stream_categories import StreamCategory
-from app.models.stream_viewerlist_fetch import StreamViewerListFetch
-from app.models.suspected_bot import SuspectedBot
-from app.models.twitch_user_data import TwitchUserData
-from app.models.viewer_sighting import ViewerSighting
+from server.models.scanning_session import ScanningSession
+from server.models.stream_categories import StreamCategory
+from server.models.stream_viewerlist_fetch import StreamViewerListFetch
+from server.models.suspected_bot import SuspectedBot
+from server.models.twitch_user_data import TwitchUserData
+from server.models.viewer_sighting import ViewerSighting
 
 
 @pytest.fixture(scope="module")

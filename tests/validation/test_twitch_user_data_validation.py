@@ -3,14 +3,14 @@ from datetime import datetime
 import pytest
 from pydantic import ValidationError
 
-from app.models.twitch_user_data import (
+from server.models.twitch_user_data import (
     TwitchAccountType,
     TwitchBroadcasterType,
     TwitchUserData,
     TwitchUserDataCreate,
     TwitchUserDataRead,
 )
-from app.util import convert_timestamp_from_twitch
+from server.util import convert_timestamp_from_twitch
 
 # NOTE. 'Get User' doesn't have the email key unless we scope for it. It's included below for ref.
 GET_USER_RESPONSE = {

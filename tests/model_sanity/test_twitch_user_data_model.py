@@ -2,7 +2,7 @@ from datetime import datetime
 
 from sqlmodel import select
 
-from app.models import (
+from server.models import (
     TwitchAccountType,
     TwitchBroadcasterType,
     TwitchUserData,

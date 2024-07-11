@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import pytest
 from pydantic import ValidationError
 
-from app.models.scanning_session import (
+from server.models.scanning_session import (
     ScanningSessionCreate,
     ScanningSessionStopReasonEnum,
 )

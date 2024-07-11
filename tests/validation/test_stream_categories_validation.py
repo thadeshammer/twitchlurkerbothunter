@@ -1,4 +1,4 @@
-from app.models import StreamCategoryCreate
+from server.models import StreamCategoryCreate
 
 GET_STREAM_MOCK = {
     "id": "123456789",

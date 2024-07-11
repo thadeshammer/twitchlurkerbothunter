@@ -17,8 +17,8 @@ COPY secrets/key.pem /secrets/key.pem
 RUN mkdir -p /logs
 
 # Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+# ENV PYTHONDONTWRITEBYTECODE 1
+# ENV PYTHONUNBUFFERED 1
 ENV FLASK_APP=app.py
 ENV FLASK_ENV=development
 ENV LOG_CFG="logging_config.yaml"
@@ -28,4 +28,4 @@ ENV SECRETS_DIR="./secrets/tokens.yaml"
 # Expose the port
 EXPOSE 443
 
-CMD ["uvicorn", "run:get_app", "--host", "0.0.0.0", "--port", "443", "--ssl-certfile", "/secrets/cert.pem", "--ssl-keyfile", "/secrets/key.pem"]
+CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "443", "--ssl-keyfile", "/secrets/key.pem", "--ssl-certfile", "/secrets/cert.pem"]

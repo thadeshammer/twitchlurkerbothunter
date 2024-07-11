@@ -3,7 +3,7 @@ from datetime import datetime
 import pytest
 from sqlmodel import col, desc, select
 
-from app.models import (
+from server.models import (
     StreamCategory,
     SuspectedBot,
     SuspectedBotCreate,

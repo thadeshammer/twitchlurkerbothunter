@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-from app.util.shard_cache import ShardCache
+from server.util.shard_cache import ShardCache
 
 
 @pytest.mark.asyncio

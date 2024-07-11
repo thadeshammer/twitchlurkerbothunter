@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.lurkerbot_hunter_components.twitch_viewerlist_fetcher import (
+from server.lurkerbot_hunter_components.twitch_viewerlist_fetcher import (
     TwitchViewerListFetcher,
     ViewerListFetchData,
 )

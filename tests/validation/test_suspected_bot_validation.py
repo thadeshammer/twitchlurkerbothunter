@@ -1,7 +1,11 @@
 import pytest
 from pydantic import ValidationError
 
-from app.models.suspected_bot import SuspectedBotCreate, SuspicionLevel, SuspicionReason
+from server.models.suspected_bot import (
+    SuspectedBotCreate,
+    SuspicionLevel,
+    SuspicionReason,
+)
 
 VALID_DATA = {
     "suspicion_level": SuspicionLevel.RED,

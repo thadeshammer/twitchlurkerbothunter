@@ -4,7 +4,7 @@ from uuid import uuid4
 import pytest
 from pydantic import ValidationError
 
-from app.models.stream_viewerlist_fetch import (
+from server.models.stream_viewerlist_fetch import (
     StreamViewerListFetchCreate,
     StreamViewerListFetchRead,
     StreamViewerListFetchStatus,

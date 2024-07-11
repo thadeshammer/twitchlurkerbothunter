@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 import pytest
 from pydantic import ValidationError
 
-from app.models.secrets import Secret, SecretCreate, SecretRead
+from server.models.secrets import Secret, SecretCreate, SecretRead
 
 VALID_SECRET_DATA = {
     "access_token": "validAccessToken123456",
