@@ -30,13 +30,27 @@ CURRENTLY IN DEVELOPMENT
 
 ## Why am I doing this?
 
-**Lurker Bots** are Twitch accounts which remain resident in thousands of chat channels across Twitch for large spans of time, either to quietly collect data on those channels and their discussions, or simply to serve as a passive advertisement. They're hoping the curious folks click, think they're cute, and subscribe, I guess. While in some ways they're harmless, and some perhaps appreciate the padding on their viewer counts, almost everyone I've spoken to about the topic finds them distasteful, creepy, frustrating, or all three. Why doesn't Twitch do anything about these accounts? I have no idea, but in light of that, there are really only two champions in the space addressing this issue in any capacity.
+**Lurker Bots** are Twitch accounts which remain resident in thousands of chat channels across
+Twitch for large spans of time, for a number of reasons including (but not limited to):
+
+- quietly farming channelpoints, gift subs, or giveaways;
+- collecting data on those channels and their chatters' discussions;
+- "billboarding," i.e. serving as a passive advertisement, hoping the curious folks click,
+  think they're cute, and subscribe, I guess.
+
+While in some ways they're harmless, and some perhaps appreciate the padding on their viewer counts,
+almost everyone I've spoken to about the topic finds them distasteful, creepy, frustrating, or all
+three. Why doesn't Twitch do anything about these accounts? I have no idea. [One of their own said
+in 2019 it was
+"PLANNED"](https://twitch.uservoice.com/forums/933812-safety/suggestions/19429897-kick-unwanted-users-bots-from-channel-completely)
+(note the question answered was posed in 2017) but in light of that, there are really only two
+champions in the space addressing this issue in any capacity.
 
 [Twitch Insights Bots](https://twitchinsights.net/bots) is everyone's favorite tool for bot identification: it does the job, why do we need another tool? The Twitch Insights used an endpoint that was removed, and now uses an undocumented endpoint to fetch the viewer list in one go. The developer of the project made an announcment on 4/20 (not a typo) about the potential loss of that undocumented endpoint, and the risks that posed to the developer's ability to maintain the bot i.d. feature if it's lost. This rattled me. I thought, if that goes away, what do we have?
 
 I briefly looked at the remarkably few other sites that do this (both seems to depend on Twitch Insights) and the one open source project, [TwitchTV-Bots-List](https://github.com/arrowgent/Twitchtv-Bots-List) - which is also great and updates once a month - also seems to lean at least in part on Twitch Insights. So if we lose that, the jig is up.
 
-So, there's two humans with their hats in the ring. Here's mine. Maybe I can make a proper bot that does the grunt work for us. Maybe I can help?
+So, it appears there are two humans with their hats in the ring. Here's mine. Maybe I can make a proper bot that does the grunt work for us. Maybe I can help?
 
 Thus, I got fired up and, after a feverish back-of-the-napkin schema design on how I could do this, as well as some rough math on whether I could run this cheaply, I determined...honestly, I don't know. The only way to find out is to try and collect metrics on how well this performs, if it performs at all. It will be a fun project either way.
 
@@ -76,6 +90,7 @@ There's a second app - a single file Flask servlet - whose only job is to take c
 - **Redis**: (UPCOMING) Simple caching for viewer-list fetching and async safe data sharing between processes.
 
 ## Features
+
 - **Parallel Processing**: Will be using using Python coroutines and multiprocesses.
 
 ## Regarding foundational tech choices
@@ -109,20 +124,20 @@ This is very, very early development, so if you fork it, you're really just gett
 
    Note that the twitch-oauth.py servlet script for the Twitch Oauth will need the bot to be up and running so it can pass the tokens to it via its API; they're short-lived and will be kept in the secrets table in MySQL, so they can be easily shared accross services if I scale out horizontally later in the project. Also, so they can be used after an app restart, which happens frequenty during development.
 
-4. **Start the Docker containers**:
+3. **Start the Docker containers**:
 
    ```bash
    docker-compose up --build
    ```
 
-5. **Check the logs**:
+4. **Check the logs**:
    To verify everything is running correctly, you can check the logs:
 
    ```bash
    docker-compose logs
    ```
 
-6. **Authenticate with Twitch using twitch-oauth.py**:
+5. **Authenticate with Twitch using twitch-oauth.py**:
    Run twitch-oauth.py in your local. For me it runs in Windows, you may need to make slight adjustments if you're doing development in a better OS.
 
 ### Configuration
