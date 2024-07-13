@@ -19,7 +19,7 @@ from enum import StrEnum
 from typing import Annotated, Any, Optional
 from uuid import UUID, uuid4
 
-from pydantic import ValidationError, model_validator
+from pydantic import model_validator
 from sqlmodel import Field, SQLModel
 
 
@@ -31,30 +31,6 @@ class ScanningSessionStopReasonEnum(StrEnum):
 
 
 class ScanningSessionBase(SQLModel):
-    time_started: datetime = Field(...)
-    time_ended: Optional[datetime] = Field(None)
-    reason_ended: Annotated[
-        Optional[str], Field(default=ScanningSessionStopReasonEnum.UNSPECIFIED)
-    ]
-    streams_in_scan: Annotated[int, Field(..., gt=0)]  # total number of targets
-    viewerlists_fetched: Annotated[
-        Optional[int], Field(default=None, ge=0)
-    ]  # total fetched so far
-    average_time_per_fetch: Annotated[Optional[float], Field(default=None, ge=0.0)]
-    average_time_for_get_user_call: Annotated[
-        Optional[float], Field(default=None, ge=0.0)
-    ]
-    average_time_for_get_stream_call: Annotated[
-        Optional[float], Field(default=None, ge=0.0)
-    ]
-
-    # eventually will have an in-mem cache of known suspects that we may want to showcase in
-    # active monitoring, so here's a counter
-    suspects_spotted: Annotated[Optional[int], Field(default=None, ge=0)]
-    error_count: Annotated[Optional[int], Field(default=None, ge=0)]
-
-
-class ScanningSession(ScanningSessionBase, table=True):
     """This table stores metrics for independent scanning session.
 
     A Scan is a series of viewerlist fetches from a (potentially very large) set of live streams.
@@ -86,6 +62,31 @@ class ScanningSession(ScanningSessionBase, table=True):
             session.
     """
 
+    time_started: datetime = Field(...)
+    time_ended: Optional[datetime] = Field(None)
+    reason_ended: Annotated[
+        Optional[str], Field(default=ScanningSessionStopReasonEnum.UNSPECIFIED)
+    ]
+    streams_in_scan: Annotated[int, Field(..., gt=0)]  # total number of targets
+    viewerlists_fetched: Annotated[
+        Optional[int], Field(default=None, ge=0)
+    ]  # total fetched so far
+    average_time_per_fetch: Annotated[Optional[float], Field(default=None, ge=0.0)]
+    average_time_for_get_user_call: Annotated[
+        Optional[float], Field(default=None, ge=0.0)
+    ]
+    average_time_for_get_stream_call: Annotated[
+        Optional[float], Field(default=None, ge=0.0)
+    ]
+    average_worker_idle_time: Annotated[Optional[float], Field(default=None, ge=0.0)]
+
+    # eventually will have an in-mem cache of known suspects that we may want to showcase in
+    # active monitoring, so here's a counter
+    suspects_spotted: Annotated[Optional[int], Field(default=None, ge=0)]
+    error_count: Annotated[Optional[int], Field(default=None, ge=0)]
+
+
+class ScanningSession(ScanningSessionBase, table=True):
     __tablename__: str = "scanning_sessions"
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)

@@ -3,7 +3,7 @@ from multiprocessing import Process, Queue
 
 import pytest
 
-from server.util.shard_cache import ShardCache
+from server.utils.shard_cache import ShardCache
 
 
 def worker(cache: ShardCache, task_queue: Queue, result_queue: Queue):

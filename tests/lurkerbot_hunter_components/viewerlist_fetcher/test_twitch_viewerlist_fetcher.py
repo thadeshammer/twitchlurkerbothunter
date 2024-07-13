@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from server.lurkerbot_hunter_components.twitch_viewerlist_fetcher import (
+from server.core.twitch_viewerlist_fetcher import (
     TwitchViewerListFetcher,
     ViewerListFetchData,
 )
@@ -30,6 +30,16 @@ async def test_event_raw_data_chatter_list_message(_fetcher):
 
 
 @pytest.mark.asyncio
+async def test_event_raw_data_chatter_list_message_no_names(_fetcher):
+    _fetcher._user_lists = {"test_channel": ViewerListFetchData()}
+    message = ":tmi.twitch.tv 353 this_bot = #test_channel :"
+
+    await _fetcher.event_raw_data(message)
+
+    assert len(_fetcher._user_lists["test_channel"].user_names) == 0
+
+
+@pytest.mark.asyncio
 async def test_event_raw_data_part_message(_fetcher):
     with patch.object(
         _fetcher, "part_channels", new_callable=AsyncMock
@@ -46,10 +56,10 @@ async def test_event_raw_data_part_message(_fetcher):
 
 @pytest.mark.asyncio
 @patch(
-    "server.lurkerbot_hunter_components.twitch_viewerlist_fetcher.perf_counter",
+    "server.core.twitch_viewerlist_fetcher.perf_counter",
     return_value=0.0,
 )
-@patch("server.lurkerbot_hunter_components.twitch_viewerlist_fetcher.logger")
+@patch("server.core.twitch_viewerlist_fetcher.logger")
 @patch.object(TwitchViewerListFetcher, "join_channels", new_callable=AsyncMock)
 @patch.object(TwitchViewerListFetcher, "_wait_for_all_users", new_callable=AsyncMock)
 async def test_fetch_viewer_list_for_channels(

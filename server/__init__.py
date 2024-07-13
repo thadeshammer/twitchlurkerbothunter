@@ -1,16 +1,13 @@
 # app/__init__.py
-import asyncio
 import logging
 import os
 import ssl
 
-import uvicorn
-from fastapi import APIRouter, FastAPI, HTTPException, Request
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi import FastAPI
 
 from server.config import Config
 from server.db import async_create_all_tables
-from server.models import (
+from server.models import (  # Import tables for creation here.
     ScanningSession,
     Secret,
     StreamCategory,
@@ -20,7 +17,7 @@ from server.models import (
     ViewerSighting,
 )
 from server.routes import router
-from server.util import setup_logging
+from server.utils import setup_logging
 
 CERT_FILE_PATH = "/secrets/cert.pem"
 KEY_FILE_PATH = "/secrets/key.pem"

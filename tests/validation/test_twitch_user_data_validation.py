@@ -10,7 +10,7 @@ from server.models.twitch_user_data import (
     TwitchUserDataCreate,
     TwitchUserDataRead,
 )
-from server.util import convert_timestamp_from_twitch
+from server.utils import convert_timestamp_from_twitch
 
 # NOTE. 'Get User' doesn't have the email key unless we scope for it. It's included below for ref.
 GET_USER_RESPONSE = {

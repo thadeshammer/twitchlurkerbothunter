@@ -65,6 +65,10 @@ IRC_CHATTER_LIST_MSG = "353"
 IRC_END_OF_NAMES_MSG = "366"
 
 
+class ViewerListFetchException(Exception):
+    pass
+
+
 @dataclass
 class ViewerListFetchData:
     user_names: Set[str] = field(default_factory=set)
@@ -111,16 +115,18 @@ class TwitchViewerListFetcher(Client):
             if len(parts) > 2:
                 # msg_parts ['user!user@user.tmi.twitch.tv', '353', 'this_bot', '=', '#channel']
                 msg_parts = parts[1].strip().split()
-                print(f"\n{msg_parts=}")
                 channel_name = msg_parts[-1].lstrip("#")
-                print(f"{channel_name=}")
+                try:
+                    assert channel_name in self._user_lists
+                except AssertionError as e:
+                    raise ViewerListFetchException(
+                        f"VLFetcher {self._worker_id} wrong channel error {channel_name}"
+                    ) from e
+
                 user_list = set(parts[2].split())
-                print(f"{user_list=}")
-                print(f"BEFORE: {list(self._user_lists[channel_name].user_names)}")
                 self._user_lists[channel_name].user_names.update(user_list)
-                print(f"AFTER: {list(self._user_lists[channel_name].user_names)}")
                 logger.info(
-                    f"User list for {channel_name}: {list(self._user_lists[channel_name].user_names)}"
+                    f"VLFetcher {self._worker_id} for {channel_name}: {list(user_list)}"
                 )
 
         if IRC_END_OF_NAMES_MSG in data:
