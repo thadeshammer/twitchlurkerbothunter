@@ -27,14 +27,17 @@ Classes:
     SuspectedBotAppData, Create, and Read: Pydantic BaseModels for validation and serializing.
 
 """
+import re
 from enum import Enum
 from typing import Annotated, Any, Optional, Tuple
 from uuid import UUID, uuid4
 
-from pydantic import StringConstraints, model_validator
+from pydantic import model_validator
 from sqlmodel import Field, SQLModel
 
 from ._validator_regexes import IN_APP_NOTES_REGEX
+
+COMPILED_NOTES_REGEX = re.compile(IN_APP_NOTES_REGEX)
 
 
 class SuspicionReason(str, Enum):
@@ -152,6 +155,8 @@ class SuspectedBotBase(SQLModel):
         """Ensure that the enum values provided are legit."""
         assert data["suspicion_level"] in SuspicionLevel.__members__.values()
         assert data["suspicion_reason"] in SuspicionReason.__members__.values()
+        if not COMPILED_NOTES_REGEX.match(data["additional_notes"]):
+            raise ValueError("additional_notes key failed regex check.")
         return data
 
 

@@ -45,7 +45,7 @@ import asyncio
 import logging
 from dataclasses import dataclass, field
 from time import perf_counter
-from typing import Optional, Tuple
+from typing import Optional, Set, Tuple
 
 from twitchio import Client
 from twitchio.errors import (
@@ -67,7 +67,7 @@ IRC_END_OF_NAMES_MSG = "366"
 
 @dataclass
 class ViewerListFetchData:
-    user_names: list[str] = field(default_factory=list)
+    user_names: Set[str] = field(default_factory=set)
     start_time: float = field(default_factory=perf_counter)
     end_time: Optional[float] = None
     time_elapsed: Optional[float] = None
@@ -111,11 +111,16 @@ class TwitchViewerListFetcher(Client):
             if len(parts) > 2:
                 # msg_parts ['user!user@user.tmi.twitch.tv', '353', 'this_bot', '=', '#channel']
                 msg_parts = parts[1].strip().split()
+                print(f"\n{msg_parts=}")
                 channel_name = msg_parts[-1].lstrip("#")
-                user_list = parts[2].split()
-                self._user_lists[channel_name].user_names.extend(user_list)
+                print(f"{channel_name=}")
+                user_list = set(parts[2].split())
+                print(f"{user_list=}")
+                print(f"BEFORE: {list(self._user_lists[channel_name].user_names)}")
+                self._user_lists[channel_name].user_names.update(user_list)
+                print(f"AFTER: {list(self._user_lists[channel_name].user_names)}")
                 logger.info(
-                    f"User list for {channel_name}: {self._user_lists[channel_name].user_names}"
+                    f"User list for {channel_name}: {list(self._user_lists[channel_name].user_names)}"
                 )
 
         if IRC_END_OF_NAMES_MSG in data:
@@ -193,6 +198,7 @@ class TwitchViewerListFetcher(Client):
 
 
 # Sample usage follows
+# TODO need to review this since the 366 refactor
 
 # async def process_batches(client, batches):
 #     for batch in batches:

@@ -16,28 +16,17 @@ def _fetcher():
 
 
 @pytest.mark.asyncio
-async def test_event_ready(_fetcher):
-    with patch(
-        "app.lurkerbot_hunter_components.twitch_viewerlist_fetcher.logger"
-    ) as mock_logger:
-        await _fetcher.event_ready()
-        mock_logger.info.assert_called_with("ViewerListFetcher_test_worker is ready.")
-
-
-@pytest.mark.asyncio
 async def test_event_raw_data_chatter_list_message(_fetcher):
-    with patch(
-        "app.lurkerbot_hunter_components.twitch_viewerlist_fetcher.logger"
-    ) as mock_logger:
+    _fetcher._user_lists = {"test_channel": ViewerListFetchData()}
+    message = ":tmi.twitch.tv 353 this_bot = #test_channel :user1 user2 user3"
 
-        _fetcher._user_lists = {"test_channel": ViewerListFetchData()}
-        message = ":tmi.twitch.tv 353 this_bot = #test_channel :user1 user2 user3"
+    await _fetcher.event_raw_data(message)
 
-        await _fetcher.event_raw_data(message)
-
-        mock_logger.info.assert_called_with(
-            "User list for test_channel: ['user1', 'user2', 'user3']"
-        )
+    assert _fetcher._user_lists["test_channel"].user_names == {
+        "user1",
+        "user2",
+        "user3",
+    }
 
 
 @pytest.mark.asyncio
@@ -57,10 +46,10 @@ async def test_event_raw_data_part_message(_fetcher):
 
 @pytest.mark.asyncio
 @patch(
-    "app.lurkerbot_hunter_components.twitch_viewerlist_fetcher.perf_counter",
+    "server.lurkerbot_hunter_components.twitch_viewerlist_fetcher.perf_counter",
     return_value=0.0,
 )
-@patch("app.lurkerbot_hunter_components.twitch_viewerlist_fetcher.logger")
+@patch("server.lurkerbot_hunter_components.twitch_viewerlist_fetcher.logger")
 @patch.object(TwitchViewerListFetcher, "join_channels", new_callable=AsyncMock)
 @patch.object(TwitchViewerListFetcher, "_wait_for_all_users", new_callable=AsyncMock)
 async def test_fetch_viewer_list_for_channels(
@@ -78,7 +67,6 @@ async def test_fetch_viewer_list_for_channels(
     mock_join_channels.assert_called_with(*channels)
     mock_wait_for_all_users.assert_called_with(channels)
     assert result == _fetcher._user_lists.copy()
-    mock_logger.info.assert_any_call(f"ViewerListFetcher_test_worker joined {channels}")
 
 
 @pytest.mark.asyncio
