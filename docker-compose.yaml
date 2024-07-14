@@ -2,12 +2,15 @@ services:
   db:
     image: mysql:latest
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: lurkerbothunterdb
       MYSQL_USER: user
-      MYSQL_PASSWORD: password
-      MYSQL_DATABASE: mydatabase
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
+      MYSQL_PASSWORD_FILE: /run/secrets/mysql_user_password
     ports:
       - "3306:3306"
+    secrets:
+      - mysql_root_password
+      - mysql_user_password
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
@@ -25,14 +28,16 @@ services:
   server:
     build: .
     environment:
-      - CERT_PASSKEY=${CERT_PASSKEY}
-      - FLASK_APP=app.py
-      - FLASK_ENV=development
+      CERT_PASSKEY: ${CERT_PASSKEY}
+      MYSQL_USER_PASSWORD_FILE: /run/secrets/mysql_user_password
+      DATABASE_URL: mysql+aiomysql://user@db/lurkerbothunterdb
     volumes:
-      - .:/app
+      - .:/server
       - ./logs:/logs
     ports:
       - "443:443"
+    secrets:
+      - mysql_user_password
     depends_on:
       db:
         condition: service_healthy
@@ -45,3 +50,9 @@ services:
 volumes:
   mysql_data:
     driver: local
+
+secrets:
+  mysql_root_password:
+    file: ./secrets/.mysql_root_password
+  mysql_user_password:
+    file: ./secrets/.mysql_user_password

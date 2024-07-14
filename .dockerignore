@@ -46,3 +46,5 @@ secrets/
 # Except these files
 !secrets/cert.pem
 !secrets/key.pem
+!secrets/.mysql_root_password
+!secrets/.mysql_user_password

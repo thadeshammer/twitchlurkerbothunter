@@ -1,8 +1,25 @@
+import logging
 import os
 from enum import StrEnum
 from typing import Optional, Union
 
 import yaml
+
+
+logger = logging.getLogger("server")
+
+
+def _build_db_uri() -> str:
+    mysql_user_password: Optional[str] = None
+    pw_file = os.getenv("MYSQL_USER_PASSWORD_FILE")
+    if pw_file is None:
+        raise EnvironmentError("MYSQL_USER_PASSWORD_FILE not in environment.")
+    with open(pw_file, "r") as file:
+        mysql_user_password = file.read().strip()
+    if len(mysql_user_password) == 0:
+        raise EnvironmentError("MYSQL_USER_PASSWORD_FILE is empty.")
+    uri = f"mysql+aiomysql://user:{mysql_user_password}@db/lurkerbothunterdb"
+    return uri
 
 
 class ConfigKey(StrEnum):
@@ -24,12 +41,10 @@ class Config:
 
     LOGGING_CONFIG_FILE: str = os.getenv("LOG_CFG", "./logging_config.yaml")
 
-    SQLMODEL_DATABASE_URI: str = os.getenv(
-        "DATABASE_URL", "mysql+aiomysql://user:password@db/mydatabas"
-    )
+    SQLMODEL_DATABASE_URI: str = _build_db_uri()
 
     # The access and refresh tokens are supplied by the twitch_oauth.sh servlet via the store_token
-    # endpoint. See app.routes
+    # endpoint. See server.routes
     TWITCH_ACCESS_TOKEN: Optional[str] = None
     TWITCH_REFRESH_TOKEN: Optional[str] = None
 

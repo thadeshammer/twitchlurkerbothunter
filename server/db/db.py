@@ -4,10 +4,10 @@ from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlmodel import SQLModel
 
-DATABASE_URL = "mysql+aiomysql://user:password@db/mydatabase"
+from server.config import Config
 
 # Creating async engine
-async_engine = create_async_engine(DATABASE_URL, echo=True, future=True)
+async_engine = create_async_engine(Config.SQLMODEL_DATABASE_URI, echo=True, future=True)
 
 
 @asynccontextmanager

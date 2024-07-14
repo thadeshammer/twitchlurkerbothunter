@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-WORKDIR /app
+WORKDIR /server
 
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
@@ -16,16 +16,15 @@ COPY secrets/key.pem /secrets/key.pem
 # Create log directory
 RUN mkdir -p /logs
 
-# Set environment variables
-# ENV PYTHONDONTWRITEBYTECODE 1
-# ENV PYTHONUNBUFFERED 1
-ENV FLASK_APP=app.py
-ENV FLASK_ENV=development
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
 ENV LOG_CFG="logging_config.yaml"
-ENV DATABASE_URL="mysql+pymysql://user:password@db/mydatabase"
 ENV SECRETS_DIR="./secrets/tokens.yaml"
 
-# Expose the port
+COPY ./secrets/.mysql_root_password /run/secrets/mysql_root_password
+COPY ./secrets/.mysql_user_password /run/secrets/mysql_user_password
+RUN chmod 400 /run/secrets/mysql_root_password /run/secrets/mysql_user_password
+
 EXPOSE 443
 
 CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "443", "--ssl-keyfile", "/secrets/key.pem", "--ssl-certfile", "/secrets/cert.pem"]
