@@ -1,4 +1,4 @@
-# app/models/secrets.py
+# server/models/secrets.py
 # SQLAlchemy Base model for access and refresh tokens, and their associated metadata and TTL.
 """
 A table for storing some short-lived secrets.

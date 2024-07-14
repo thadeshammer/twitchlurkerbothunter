@@ -1,4 +1,4 @@
-# app/models/viewer_sighting.py
+# server/models/viewer_sighting.py
 # SQLModel representing sightings of Twitch login names in a given channel.
 from typing import Annotated
 from uuid import UUID, uuid4

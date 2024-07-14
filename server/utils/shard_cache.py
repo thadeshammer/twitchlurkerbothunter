@@ -1,4 +1,4 @@
-# /app/helpers/shard_cache.py
+# server/helpers/shard_cache.py
 """
     ShardCache
 
@@ -10,7 +10,7 @@
 
     Example usage:
 
-        # /app/main.py
+        # server/main.py
         import asyncio
         from helpers.shard_cache import ShardCache
 

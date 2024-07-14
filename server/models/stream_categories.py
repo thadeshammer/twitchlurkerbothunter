@@ -1,4 +1,4 @@
-# /app/models/stream_categories.py
+# server/models/stream_categories.py
 """
 StreamCategory
 

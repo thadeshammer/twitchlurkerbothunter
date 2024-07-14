@@ -1,4 +1,4 @@
-# app/models/_validator_regexes.py
+# server/models/_validator_regexes.py
 # A centralized spot for regexes used in data validation for Twitch API responses.
 import re
 from typing import Any

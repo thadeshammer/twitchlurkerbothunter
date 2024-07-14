@@ -1,4 +1,4 @@
-# app/models/stream_viewerlist_fetch.py
+# server/models/stream_viewerlist_fetch.py
 # SQLmodel representing a single viewerlist fetch event of a target stream.
 
 """StreamViewerListFetch model and validators.

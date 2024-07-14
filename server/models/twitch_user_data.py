@@ -1,4 +1,4 @@
-# app/models/twitch_user_data.py
+# server/models/twitch_user_data.py
 # SQLAlchemy model representing Twitch Users that have been spotted during scans.
 """
 TwitchUserData

@@ -1,4 +1,4 @@
-# app/models/suspect.py
+# server/models/suspect.py
 # SQLAlchemy model representing Twitch Accounts that have been flagged by the classfier.
 """We all agree a Twitch account is a bot if:
     - it's in thousands upon thousands of channel viewerlists concurrently

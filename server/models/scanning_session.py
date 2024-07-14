@@ -1,4 +1,4 @@
-# app/models/scanning_session.py
+# server/models/scanning_session.py
 # SQLAlchemy model representing Scans.
 """ScanningSession and associated classes.
 
