@@ -56,27 +56,31 @@ class TwitchSecretsManager:
 
     async def _insert_or_update_secret(self, new_secret: SecretCreate):
         secret = Secret(**new_secret.model_dump())
-        existing_secret = await self._get_secret_row()
+        # existing_secret = await self._get_secret_row()
 
-        async with get_db() as db:
-            if existing_secret is None:
-                logger.debug("No existing tokens; creating new row.")
-                db.add(secret)
-                await db.commit()
-            else:
-                logger.debug("Existing tokens; updating them.")
-                logger.debug(
-                    f"BEFORE: {existing_secret.expires_in} {existing_secret.last_update_timestamp}"
-                )
-                existing_secret.access_token = secret.access_token
-                existing_secret.refresh_token = secret.refresh_token
-                existing_secret.expires_in = secret.expires_in
-                existing_secret.token_type = secret.token_type
-                existing_secret.scope = secret.scope
-                await db.commit()
-                logger.debug(
-                    f"AFTER: {existing_secret.expires_in} {existing_secret.last_update_timestamp}"
-                )
+        from server.db import upsert_one
+
+        await upsert_one(secret)
+
+        # async with get_db() as db:
+        #     if existing_secret is None:
+        #         logger.debug("No existing tokens; creating new row.")
+        #         db.add(secret)
+        #         await db.commit()
+        #     else:
+        #         logger.debug("Existing tokens; updating them.")
+        #         logger.debug(
+        #             f"BEFORE: {existing_secret.expires_in} {existing_secret.last_update_timestamp}"
+        #         )
+        #         existing_secret.access_token = secret.access_token
+        #         existing_secret.refresh_token = secret.refresh_token
+        #         existing_secret.expires_in = secret.expires_in
+        #         existing_secret.token_type = secret.token_type
+        #         existing_secret.scope = secret.scope
+        #         await db.commit()
+        #         logger.debug(
+        #             f"AFTER: {existing_secret.expires_in} {existing_secret.last_update_timestamp}"
+        #         )
 
         self._secrets_store = await self._get_secret_row()
         if self._secrets_store is not None:

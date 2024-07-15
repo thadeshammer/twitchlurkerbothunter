@@ -4,11 +4,13 @@ import os
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.pool import NullPool
 from sqlmodel import SQLModel
 
 # pylint: disable=unused-import
 from server.models import (
     ScanningSession,
+    Secret,
     StreamCategory,
     StreamViewerListFetch,
     SuspectedBot,
@@ -23,7 +25,16 @@ os.environ["ENVIRONMENT"] = "test"
 
 @pytest.fixture(scope="function")
 def async_engine():
-    return create_async_engine("sqlite+aiosqlite://", echo=True)
+    # Here are a variety of things I've tried to resolve the "no such table" issue with asyncio
+    # and SQLite in-memory.
+    # https://docs.sqlalchemy.org/en/20/dialects/sqlite.html#using-a-memory-database-in-multiple-threads
+    # https://stackoverflow.com/questions/73485899/sqlalchemy-with-asyncpg-crashing-with-error-asyncpg-interfaceerror-cannot-per/73485900#73485900
+    return create_async_engine(
+        "sqlite+aiosqlite://",
+        echo=True,
+        connect_args={"check_same_thread": False},
+        poolclass=NullPool,
+    )
 
 
 @pytest_asyncio.fixture(scope="function")
