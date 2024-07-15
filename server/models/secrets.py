@@ -77,10 +77,15 @@ class Secret(SecretBase, table=True):
 class SecretCreate(SecretBase):
     @model_validator(mode="before")
     def validate_fields(cls, data: dict[str, Any]) -> dict[str, Any]:
-        assert "token_type" in data
-        assert data["token_type"] in TokenType.__members__.values()
+        if not all(key in data for key in ["token_type", "scope"]):
+            raise ValueError("Missing required field(s).")
 
-        assert "scope" in data and data["scope"] is not None
+        if data["scope"] is None:
+            raise ValueError("Scope missing.")
+
+        if data["token_type"] not in TokenType.__members__.values():
+            raise ValueError("Unknown token type.")
+
         if isinstance(data["scope"], list):
             # This will be a VERY small number of scopes, usually one, at most three.
             data["scope"] = " ".join(data["scope"])

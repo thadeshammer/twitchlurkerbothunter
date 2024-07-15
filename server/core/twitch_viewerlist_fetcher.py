@@ -84,7 +84,10 @@ class ViewerListFetchData:
 class TwitchViewerListFetcher(Client):
 
     def __init__(self, worker_id: str, access_token: str):
-        assert isinstance(worker_id, str) and isinstance(access_token, str)
+        if not isinstance(worker_id, str):
+            raise TypeError(f"worker_id is {type(worker_id)} but needs be a str.")
+        if not isinstance(access_token, str):
+            raise TypeError(f"access_token is {type(access_token)} but needs be a str.")
 
         self._worker_id = worker_id
         self._name = f"ViewerListFetcher_{worker_id}"
@@ -116,12 +119,10 @@ class TwitchViewerListFetcher(Client):
                 # msg_parts ['user!user@user.tmi.twitch.tv', '353', 'this_bot', '=', '#channel']
                 msg_parts = parts[1].strip().split()
                 channel_name = msg_parts[-1].lstrip("#")
-                try:
-                    assert channel_name in self._user_lists
-                except AssertionError as e:
+                if channel_name not in self._user_lists:
                     raise ViewerListFetchException(
                         f"VLFetcher {self._worker_id} wrong channel error {channel_name}"
-                    ) from e
+                    )
 
                 user_list = set(parts[2].split())
                 self._user_lists[channel_name].user_names.update(user_list)
@@ -176,7 +177,11 @@ class TwitchViewerListFetcher(Client):
                 - The time this call took to join, fetch, and part from all given channels, in
                   seconds.
         """
-        assert isinstance(channels, list) and all(isinstance(c, str) for c in channels)
+        if not isinstance(channels, list):
+            raise TypeError(f"channels is {type(channels)} but needs be list.")
+        if not all(isinstance(c, str) for c in channels):
+            raise TypeError(f"channels list contains non-str type(s).")
+
         self._user_lists = {channel: ViewerListFetchData() for channel in channels}
         start_time: float = perf_counter()
 

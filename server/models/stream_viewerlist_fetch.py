@@ -172,17 +172,17 @@ class StreamViewerListFetchCreate(StreamViewerListFetchBase):
             was_live = False
         """
         if "type" in data.keys():
-            assert isinstance(data["was_live"], str)
-            if data["was_live"] == "live":
+            if data["type"] == "live":
                 data["was_live"] = True
-            elif data["was_live"] == "":
+            elif data["type"] == "":
                 data["was_live"] = False
             else:
-                raise ValidationError("Invalid value for type / was_live.")
+                raise ValueError("Invalid value for stream 'type' / 'was_live'.")
 
             data.pop("type")
 
-        assert data["fetch_status"] in StreamViewerListFetchStatus.__members__.values()
+        if not data["fetch_status"] in StreamViewerListFetchStatus.__members__.values():
+            raise ValueError("Invalid value for StreamViewerListFetchStatus enum.")
 
         return data
 

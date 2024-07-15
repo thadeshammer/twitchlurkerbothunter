@@ -97,10 +97,13 @@ class ScanningSessionCreate(ScanningSessionBase):
 
     @model_validator(mode="before")
     def check_enum(cls, data: dict[str, Any]) -> dict[str, Any]:
-        if "reason_ended" in data:
-            assert (
-                data["reason_ended"]
-                in ScanningSessionStopReasonEnum.__members__.values()
+        if (
+            "reason_ended" in data
+            and data["reason_ended"]
+            not in ScanningSessionStopReasonEnum.__members__.values()
+        ):
+            raise ValueError(
+                f"{data['reason_ended']} is not a member of ScanningSessionStopReasonEnum"
             )
         return data
 

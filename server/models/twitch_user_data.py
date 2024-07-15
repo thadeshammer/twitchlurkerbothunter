@@ -149,8 +149,11 @@ class TwitchUserDataBase(SQLModel, table=False):
         So for now we'll handle it manually here, manually fingerprinting each response and
         converting accordingly.
         """
-        assert data is not None
-        assert isinstance(data, dict)
+        if data is None:
+            raise ValueError("No data.")
+
+        if not isinstance(data, dict):
+            raise TypeError(f"data is {type(data)} but needs be dict.")
 
         if all(
             key in data for key in ["user_id", "user_login", "game_id", "game_name"]
@@ -166,10 +169,13 @@ class TwitchUserDataBase(SQLModel, table=False):
             data["lifetime_view_count"] = data.pop("view_count")
             data["account_created_at"] = data.pop("created_at")
 
-            assert data["account_type"] in TwitchAccountType.__members__.values()
-            assert (
-                data["broadcaster_type"] in TwitchBroadcasterType.__members__.values()
-            )
+            if not data["account_type"] in TwitchAccountType.__members__.values():
+                raise ValueError("Invalid value for account_type enum.")
+            if (
+                not data["broadcaster_type"]
+                in TwitchBroadcasterType.__members__.values()
+            ):
+                raise ValueError("Invalid value for broadcaster_type enum.")
 
         return data
 

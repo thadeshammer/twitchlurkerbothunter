@@ -30,7 +30,8 @@ class Config:
         if os.path.exists(secrets_path):
             with open(secrets_path, "r", encoding="UTF8") as file:
                 secrets: Union[dict, list, None] = yaml.safe_load(file)
-                assert isinstance(secrets, dict)
+                if not isinstance(secrets, dict):
+                    raise TypeError("secrets load failed.")
                 cls.TWITCH_CLIENT_ID = secrets["TWITCH_CLIENT_ID"]
                 cls.TWITCH_CLIENT_SECRET = secrets["TWITCH_CLIENT_SECRET"]
 

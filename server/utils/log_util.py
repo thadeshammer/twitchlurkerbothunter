@@ -29,7 +29,8 @@ def setup_logging(loggin_config_yaml_filepath: str) -> None:
     if os.path.exists(loggin_config_yaml_filepath):
         with open(loggin_config_yaml_filepath, "rt", encoding="UTF8") as config_file:
             config: Union[list, dict, None] = yaml.safe_load(config_file.read())
-            assert isinstance(config, dict)
+            if not isinstance(config, dict):
+                raise TypeError(f"logging config is {type(config)} but needs be dict.")
             logging.config.dictConfig(config)
 
             log_files: list = _extract_filenames_from_logger_config(config)

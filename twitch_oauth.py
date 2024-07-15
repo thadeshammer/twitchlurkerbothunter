@@ -36,7 +36,8 @@ with open("./secrets/secret_key.txt", "r", encoding="UTF8") as file:
 with open("./secrets/tokens.yaml", "r", encoding="UTF8") as file:
     tokens_file: Union[dict, List, None] = yaml.safe_load(file)
 
-assert isinstance(tokens_file, dict)
+if not isinstance(tokens_file, dict):
+    raise TypeError("Tokens file incorrectly formatted.")
 
 CERT_PASSKEY = str(os.getenv("CERT_PASSKEY"))
 client_id: str = tokens_file["TWITCH_CLIENT_ID"]

@@ -153,8 +153,10 @@ class SuspectedBotBase(SQLModel):
     @classmethod
     def validate_fields(cls, data: dict[str, Any]) -> dict[str, Any]:
         """Ensure that the enum values provided are legit."""
-        assert data["suspicion_level"] in SuspicionLevel.__members__.values()
-        assert data["suspicion_reason"] in SuspicionReason.__members__.values()
+        if not data["suspicion_level"] in SuspicionLevel.__members__.values():
+            raise ValueError("Invalid value for suspicion_level enum.")
+        if not data["suspicion_reason"] in SuspicionReason.__members__.values():
+            raise ValueError("Invalid value for suspicion_reason enum.")
         if not COMPILED_NOTES_REGEX.match(data["additional_notes"]):
             raise ValueError("additional_notes key failed regex check.")
         return data
