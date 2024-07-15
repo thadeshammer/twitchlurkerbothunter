@@ -1,39 +1,42 @@
 import logging
+import os
 
 import pytest
-from sqlmodel import Session, SQLModel, create_engine
+import pytest_asyncio
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlmodel import SQLModel
 
-from server.models.scanning_session import ScanningSession
-from server.models.stream_categories import StreamCategory
-from server.models.stream_viewerlist_fetch import StreamViewerListFetch
-from server.models.suspected_bot import SuspectedBot
-from server.models.twitch_user_data import TwitchUserData
-from server.models.viewer_sighting import ViewerSighting
+# pylint: disable=unused-import
+from server.models import (
+    ScanningSession,
+    StreamCategory,
+    StreamViewerListFetch,
+    SuspectedBot,
+    TwitchUserData,
+    ViewerSighting,
+)
+from server.models.dummy_model import DummyModel
 
-
-@pytest.fixture(scope="module")
-def engine():
-    return create_engine("sqlite:///:memory:")
-
-
-@pytest.fixture(scope="module")
-def tables(engine):  # pylint: disable=redefined-outer-name
-    print(f"Tables in metadata before creation: {SQLModel.metadata.tables.keys()}")
-    SQLModel.metadata.create_all(engine)
-    print(f"Tables in metadata after creation: {SQLModel.metadata.tables.keys()}")
-    yield
-    SQLModel.metadata.drop_all(engine)
+# Set the environment to test
+os.environ["ENVIRONMENT"] = "test"
 
 
-# pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
 @pytest.fixture(scope="function")
-def session(engine, tables):
-    with Session(engine) as session:  # type: ignore
+def async_engine():
+    return create_async_engine("sqlite+aiosqlite://", echo=True)
+
+
+@pytest_asyncio.fixture(scope="function")
+async def async_session(async_engine):
+    async with async_engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.create_all)
+    async with AsyncSession(async_engine) as session:
         yield session
+    async with async_engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.drop_all)
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(scope="module", autouse=True)
 def disable_logging():
     """Automatically disable logging for all unit tests."""
     logging.disable(logging.CRITICAL)

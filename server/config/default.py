@@ -1,39 +1,10 @@
 import logging
 import os
-from enum import StrEnum
 from typing import Optional, Union
 
 import yaml
 
-
 logger = logging.getLogger("server")
-
-
-def _build_db_uri() -> str:
-    mysql_user_password: Optional[str] = None
-    pw_file = os.getenv("MYSQL_USER_PASSWORD_FILE")
-    if pw_file is None:
-        raise EnvironmentError("MYSQL_USER_PASSWORD_FILE not in environment.")
-    with open(pw_file, "r") as file:
-        mysql_user_password = file.read().strip()
-    if len(mysql_user_password) == 0:
-        raise EnvironmentError("MYSQL_USER_PASSWORD_FILE is empty.")
-    uri = f"mysql+aiomysql://user:{mysql_user_password}@db/lurkerbothunterdb"
-    return uri
-
-
-class ConfigKey(StrEnum):
-    # Use these to access current_app.config[KEY]
-    PORT = "PORT"
-
-    LOGGING_CONFIG_FILE = "LOGGING_CONFIG_FILE"
-
-    SQLALCHEMY_DATABASE_URI = "SQLALCHEMY_DATABASE_URI"
-
-    TWITCH_ACCESS_TOKEN = "TWITCH_ACCESS_TOKEN"
-    TWITCH_REFRESH_TOKEN = "TWITCH_REFRESH_TOKEN"
-    TWITCH_CLIENT_ID = "TWITCH_CLIENT_ID"
-    TWITCH_CLIENT_SECRET = "TWITCH_CLIENT_SECRET"
 
 
 class Config:
@@ -41,7 +12,7 @@ class Config:
 
     LOGGING_CONFIG_FILE: str = os.getenv("LOG_CFG", "./logging_config.yaml")
 
-    SQLMODEL_DATABASE_URI: str = _build_db_uri()
+    _sqlmodel_database_uri: Optional[str] = None
 
     # The access and refresh tokens are supplied by the twitch_oauth.sh servlet via the store_token
     # endpoint. See server.routes
@@ -60,5 +31,29 @@ class Config:
             with open(secrets_path, "r", encoding="UTF8") as file:
                 secrets: Union[dict, list, None] = yaml.safe_load(file)
                 assert isinstance(secrets, dict)
-                cls.TWITCH_CLIENT_ID = secrets[ConfigKey.TWITCH_CLIENT_ID]
-                cls.TWITCH_CLIENT_SECRET = secrets[ConfigKey.TWITCH_CLIENT_SECRET]
+                cls.TWITCH_CLIENT_ID = secrets["TWITCH_CLIENT_ID"]
+                cls.TWITCH_CLIENT_SECRET = secrets["TWITCH_CLIENT_SECRET"]
+
+    @classmethod
+    def _build_db_uri(cls) -> str:
+        mysql_user_password: Optional[str] = None
+        pw_file = os.getenv("MYSQL_USER_PASSWORD_FILE")
+        if pw_file is None:
+            raise EnvironmentError("MYSQL_USER_PASSWORD_FILE not in environment.")
+        with open(pw_file, "r", encoding="utf8") as file:
+            mysql_user_password = file.read().strip()
+        if len(mysql_user_password) == 0:
+            raise EnvironmentError("MYSQL_USER_PASSWORD_FILE is empty.")
+        uri = f"mysql+aiomysql://user:{mysql_user_password}@db/lurkerbothunterdb"
+        return uri
+
+    @classmethod
+    def get_db_uri(cls) -> str:
+        if cls._sqlmodel_database_uri is None:
+            environment = os.getenv("ENVIRONMENT", "prod")
+            if environment in ["test", "dev"]:
+                cls._sqlmodel_database_uri = "sqlite+aiosqlite://"
+            else:
+                cls._sqlmodel_database_uri = cls._build_db_uri()
+
+        return cls._sqlmodel_database_uri

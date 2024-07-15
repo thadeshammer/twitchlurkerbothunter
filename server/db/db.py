@@ -7,7 +7,9 @@ from sqlmodel import SQLModel
 from server.config import Config
 
 # Creating async engine
-async_engine = create_async_engine(Config.SQLMODEL_DATABASE_URI, echo=True, future=True)
+async_engine = create_async_engine(
+    Config.get_db_uri(), echo=True, future=True, hide_parameters=True
+)
 
 
 @asynccontextmanager

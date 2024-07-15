@@ -1,3 +1,3 @@
-from .default import Config, ConfigKey
+from .default import Config
 
-__all__ = ["Config", "ConfigKey"]
+__all__ = ["Config"]

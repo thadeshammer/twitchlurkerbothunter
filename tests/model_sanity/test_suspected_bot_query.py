@@ -68,16 +68,19 @@ def valid_stream_category():
 
 
 # pylint: disable=redefined-outer-name
-def test_database_interactions(session, valid_twitch_user_data, valid_stream_category):
+@pytest.mark.asyncio
+async def test_database_interactions(
+    async_session, valid_twitch_user_data, valid_stream_category
+):
     # Insert the TwitchUserData entries
     for user_data in valid_twitch_user_data:
-        user = TwitchUserData(**user_data.dict())
-        session.add(user)
-    session.commit()
+        user = TwitchUserData(**user_data.model_dump())
+        async_session.add(user)
+    async_session.commit()
 
     # Insert the StreamCategory entry
-    session.add(valid_stream_category)
-    session.commit()
+    async_session.add(valid_stream_category)
+    async_session.commit()
 
     # Query for the TwitchUserData with all_time_high_concurrent_channel_count greater than 1000
     statement = (
@@ -89,7 +92,7 @@ def test_database_interactions(session, valid_twitch_user_data, valid_stream_cat
         )
         .order_by(desc(TwitchUserData.all_time_high_concurrent_channel_count))
     )
-    results = session.exec(statement).all()
+    results = (await async_session.execute(statement)).all()
 
     # Create new SuspectedBot entries from the results
     for result in results:
@@ -100,16 +103,18 @@ def test_database_interactions(session, valid_twitch_user_data, valid_stream_cat
             is_banned_or_deleted=False,
         )
         suspected_bot = SuspectedBot(**suspected_bot_data.dict())
-        session.add(suspected_bot)
-    session.commit()
+        async_session.add(suspected_bot)
+    async_session.commit()
 
     # Assert the correctness of the SuspectedBot entries
     for result in results:
-        suspected_bot = session.exec(
-            select(SuspectedBot).where(
-                SuspectedBot.twitch_account_id == result.twitch_account_id
+        suspected_bot = (
+            await async_session.execute(
+                select(SuspectedBot).where(
+                    SuspectedBot.twitch_account_id == result.twitch_account_id
+                )
             )
-        ).first()
+        ).scalar_one_or_none()
         assert suspected_bot is not None
         assert suspected_bot.suspicion_level == SuspicionLevel.RED
         assert (

@@ -28,6 +28,7 @@ services:
   server:
     build: .
     environment:
+      ENVIRONMENT: prod
       CERT_PASSKEY: ${CERT_PASSKEY}
       MYSQL_USER_PASSWORD_FILE: /run/secrets/mysql_user_password
       DATABASE_URL: mysql+aiomysql://user@db/lurkerbothunterdb

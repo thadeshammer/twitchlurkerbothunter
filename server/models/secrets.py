@@ -21,7 +21,7 @@ Classes:
 """
 from datetime import datetime, timezone
 from enum import StrEnum
-from typing import Annotated, Any, Union
+from typing import Annotated, Any
 
 from pydantic import StringConstraints, model_validator
 from sqlmodel import Field, SQLModel

@@ -1,5 +1,6 @@
 from datetime import datetime
 
+import pytest
 from sqlmodel import select
 
 from server.models import (
@@ -25,18 +26,20 @@ TWITCH_USER_DATA_MOCK = {
 }
 
 
-def test_create_and_read_twitch_user_data(
-    session,
-):  # pylint: disable=redefined-outer-name
+@pytest.mark.asyncio
+async def test_create_and_read_twitch_user_data(async_session):
     # Create a new entry using TwitchUserDataCreate
     create_data = TwitchUserDataCreate(**TWITCH_USER_DATA_MOCK)
     twitch_user_data = TwitchUserData(**create_data.model_dump())
-    session.add(twitch_user_data)
-    session.commit()
+
+    async with async_session.begin():
+        async_session.add(twitch_user_data)
+
+    await async_session.commit()
 
     # Read the entry back using TwitchUserDataRead
     statement = select(TwitchUserData).where(TwitchUserData.twitch_account_id == 12345)
-    result = session.exec(statement).first()
+    result = (await async_session.execute(statement)).scalar_one_or_none()
 
     assert isinstance(result, TwitchUserData)
 
