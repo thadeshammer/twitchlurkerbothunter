@@ -49,8 +49,10 @@ async def create_test_tables(async_engine):  # pylint:disable=redefined-outer-na
         await conn.run_sync(SQLModel.metadata.drop_all)
 
 
-@pytest_asyncio.fixture(scope="function", autouse=True)
-async def truncate_tables(async_engine):  # pylint:disable=redefined-outer-name
+@pytest_asyncio.fixture(scope="function")
+async def truncate_tables(
+    async_engine,
+):  # pylint:disable=redefined-outer-name  # type: ignore
     async with async_engine.begin() as conn:
         await conn.execute(text("SET FOREIGN_KEY_CHECKS = 0;"))
         for table in reversed(SQLModel.metadata.sorted_tables):
@@ -61,7 +63,9 @@ async def truncate_tables(async_engine):  # pylint:disable=redefined-outer-name
 
 
 @pytest_asyncio.fixture(scope="function")
-async def async_session(async_session_maker):  # pylint:disable=redefined-outer-name
+async def async_session(
+    async_session_maker, truncate_tables  # type: ignore
+):  # pylint:disable=redefined-outer-name
     async with async_session_maker() as session:
         yield session
         await session.close()
