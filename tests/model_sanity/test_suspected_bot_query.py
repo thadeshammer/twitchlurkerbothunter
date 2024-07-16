@@ -76,11 +76,11 @@ async def test_database_interactions(
     for user_data in valid_twitch_user_data:
         user = TwitchUserData(**user_data.model_dump())
         async_session.add(user)
-    async_session.commit()
+    await async_session.commit()
 
     # Insert the StreamCategory entry
     async_session.add(valid_stream_category)
-    async_session.commit()
+    await async_session.commit()
 
     # Query for the TwitchUserData with all_time_high_concurrent_channel_count greater than 1000
     statement = (
@@ -104,7 +104,7 @@ async def test_database_interactions(
         )
         suspected_bot = SuspectedBot(**suspected_bot_data.dict())
         async_session.add(suspected_bot)
-    async_session.commit()
+    await async_session.commit()
 
     # Assert the correctness of the SuspectedBot entries
     for result in results:
