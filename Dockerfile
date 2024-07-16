@@ -23,7 +23,8 @@ ENV SECRETS_DIR="./secrets/tokens.yaml"
 
 COPY ./secrets/.mysql_root_password /run/secrets/mysql_root_password
 COPY ./secrets/.mysql_user_password /run/secrets/mysql_user_password
-RUN chmod 400 /run/secrets/mysql_root_password /run/secrets/mysql_user_password
+COPY ./secrets/.testdb_user_password /run/secrets/testdb_user_password
+RUN chmod 400 /run/secrets/mysql_root_password /run/secrets/mysql_user_password /run/secrets/testdb_user_password
 
 EXPOSE 443
 

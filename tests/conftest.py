@@ -1,10 +1,11 @@
 import logging
-import os
 
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlmodel import SQLModel
+
+from server.config import Config
 
 # pylint: disable=unused-import
 from server.models import (
@@ -17,17 +18,16 @@ from server.models import (
 )
 from server.models.dummy_model import DummyModel
 
-# Set the environment to test
-os.environ["ENVIRONMENT"] = "test"
+_TEST_DB_URI = Config.get_db_uri()
 
 
 @pytest.fixture(scope="function")
 def async_engine():
-    return create_async_engine("sqlite+aiosqlite://", echo=True)
+    return create_async_engine(_TEST_DB_URI, echo=True, future=True, hide_parameters=True)
 
 
 @pytest_asyncio.fixture(scope="function")
-async def async_session(async_engine):
+async def async_session(async_engine):  # pylint:disable=redefined-outer-name
     async with async_engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
     async with AsyncSession(async_engine) as session:
