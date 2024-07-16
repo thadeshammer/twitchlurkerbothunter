@@ -35,6 +35,7 @@ Dockerfile
 # Ignore build directories
 build/
 dist/
+tmp/
 
 # Ignore IDE specific files
 .vscode/
@@ -46,5 +47,7 @@ secrets/
 # Except these files
 !secrets/cert.pem
 !secrets/key.pem
-!secrets/.mysql_root_password
-!secrets/.mysql_user_password
+!secrets/.mysql_root_password.txt
+!secrets/.mysql_user_password.txt
+!secrets/.testdb_root_password.txt
+!secrets/.testdb_user_password.txt

@@ -18,9 +18,13 @@ class Config:
     _db_name: Optional[str] = None
 
     MYSQL_USER_PASSWORD_FILE: Optional[str] = None
-    TESTDB_PASSWORD_FILE_FALLBACK = "./secrets/.testdb_user_password"
+    TESTDB_PASSWORD_FILE_FALLBACK = "./secrets/.testdb_user_password.txt"
     DATABASE_PREFIX = os.getenv("DATABASE_PREFIX", "mysql+aiomysql://")
-    MYSQL_DB_NAME = os.getenv("DATABASE_NAME", "test-db")
+    DBNAME = os.getenv("DATABASE_NAME", "lurkerbothunter-testdb")
+    DBSERVICE_NAME = os.getenv(
+        "DB_SERVICE_NAME", "localhost"
+    )  # "test-db" docker service name
+    DBPORT = os.getenv("DB_PORT", "3307")
 
     # The access and refresh tokens are supplied by the twitch_oauth.sh servlet via the store_token
     # endpoint. See server.routes
@@ -49,7 +53,9 @@ class Config:
             cls.MYSQL_USER_PASSWORD_FILE = os.getenv("MYSQL_USER_PASSWORD_FILE")
             cls._db_name = os.getenv("DATABASE_NAME")
         elif cls.ENVIRONMENT in {"test", "dev"}:
-            cls.MYSQL_USER_PASSWORD_FILE = os.getenv("TESTDB_USER_PASSWORD", cls.TESTDB_PASSWORD_FILE_FALLBACK)
+            cls.MYSQL_USER_PASSWORD_FILE = os.getenv(
+                "TESTDB_USER_PASSWORD", cls.TESTDB_PASSWORD_FILE_FALLBACK
+            )
             cls._db_name = os.getenv("TEST_DB_NAME")
         else:
             raise ValueError("Invalid ENVIRONMENT set.")
@@ -73,9 +79,16 @@ class Config:
             raise EnvironmentError(f"DB password file missing: {pw_file}") from e
         if len(mysql_user_password) == 0:
             raise EnvironmentError(f"DB password file is empty: {pw_file}")
-        
-        uri = f"mysql+aiomysql://user:{mysql_user_password}@db/lurkerbothunterdb"
-        uri = f"{cls.DATABASE_PREFIX}user:{mysql_user_password}@db/{cls.MYSQL_DB_NAME}"
+
+        # uri = f"mysql+aiomysql://user:{mysql_user_password}@db/lurkerbothunterdb"
+        # uri = f"mysql+aiomysql://user:{password}@test-db:3307/lurkerbothunter-testdb"
+        prefix = cls.DATABASE_PREFIX
+        credentials = f"user:{mysql_user_password}"
+        if cls.DBPORT is not None:
+            service_and_port = f"{cls.DBSERVICE_NAME}:{cls.DBPORT}"
+        else:
+            service_and_port = f"{cls.DBSERVICE_NAME}:3306"
+        uri = f"{prefix}{credentials}@{service_and_port}/{cls.DBNAME}"
         return uri
 
     @classmethod

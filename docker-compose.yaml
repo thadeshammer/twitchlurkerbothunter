@@ -61,7 +61,8 @@ services:
       DATABASE_URL: mysql+aiomysql://user@db/lurkerbothunterdb
       DATABASE_PREFIX: mysql+aiomysql://
       DATABASE_NAME: lurkerbothunterdb
-      TEST_DB_NAME: lurkerbothunterdb-testdb
+      DB_SERVICE_NAME: db
+      DB_PORT: 3306
     volumes:
       - .:/server
       - ./logs:/logs
@@ -87,10 +88,10 @@ volumes:
 
 secrets:
   mysql_root_password:
-    file: ./secrets/.mysql_root_password
+    file: ./secrets/.mysql_root_password.txt
   mysql_user_password:
-    file: ./secrets/.mysql_user_password
+    file: ./secrets/.mysql_user_password.txt
   testdb_root_password:
-    file: ./secrets/.testdb_root_password
+    file: ./secrets/.testdb_root_password.txt
   testdb_user_password:
-    file: ./secrets/.testdb_user_password
+    file: ./secrets/.testdb_user_password.txt

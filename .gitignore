@@ -10,6 +10,7 @@ tmux*
 .env
 notes.txt
 secrets/
+tmp/
 
 # Ignore build directories
 dist/
