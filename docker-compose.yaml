@@ -1,4 +1,30 @@
 services:
+  test-db:
+    image: mysql:latest
+    environment:
+      MYSQL_DATABASE: lurkerbothunter-testdb
+      MYSQL_USER: user
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/testdb_root_password
+      MYSQL_PASSWORD_FILE: /run/secrets/testdb_user_password
+    ports:
+      - "3307:3307"
+    secrets:
+      - testdb_root_password
+      - testdb_user_password
+    volumes:
+      - testdb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    command: --wait_timeout=28800 --interactive_timeout=28800
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: "1g"
+
   db:
     image: mysql:latest
     environment:
@@ -51,9 +77,15 @@ services:
 volumes:
   mysql_data:
     driver: local
+  testdb_data:
+    driver: local
 
 secrets:
   mysql_root_password:
     file: ./secrets/.mysql_root_password
   mysql_user_password:
     file: ./secrets/.mysql_user_password
+  testdb_root_password:
+    file: ./secrets/.testdb_root_password
+  testdb_user_password:
+    file: ./secrets/.testdb_user_password
