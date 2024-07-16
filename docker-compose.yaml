@@ -57,7 +57,11 @@ services:
       ENVIRONMENT: prod
       CERT_PASSKEY: ${CERT_PASSKEY}
       MYSQL_USER_PASSWORD_FILE: /run/secrets/mysql_user_password
+      TESTDB_USER_PASSWORD_FILE: /run/secrets/testdb_user_password
       DATABASE_URL: mysql+aiomysql://user@db/lurkerbothunterdb
+      DATABASE_PREFIX: mysql+aiomysql://
+      DATABASE_NAME: lurkerbothunterdb
+      TEST_DB_NAME: lurkerbothunterdb-testdb
     volumes:
       - .:/server
       - ./logs:/logs
@@ -65,6 +69,7 @@ services:
       - "443:443"
     secrets:
       - mysql_user_password
+      - testdb_user_password
     depends_on:
       db:
         condition: service_healthy

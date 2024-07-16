@@ -8,11 +8,18 @@ logger = logging.getLogger("server")
 
 
 class Config:
-    PORT = 443
+    _initialized = False
 
+    PORT = 443
+    ENVIRONMENT = os.getenv("ENVIRONMENT", "dev").lower()
     LOGGING_CONFIG_FILE: str = os.getenv("LOG_CFG", "./logging_config.yaml")
 
     _sqlmodel_database_uri: Optional[str] = None
+    _db_name: Optional[str] = None
+
+    MYSQL_USER_PASSWORD_FILE: Optional[str] = None
+    DATABASE_PREFIX = os.getenv("DATABASE_PREFIX")
+    MYSQL_DB_NAME = os.getenv("DATABASE_NAME")
 
     # The access and refresh tokens are supplied by the twitch_oauth.sh servlet via the store_token
     # endpoint. See server.routes
@@ -24,37 +31,53 @@ class Config:
     TWITCH_CLIENT_SECRET: Optional[str] = None
 
     @classmethod
-    def load_secrets(cls) -> None:
-        secrets_path: str = os.getenv("SECRETS_DIR", "./secrets/tokens.yaml")
+    def initialize(cls) -> None:
+        twitch_oauth_secrets_path: str = os.getenv(
+            "SECRETS_DIR", "./secrets/tokens.yaml"
+        )
 
-        if os.path.exists(secrets_path):
-            with open(secrets_path, "r", encoding="UTF8") as file:
+        if os.path.exists(twitch_oauth_secrets_path):
+            with open(twitch_oauth_secrets_path, "r", encoding="UTF8") as file:
                 secrets: Union[dict, list, None] = yaml.safe_load(file)
                 if not isinstance(secrets, dict):
                     raise TypeError("secrets load failed.")
                 cls.TWITCH_CLIENT_ID = secrets["TWITCH_CLIENT_ID"]
                 cls.TWITCH_CLIENT_SECRET = secrets["TWITCH_CLIENT_SECRET"]
 
+        if cls.ENVIRONMENT == "prod":
+            cls.MYSQL_USER_PASSWORD_FILE = os.getenv("MYSQL_USER_PASSWORD_FILE")
+            cls._db_name = os.getenv("DATABASE_NAME")
+        elif cls.ENVIRONMENT in {"test", "dev"}:
+            cls.MYSQL_USER_PASSWORD_FILE = os.getenv("TESTDB_USER_PASSWORD")
+            cls._db_name = os.getenv("TEST_DB_NAME")
+        else:
+            raise ValueError("Invalid ENVIRONMENT set.")
+
+        cls._initialized = True
+
     @classmethod
     def _build_db_uri(cls) -> str:
+        if not cls._initialized:
+            cls.initialize()
+
         mysql_user_password: Optional[str] = None
-        pw_file = os.getenv("MYSQL_USER_PASSWORD_FILE")
+        pw_file = cls.MYSQL_USER_PASSWORD_FILE
         if pw_file is None:
-            raise EnvironmentError("MYSQL_USER_PASSWORD_FILE not in environment.")
-        with open(pw_file, "r", encoding="utf8") as file:
-            mysql_user_password = file.read().strip()
+            raise EnvironmentError(f"DB password file not set: {pw_file}")
+        try:
+            with open(pw_file, "r", encoding="utf8") as file:
+                mysql_user_password = file.read().strip()
+        except FileNotFoundError as e:
+            raise EnvironmentError(f"DB password file missing: {pw_file}") from e
         if len(mysql_user_password) == 0:
             raise EnvironmentError("MYSQL_USER_PASSWORD_FILE is empty.")
         uri = f"mysql+aiomysql://user:{mysql_user_password}@db/lurkerbothunterdb"
+        uri = f"{cls.DATABASE_PREFIX}user:{mysql_user_password}@db/{cls.MYSQL_DB_NAME}"
         return uri
 
     @classmethod
     def get_db_uri(cls) -> str:
         if cls._sqlmodel_database_uri is None:
-            environment = os.getenv("ENVIRONMENT", "prod")
-            if environment in ["test", "dev"]:
-                cls._sqlmodel_database_uri = "sqlite+aiosqlite://"
-            else:
-                cls._sqlmodel_database_uri = cls._build_db_uri()
+            cls._sqlmodel_database_uri = cls._build_db_uri()
 
         return cls._sqlmodel_database_uri
