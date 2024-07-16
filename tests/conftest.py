@@ -7,6 +7,7 @@ import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
+from sqlalchemy.sql import text
 from sqlmodel import SQLModel
 
 from server.config import Config
@@ -39,12 +40,24 @@ async def async_session_maker(async_engine):  # pylint:disable=redefined-outer-n
     return sessionmaker(async_engine, expire_on_commit=False, class_=AsyncSession)
 
 
-@pytest_asyncio.fixture(scope="function", autouse=True)
+@pytest_asyncio.fixture(scope="session", autouse=True)
 async def create_test_tables(async_engine):  # pylint:disable=redefined-outer-name
     async with async_engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
-        yield
+    yield
+    async with async_engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.drop_all)
+
+
+@pytest_asyncio.fixture(scope="function", autouse=True)
+async def truncate_tables(async_engine):  # pylint:disable=redefined-outer-name
+    async with async_engine.begin() as conn:
+        await conn.execute(text("SET FOREIGN_KEY_CHECKS = 0;"))
+        for table in reversed(SQLModel.metadata.sorted_tables):
+            await conn.execute(text(f"TRUNCATE TABLE {table.name};"))
+        await conn.execute(text("SET FOREIGN_KEY_CHECKS = 1;"))
+        await conn.commit()
+    yield
 
 
 @pytest_asyncio.fixture(scope="function")
