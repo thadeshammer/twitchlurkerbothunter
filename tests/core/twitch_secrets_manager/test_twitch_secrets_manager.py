@@ -1,5 +1,4 @@
-from datetime import datetime
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 import pytest
 from sqlmodel import select
@@ -8,11 +7,7 @@ from server.core.twitch_secrets_manager import (
     TwitchSecretsManager,
     TwitchSecretsManagerException,
 )
-from server.models import Secret, SecretCreate, SecretRead
-
-# @pytest.fixture
-# def secrets_manager():
-#     return TwitchSecretsManager()
+from server.models import Secret, SecretRead
 
 
 @pytest.mark.asyncio
@@ -42,10 +37,12 @@ async def test_get_access_token_secret(mock_get_db, async_session):
     secrets_manager = TwitchSecretsManager()
     await secrets_manager.process_token_update_from_servlet(first_secret_payload)
 
-    async_session.commit()  # hand testing edgecase of rapid query chaser
+    await async_session.commit()  # hand testing edgecase of rapid query chaser
 
     token = await secrets_manager.get_access_token()
     assert token == first_secret_payload["access_token"]
+
+    await async_session.close()
 
 
 @pytest.mark.asyncio
@@ -92,3 +89,5 @@ async def test_process_token_update_from_servlet(mock_get_db, async_session):
     secret2: SecretRead = result2.scalar_one_or_none()
 
     assert secret2.access_token == second_secret_payload["access_token"]
+
+    await async_session.close()

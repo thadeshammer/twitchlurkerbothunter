@@ -18,11 +18,10 @@ from multiprocessing import Manager as multi_proc_manager
 from typing import Any, Optional
 
 from pydantic import ValidationError
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 from server.db import get_db, upsert_one
-from server.models import Secret, SecretCreate, SecretRead
+from server.models import Secret, SecretCreate
 
 logger = logging.getLogger("server")
 

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 import pytest
@@ -25,6 +26,22 @@ _TEST_DB_URI = Config.get_db_uri()
 
 
 @pytest_asyncio.fixture(scope="session")
+def event_loop():
+    """Create and return a new event loop for the session.
+
+    NOTE. This works but it's the old way of doing it and deprecated. I haven't yet figured out how
+    to update it. Pytest's docs aren't the best, and my various attempts at making a
+    CustomEventLoopPolicy have uniformly failed. For now, this works, let's focus on other things.
+    """
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
+
+
+@pytest_asyncio.fixture(scope="session")
 async def async_engine():
     engine = create_async_engine(
         _TEST_DB_URI, echo=False, future=True, hide_parameters=True, poolclass=NullPool
@@ -35,7 +52,7 @@ async def async_engine():
 
 @pytest_asyncio.fixture(scope="session")
 async def async_session_maker(async_engine):  # pylint:disable=redefined-outer-name
-    return sessionmaker(async_engine, expire_on_commit=False, class_=AsyncSession)
+    return sessionmaker(async_engine, expire_on_commit=True, class_=AsyncSession)
 
 
 @pytest_asyncio.fixture(scope="session", autouse=True)
