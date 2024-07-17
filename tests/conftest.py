@@ -1,6 +1,4 @@
-import asyncio
 import logging
-import sys
 
 import pytest
 import pytest_asyncio
@@ -42,6 +40,11 @@ async def async_session_maker(async_engine):  # pylint:disable=redefined-outer-n
 
 @pytest_asyncio.fixture(scope="session", autouse=True)
 async def create_test_tables(async_engine):  # pylint:disable=redefined-outer-name
+    """_summary_
+
+    Args:
+        async_engine (pytest fixture): _description_
+    """
     async with async_engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
     yield
@@ -53,6 +56,13 @@ async def create_test_tables(async_engine):  # pylint:disable=redefined-outer-na
 async def truncate_tables(
     async_engine,
 ):  # pylint:disable=redefined-outer-name  # type: ignore
+    """Clears table data quickly between tests.
+
+    Uses truncate instead of dropping the tables each test.
+
+    Args:
+        async_engine (pytest fixture): Instantiates async test db engine.
+    """
     async with async_engine.begin() as conn:
         await conn.execute(text("SET FOREIGN_KEY_CHECKS = 0;"))
         for table in reversed(SQLModel.metadata.sorted_tables):
@@ -64,8 +74,9 @@ async def truncate_tables(
 
 @pytest_asyncio.fixture(scope="function")
 async def async_session(
-    async_session_maker, truncate_tables  # type: ignore
+    async_session_maker, truncate_tables  # type: ignore  # pylint:disable=unused-argument
 ):  # pylint:disable=redefined-outer-name
+    """Yields an async session per function, closing for each post-function teardown."""
     async with async_session_maker() as session:
         yield session
         await session.close()

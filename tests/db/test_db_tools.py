@@ -1,15 +1,13 @@
-from unittest.mock import AsyncMock, patch
-
 import pytest
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
-from server.db import get_db, upsert_one
+from server.db import upsert_one
 from server.models.dummy_model import DummyModel
 
 
 @pytest.mark.asyncio
 async def test_upsert_insert(async_session):
+    """Test one upsert which winds up being a create/insert call."""
     # Arrange
     dummy_model = DummyModel(id=1, name="Test", value=100)
 
@@ -25,6 +23,7 @@ async def test_upsert_insert(async_session):
 
 @pytest.mark.asyncio
 async def test_upsert_update(async_session):
+    """Test two upserts so the second one is an update call."""
     # Arrange
     dummy_model = DummyModel(id=1, name="Test", value=100)
     await upsert_one(dummy_model, session=async_session)
