@@ -32,6 +32,8 @@ def event_loop():
     NOTE. This works but it's the old way of doing it and deprecated. I haven't yet figured out how
     to update it. Pytest's docs aren't the best, and my various attempts at making a
     CustomEventLoopPolicy have uniformly failed. For now, this works, let's focus on other things.
+
+    The warning filter in pytest.ini is for this.
     """
     try:
         loop = asyncio.get_running_loop()

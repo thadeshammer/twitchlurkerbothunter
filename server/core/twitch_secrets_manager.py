@@ -12,7 +12,7 @@
 """
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from multiprocessing import Lock as multi_proc_lock
 from multiprocessing import Manager as multi_proc_manager
 from typing import Any, Optional
@@ -44,17 +44,24 @@ class TwitchSecretsManager:
             self._secrets_store: Optional[Secret] = None
             self._process_lock: multi_proc_lock = self._manager.Lock()
             self._async_lock = asyncio.Lock()
+            self.expiration_time: Optional[datetime] = None
             self.initialized = True
+
+    @staticmethod
+    def _calculate_expiry_time(lifetime_in_seconds: int) -> datetime:
+        return datetime.now(timezone.utc) + timedelta(seconds=lifetime_in_seconds)
 
     async def _insert_or_update_secret(self, new_secret: SecretCreate):
         secret = Secret(**new_secret.model_dump())
         self._secrets_store = secret.model_copy()
+        self.expiration_time = self._calculate_expiry_time(secret.expires_in)
 
         try:
             async with get_db() as session:
                 await upsert_one(secret, session)
         except Exception as e:
             self._secrets_store = None  # invalidated
+            self.expiration_time = None  # invalidated
             raise TwitchSecretsManagerException("Couldn't store secret.") from e
 
         if self._secrets_store is not None:
@@ -76,6 +83,8 @@ class TwitchSecretsManager:
             raise TwitchSecretsManagerException from e
 
         logger.info(f"Tokens received: {new_secret.expires_in=}, {new_secret.scope=}")
+        token_portion = new_secret.access_token[:5]
+        logger.debug(f"Token: {token_portion}")
 
         try:
             await self._insert_or_update_secret(new_secret)
@@ -91,6 +100,13 @@ class TwitchSecretsManager:
             async with get_db() as session:
                 result = await session.execute(select(Secret))
                 self._secrets_store = result.scalar_one_or_none()
+
+        if self._secrets_store:
+            token_portion = self._secrets_store.access_token[:5]
+            logger.debug(f"Token loaded: {token_portion}")
+            self.expiration_time = self._calculate_expiry_time(
+                self._secrets_store.expires_in
+            )
 
         # if _secrets_store.access_token is expired, attempt to refresh
 
