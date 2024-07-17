@@ -74,6 +74,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      test-db:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:443/test"]
       interval: 30s

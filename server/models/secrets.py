@@ -19,9 +19,9 @@ Classes:
     SecretRead: Pydantic model for serializing the Secret model, including the id field and
         enabling ORM mode for compatibility with SQLAlchemy.
 """
-from datetime import datetime, timezone
+from datetime import datetime
 from enum import StrEnum
-from typing import Annotated, Any
+from typing import Annotated, Any, Optional
 
 from pydantic import StringConstraints, model_validator
 from sqlmodel import Field, SQLModel
@@ -45,6 +45,7 @@ class SecretBase(SQLModel):
     scope: Annotated[
         str, StringConstraints(min_length=7), Field(...)
     ]  # space-delimited
+    last_update_timestamp: Optional[datetime] = Field(default=None, nullable=False)
 
 
 class Secret(SecretBase, table=True):
@@ -67,11 +68,8 @@ class Secret(SecretBase, table=True):
 
     __tablename__: str = "secrets"
 
-    id: int = Field(default=None, primary_key=True)
+    id: int = Field(default_factory=int, primary_key=True)
     enforce_one_row: str = Field(default="enforce_one_row", unique=True, nullable=False)
-    last_update_timestamp: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc), nullable=False
-    )
 
 
 class SecretCreate(SecretBase):
@@ -95,4 +93,3 @@ class SecretCreate(SecretBase):
 
 class SecretRead(SecretBase):
     id: int
-    last_update_timestamp: datetime

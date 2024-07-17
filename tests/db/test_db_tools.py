@@ -24,16 +24,17 @@ async def test_upsert_insert(async_session):
 @pytest.mark.asyncio
 async def test_upsert_update(async_session):
     """Test two upserts so the second one is an update call."""
-    # Arrange
     dummy_model = DummyModel(id=1, name="Test", value=100)
     await upsert_one(dummy_model, session=async_session)
 
-    updated_dummy_model = DummyModel(id=1, name="Test Updated", value=200)
+    result = await async_session.execute(select(DummyModel).where(DummyModel.id == 1))
+    retrieved = result.scalar_one()
+    assert retrieved.name == "Test"
+    assert retrieved.value == 100
 
-    # Act
+    updated_dummy_model = DummyModel(id=1, name="Test Updated", value=200)
     await upsert_one(updated_dummy_model, session=async_session)
 
-    # Assert
     result = await async_session.execute(select(DummyModel).where(DummyModel.id == 1))
     retrieved = result.scalar_one()
     assert retrieved.name == "Test Updated"

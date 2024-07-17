@@ -2,77 +2,93 @@ from datetime import datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from sqlmodel import select
 
 from server.core.twitch_secrets_manager import (
     TwitchSecretsManager,
     TwitchSecretsManagerException,
 )
-from server.models import SecretRead
+from server.models import Secret, SecretCreate, SecretRead
 
-# pylint: disable=redefined-outer-name
-
-
-@pytest.fixture
-def secrets_manager():
-    return TwitchSecretsManager()
+# @pytest.fixture
+# def secrets_manager():
+#     return TwitchSecretsManager()
 
 
 @pytest.mark.asyncio
-@patch(
-    "server.core.twitch_secrets_manager.TwitchSecretsManager._get_secret_row",
-    new_callable=AsyncMock,
-)
-async def test_get_access_token_no_secrets(mock_get_secret_row, secrets_manager):
-    mock_get_secret_row.side_effect = Exception("No secret found")
-
+async def test_get_access_token_no_secrets():
+    secrets_manager = TwitchSecretsManager()
     with pytest.raises(
-        TwitchSecretsManagerException, match="No token. Please auth with servlet."
+        TwitchSecretsManagerException, match="No token. Use oauth servlet."
     ):
         await secrets_manager.get_access_token()
 
 
 @pytest.mark.asyncio
-@patch(
-    "server.core.twitch_secrets_manager.TwitchSecretsManager._get_secret_row",
-    new_callable=AsyncMock,
-)
-async def test_get_access_token_with_secrets(mock_get_secret_row, secrets_manager):
-    fake_secret = SecretRead(
-        access_token="testAccessToken",
-        refresh_token="testRefreshToken",
-        expires_in=3600,
-        token_type="bearer",
-        scope="test_scope",
-        id=1,
-        last_update_timestamp=datetime.now(),
-    )
-    mock_get_secret_row.return_value = fake_secret
+@patch("server.db.db.get_db")
+async def test_get_access_token_secret(mock_get_db, async_session):
+    mock_get_db.return_value = async_session
 
-    token = await secrets_manager.get_access_token()
-    assert token == "testAccessToken"
-
-
-@pytest.mark.asyncio
-@patch(
-    "server.core.twitch_secrets_manager.TwitchSecretsManager._insert_or_update_secret",
-    new_callable=AsyncMock,
-)
-async def test_process_token_update_from_servlet(
-    mock_insert_or_update_secret, secrets_manager
-):
-    new_secret_payload = {
-        "access_token": "newAccessToken",
-        "refresh_token": "newRefreshToken",
+    # Set up
+    first_secret_payload = {
+        "access_token": "accessToken",
+        "refresh_token": "refreshToken",
         "expires_in": 3600,
         "token_type": "bearer",
-        "scope": "test_scope",
+        "scope": "chat:read",
         "enforce_one_row": "enforce_one_row",
     }
 
-    result = await secrets_manager.process_token_update_from_servlet(new_secret_payload)
-    assert result is True
-    mock_insert_or_update_secret.assert_called_once()
+    secrets_manager = TwitchSecretsManager()
+    await secrets_manager.process_token_update_from_servlet(first_secret_payload)
+
+    async_session.commit()  # hand testing edgecase of rapid query chaser
+
+    token = await secrets_manager.get_access_token()
+    assert token == first_secret_payload["access_token"]
 
 
-if __name__ == "__main__":
-    pytest.main()
+@pytest.mark.asyncio
+@patch("server.db.db.get_db")
+async def test_process_token_update_from_servlet(mock_get_db, async_session):
+    mock_get_db.return_value = async_session
+    secrets_manager = TwitchSecretsManager()
+
+    # Set up
+    first_secret_payload = {
+        "access_token": "1stAccessToken",
+        "refresh_token": "1stRefreshToken",
+        "expires_in": 3600,
+        "token_type": "bearer",
+        "scope": "chat:read",
+        "enforce_one_row": "enforce_one_row",
+    }
+
+    await secrets_manager.process_token_update_from_servlet(first_secret_payload)
+
+    result1 = await async_session.execute(select(Secret))
+    secret1: SecretRead = result1.scalar_one_or_none()
+
+    assert secret1.access_token == first_secret_payload["access_token"]
+
+    # Replace it
+    second_secret_payload = {
+        "access_token": "2ndAccessToken",
+        "refresh_token": "2ndRefreshToken",
+        "expires_in": 3600,
+        "token_type": "bearer",
+        "scope": "chat:read",
+        "enforce_one_row": "enforce_one_row",
+    }
+
+    await secrets_manager.process_token_update_from_servlet(second_secret_payload)
+
+    await async_session.commit()  # Need to commit and close out transaction for refresh to work
+    await async_session.refresh(
+        secret1
+    )  # Weird edge case because of back-to-back select(Secret)
+
+    result2 = await async_session.execute(select(Secret))
+    secret2: SecretRead = result2.scalar_one_or_none()
+
+    assert secret2.access_token == second_secret_payload["access_token"]

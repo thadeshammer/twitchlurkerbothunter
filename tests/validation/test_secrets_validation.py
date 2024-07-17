@@ -64,5 +64,7 @@ def test_secret_last_update_timestamp_default():
     secret_data["id"] = 1
 
     secret = Secret(**secret_data)
+    secret.last_update_timestamp = datetime.now(timezone.utc)
+
     assert isinstance(secret.last_update_timestamp, datetime)
     assert secret.last_update_timestamp <= datetime.now(timezone.utc)

@@ -12,14 +12,16 @@
 """
 import asyncio
 import logging
+from datetime import datetime, timezone
 from multiprocessing import Lock as multi_proc_lock
 from multiprocessing import Manager as multi_proc_manager
 from typing import Any, Optional
 
 from pydantic import ValidationError
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
-from server.db import get_db
+from server.db import get_db, upsert_one
 from server.models import Secret, SecretCreate, SecretRead
 
 logger = logging.getLogger("server")
@@ -40,45 +42,22 @@ class TwitchSecretsManager:
 
     def __init__(self):
         if not hasattr(self, "initialized"):  # To prevent reinitialization
-            self._secrets_store: Optional[SecretRead] = None
+            self._secrets_store: Optional[Secret] = None
             self._process_lock: multi_proc_lock = self._manager.Lock()
             self._async_lock = asyncio.Lock()
             self.initialized = True
 
-    async def _get_secret_row(self) -> Optional[SecretRead]:
-        async with get_db() as db:
-            statement = select(Secret).where(
-                Secret.enforce_one_row == "enforce_one_row"
-            )
-            result = await db.execute(statement)
-            existing_secret: Optional[SecretRead] = result.scalar()
-            return existing_secret
-
     async def _insert_or_update_secret(self, new_secret: SecretCreate):
         secret = Secret(**new_secret.model_dump())
-        existing_secret = await self._get_secret_row()
+        self._secrets_store = secret.model_copy()
 
-        async with get_db() as db:
-            if existing_secret is None:
-                logger.debug("No existing tokens; creating new row.")
-                db.add(secret)
-                await db.commit()
-            else:
-                logger.debug("Existing tokens; updating them.")
-                logger.debug(
-                    f"BEFORE: {existing_secret.expires_in} {existing_secret.last_update_timestamp}"
-                )
-                existing_secret.access_token = secret.access_token
-                existing_secret.refresh_token = secret.refresh_token
-                existing_secret.expires_in = secret.expires_in
-                existing_secret.token_type = secret.token_type
-                existing_secret.scope = secret.scope
-                await db.commit()
-                logger.debug(
-                    f"AFTER: {existing_secret.expires_in} {existing_secret.last_update_timestamp}"
-                )
+        try:
+            async with get_db() as session:
+                await upsert_one(secret, session)
+        except Exception as e:
+            self._secrets_store = None  # invalidated
+            raise TwitchSecretsManagerException("Couldn't store secret.") from e
 
-        self._secrets_store = await self._get_secret_row()
         if self._secrets_store is not None:
             logger.debug(
                 f"{self._secrets_store.expires_in} {self._secrets_store.last_update_timestamp}"
@@ -92,6 +71,7 @@ class TwitchSecretsManager:
 
         try:
             new_secret = SecretCreate(**servlet_payload)
+            new_secret.last_update_timestamp = datetime.now(timezone.utc)
         except ValidationError as e:
             logger.error(f"SecretCreate validation failed: {e.errors()}")
             raise TwitchSecretsManagerException from e
@@ -109,16 +89,15 @@ class TwitchSecretsManager:
     async def get_access_token(self) -> Optional[str]:
         # if _secrets_store is None, attempt to fetch from DB
         if self._secrets_store is None:
-            try:
-                self._secrets_store = await self._get_secret_row()
-            except Exception as e:
-                raise TwitchSecretsManagerException(
-                    "No token. Please auth with servlet."
-                ) from e
+            async with get_db() as session:
+                result = await session.execute(select(Secret))
+                self._secrets_store = result.scalar_one_or_none()
 
         # if _secrets_store.access_token is expired, attempt to refresh
 
         # if cannot refresh and/or has no token, throw an error
+        if self._secrets_store is None:
+            raise TwitchSecretsManagerException("No token. Use oauth servlet.")
 
         if self._secrets_store is not None:
             return self._secrets_store.access_token

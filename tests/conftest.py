@@ -27,7 +27,7 @@ _TEST_DB_URI = Config.get_db_uri()
 @pytest_asyncio.fixture(scope="session")
 async def async_engine():
     engine = create_async_engine(
-        _TEST_DB_URI, echo=True, future=True, hide_parameters=True, poolclass=NullPool
+        _TEST_DB_URI, echo=False, future=True, hide_parameters=True, poolclass=NullPool
     )
     yield engine
     await engine.dispose()
