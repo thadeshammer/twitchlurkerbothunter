@@ -9,6 +9,11 @@
       fails we no longer have tokens.
     - If we don't have tokens (because the row is empty or expired) then we're dead in the water and
       we respond that we can't act. (Some other part of the app should poke the user to fix this.)
+
+    CONCURRENCY NOTES
+
+    This module is rigged up to be hammered by each worker directly and is a singleton. It leverages
+    locking mechanisms to ensure this is the case.
 """
 import asyncio
 import logging
@@ -33,25 +38,38 @@ class TwitchSecretsManagerException(Exception):
 class TwitchSecretsManager:
     _singleton_instance: Optional["TwitchSecretsManager"] = None
     _manager = multi_proc_manager()
+    _singleton_lock = _manager.Lock()
 
     def __new__(cls):
-        if cls._singleton_instance is None:
-            cls._singleton_instance = super(TwitchSecretsManager, cls).__new__(cls)
+        with cls._singleton_lock:
+            if cls._singleton_instance is None:
+                cls._singleton_instance = super(TwitchSecretsManager, cls).__new__(cls)
         return cls._singleton_instance
 
     def __init__(self):
-        if not hasattr(self, "initialized"):  # To prevent reinitialization
-            self._secrets_store: Optional[Secret] = None
-            self._process_lock: multi_proc_lock = self._manager.Lock()
-            self._async_lock = asyncio.Lock()
-            self.expiration_time: Optional[datetime] = None
-            self.initialized = True
+        with self._singleton_lock:
+            if not hasattr(self, "initialized"):  # To prevent reinitialization
+                self._secrets_store: Optional[Secret] = None
+                self._process_lock: multi_proc_lock = self._manager.Lock()
+                self._async_lock = asyncio.Lock()
+                self.expiration_time: Optional[datetime] = None
+                self.initialized = True
 
     @staticmethod
     def _calculate_expiry_time(lifetime_in_seconds: int) -> datetime:
         return datetime.now(timezone.utc) + timedelta(seconds=lifetime_in_seconds)
 
     async def _insert_or_update_secret(self, new_secret: SecretCreate):
+        """DO NOT CALL DIRECTLY. CALL process_token_update_from_servlet OR IT WILL BE BAD.
+
+        Performs upsert op for a new Secret and updates the singleton's store.
+
+        Args:
+            new_secret (SecretCreate): The validated SecretCreate SQLModel.
+
+        Raises:
+            TwitchSecretsManagerException: In the event of a DB error we can't recover from.
+        """
         secret = Secret(**new_secret.model_dump())
         self._secrets_store = secret.model_copy()
         self.expiration_time = self._calculate_expiry_time(secret.expires_in)
@@ -74,47 +92,70 @@ class TwitchSecretsManager:
     async def process_token_update_from_servlet(
         self, servlet_payload: dict[str, Any]
     ) -> bool:
+        """Call this from the store-token route with new tokens + metadata
 
-        try:
-            new_secret = SecretCreate(**servlet_payload)
-            new_secret.last_update_timestamp = datetime.now(timezone.utc)
-        except ValidationError as e:
-            logger.error(f"SecretCreate validation failed: {e.errors()}")
-            raise TwitchSecretsManagerException from e
+        Args:
+            servlet_payload (dict[str, Any]): The payload from the Twitch oauth servlet.
 
-        logger.info(f"Tokens received: {new_secret.expires_in=}, {new_secret.scope=}")
-        token_portion = new_secret.access_token[:5]
-        logger.debug(f"Token: {token_portion}")
+        Raises:
+            TwitchSecretsManagerException: Validation faiure.
+            TwitchSecretsManagerException: DB upsert failure.
 
-        try:
-            await self._insert_or_update_secret(new_secret)
-        except Exception as e:
-            logger.error(f"Failed to insert or update secret: {str(e)}")
-            raise TwitchSecretsManagerException from e
+        Returns:
+            bool: True if update succeeded; False otherwise.
+        """
+        with self._process_lock:
+            async with self._async_lock:
+                try:
+                    new_secret = SecretCreate(**servlet_payload)
+                    new_secret.last_update_timestamp = datetime.now(timezone.utc)
+                except ValidationError as e:
+                    logger.error(f"SecretCreate validation failed: {e.errors()}")
+                    raise TwitchSecretsManagerException from e
 
-        return True
+                logger.info(
+                    f"Tokens received: {new_secret.expires_in=}, {new_secret.scope=}"
+                )
+                token_portion = new_secret.access_token[:5]
+                logger.debug(f"Token: {token_portion}")
+
+                try:
+                    await self._insert_or_update_secret(new_secret)
+                except Exception as e:
+                    logger.error(f"Failed to insert or update secret: {str(e)}")
+                    raise TwitchSecretsManagerException from e
+
+                return True
+
+    async def _refresh_tokens(self):
+        pass
 
     async def get_access_token(self) -> Optional[str]:
-        # if _secrets_store is None, attempt to fetch from DB
-        if self._secrets_store is None:
-            async with get_db() as session:
-                result = await session.execute(select(Secret))
-                self._secrets_store = result.scalar_one_or_none()
+        with self._process_lock:
+            async with self._async_lock:
+                # if _secrets_store is None, attempt to fetch from DB
+                if self._secrets_store is None:
+                    async with get_db() as session:
+                        result = await session.execute(select(Secret))
+                        self._secrets_store = result.scalar_one_or_none()
 
-        if self._secrets_store:
-            token_portion = self._secrets_store.access_token[:5]
-            logger.debug(f"Token loaded: {token_portion}")
-            self.expiration_time = self._calculate_expiry_time(
-                self._secrets_store.expires_in
-            )
+                if self._secrets_store:
+                    token_portion = self._secrets_store.access_token[:5]
+                    logger.debug(f"Token loaded: {token_portion}")
+                    self.expiration_time = self._calculate_expiry_time(
+                        self._secrets_store.expires_in
+                    )
 
-        # if _secrets_store.access_token is expired, attempt to refresh
+                # if _secrets_store.access_token is expired, attempt to refresh
+                if self._secrets_store and self.expiration_time:
+                    if datetime.now(timezone.utc) >= self.expiration_time:
+                        await self._refresh_tokens()
 
-        # if cannot refresh and/or has no token, throw an error
-        if self._secrets_store is None:
-            raise TwitchSecretsManagerException("No token. Use oauth servlet.")
+                # if cannot refresh and/or has no token, throw an error
+                if self._secrets_store is None:
+                    raise TwitchSecretsManagerException("No token. Use oauth servlet.")
 
-        if self._secrets_store is not None:
-            return self._secrets_store.access_token
+                if self._secrets_store is not None:
+                    return self._secrets_store.access_token
 
-        return None
+                return None

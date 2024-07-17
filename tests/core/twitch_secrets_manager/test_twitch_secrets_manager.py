@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 import pytest
@@ -91,3 +92,17 @@ async def test_process_token_update_from_servlet(mock_get_db, async_session):
     assert secret2.access_token == second_secret_payload["access_token"]
 
     await async_session.close()
+
+
+@patch("server.core.twitch_secrets_manager.datetime")
+def test_calculate_expiry_time(mock_datetime):
+    fixed_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+    mock_datetime.now.return_value = fixed_now
+
+    lifetime_in_seconds = 3600  # one hour
+
+    expected = fixed_now + timedelta(seconds=lifetime_in_seconds)
+    calculated = TwitchSecretsManager._calculate_expiry_time(
+        lifetime_in_seconds
+    )  # pylint:disable=protected-access
+    assert calculated == expected
