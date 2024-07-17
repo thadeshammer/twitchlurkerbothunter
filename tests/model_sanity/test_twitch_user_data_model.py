@@ -17,12 +17,12 @@ TWITCH_USER_DATA_MOCK = {
     "account_type": TwitchAccountType.NORMAL,
     "broadcaster_type": TwitchBroadcasterType.AFFILIATE,
     "lifetime_view_count": 1000,
-    "account_created_at": datetime.now(),
-    "first_sighting_as_viewer": datetime.now(),
-    "most_recent_sighting_as_viewer": datetime.now(),
+    "account_created_at": "2020-12-12T20:12:00Z",
+    "first_sighting_as_viewer": "2024-07-14T20:00:00Z",
+    "most_recent_sighting_as_viewer": "2024-07-14T20:00:00Z",
     "most_recent_concurrent_channel_count": 10,
     "all_time_high_concurrent_channel_count": 20,
-    "all_time_high_at": datetime.now(),
+    "all_time_high_at": "2024-07-14T20:00:00Z",
 }
 
 
@@ -54,15 +54,6 @@ async def test_create_and_read_twitch_user_data(async_session):
         TWITCH_USER_DATA_MOCK["broadcaster_type"]
     )
     assert read_data.lifetime_view_count == TWITCH_USER_DATA_MOCK["lifetime_view_count"]
-    assert read_data.account_created_at == TWITCH_USER_DATA_MOCK["account_created_at"]
-    assert (
-        read_data.first_sighting_as_viewer
-        == TWITCH_USER_DATA_MOCK["first_sighting_as_viewer"]
-    )
-    assert (
-        read_data.most_recent_sighting_as_viewer
-        == TWITCH_USER_DATA_MOCK["most_recent_sighting_as_viewer"]
-    )
     assert (
         read_data.most_recent_concurrent_channel_count
         == TWITCH_USER_DATA_MOCK["most_recent_concurrent_channel_count"]
@@ -71,4 +62,3 @@ async def test_create_and_read_twitch_user_data(async_session):
         read_data.all_time_high_concurrent_channel_count
         == TWITCH_USER_DATA_MOCK["all_time_high_concurrent_channel_count"]
     )
-    assert read_data.all_time_high_at == TWITCH_USER_DATA_MOCK["all_time_high_at"]

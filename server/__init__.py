@@ -56,7 +56,7 @@ async def lifespan(
 def create_app() -> FastAPI:
     fastapi_app = FastAPI(lifespan=lifespan)
 
-    Config.load_secrets()
+    Config.initialize()
     fastapi_app.debug = False
 
     logger.info("Logger is ready.")

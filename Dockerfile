@@ -20,10 +20,14 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 ENV LOG_CFG="logging_config.yaml"
 ENV SECRETS_DIR="./secrets/tokens.yaml"
+ENV DBNAME="lurkerbothunterdb"
+ENV DB_SERVICE_NAME="db"
+ENV DB_PORT="3306"
 
-COPY ./secrets/.mysql_root_password /run/secrets/mysql_root_password
-COPY ./secrets/.mysql_user_password /run/secrets/mysql_user_password
-RUN chmod 400 /run/secrets/mysql_root_password /run/secrets/mysql_user_password
+COPY ./secrets/.mysql_root_password.txt /run/secrets/mysql_root_password
+COPY ./secrets/.mysql_user_password.txt /run/secrets/mysql_user_password
+COPY ./secrets/.testdb_user_password.txt /run/secrets/testdb_user_password
+RUN chmod 400 /run/secrets/mysql_root_password /run/secrets/mysql_user_password /run/secrets/testdb_user_password
 
 EXPOSE 443
 
