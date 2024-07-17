@@ -28,11 +28,23 @@ class MissingCredentials(Exception):
 
 app = Flask(__name__)
 
-# Read the Flask secret key
+# FLASK SECRET KEY
+# Incase I forget what this is for again:
+
+# Session Management: Flask uses the secret key to sign session cookies. This ensures that the
+# cookies  cannot be tampered with. When Flask sets a session cookie, it signs it with the secret
+# key. When a request with the session cookie is received, Flask verifies the signature using the
+# secret key. If the signature is valid, Flask knows the cookie hasn’t been altered.
+
+# CSRF Protection: If you are using Flask-WTF or another extension to protect against Cross-Site
+# Request Forgery (CSRF) attacks, the secret key is used to generate tokens that prevent these
+# attacks.
+
+# Encryption: The secret key can also be used for encrypting sensitive data within your application.
 with open("./secrets/secret_key.txt", "r", encoding="UTF8") as file:
     app.secret_key = file.read().strip()
 
-# Get the client id and secret
+# Get the Twitch client id and client secret for this registered app.
 with open("./secrets/tokens.yaml", "r", encoding="UTF8") as file:
     tokens_file: Union[dict, List, None] = yaml.safe_load(file)
 
