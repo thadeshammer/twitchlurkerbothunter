@@ -22,4 +22,7 @@ async def fetch_secret() -> Optional[Secret]:
     async with get_db() as session:
         result = await session.execute(select(Secret))
     secret_read: SecretRead = result.scalar_one_or_none()
-    return Secret(**secret_read.model_dump())
+    if secret_read is not None:
+        return Secret(**secret_read.model_dump())
+    else:
+        return None
