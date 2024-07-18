@@ -23,9 +23,9 @@ from multiprocessing import Manager as multi_proc_manager
 from typing import Any, Optional
 
 from pydantic import ValidationError
-from sqlmodel import select
 
 from server.db import get_db, upsert_one
+from server.db.query import fetch_secrets_table
 from server.models import Secret, SecretCreate
 
 logger = logging.getLogger("server")
@@ -135,9 +135,7 @@ class TwitchSecretsManager:
             async with self._async_lock:
                 # if _secrets_store is None, attempt to fetch from DB
                 if self._secrets_store is None:
-                    async with get_db() as session:
-                        result = await session.execute(select(Secret))
-                        self._secrets_store = result.scalar_one_or_none()
+                    self._secrets_store = await fetch_secrets_table()
 
                 if self._secrets_store:
                     token_portion = self._secrets_store.access_token[:5]
