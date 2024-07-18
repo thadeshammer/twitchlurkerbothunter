@@ -3,6 +3,7 @@ import logging
 
 import pytest
 import pytest_asyncio
+import redis.asyncio as redis_async
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
@@ -24,6 +25,10 @@ from server.models.dummy_model import DummyModel
 
 _TEST_DB_URI = Config.get_db_uri()
 
+TEST_REDIS_HOST = "localhost"
+TEST_REDIS_PORT = 6380  # TODO move to Config
+TEST_REDIS_DB = 0
+
 
 @pytest_asyncio.fixture(scope="session")
 def event_loop():
@@ -41,6 +46,17 @@ def event_loop():
         loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
+
+
+@pytest_asyncio.fixture(scope="session")
+async def redis_client(event_loop):
+    redis_instance = redis_async.Redis(
+        host=TEST_REDIS_HOST, port=TEST_REDIS_PORT, db=TEST_REDIS_DB
+    )
+    await redis_instance.flushdb()
+    yield redis_instance
+    await redis_instance.flushdb()
+    await redis_instance.aclose()  # type: ignore
 
 
 @pytest_asyncio.fixture(scope="session")

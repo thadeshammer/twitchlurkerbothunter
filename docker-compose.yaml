@@ -1,29 +1,36 @@
 services:
-  test-db:
-    image: mysql:latest
+  server:
+    build: .
     environment:
-      MYSQL_DATABASE: lurkerbothunter-testdb
-      MYSQL_USER: user
-      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/testdb_root_password
-      MYSQL_PASSWORD_FILE: /run/secrets/testdb_user_password
-    ports:
-      - "3307:3306"
-    secrets:
-      - testdb_root_password
-      - testdb_user_password
+      ENVIRONMENT: prod
+      CERT_PASSKEY: ${CERT_PASSKEY}
+      MYSQL_USER_PASSWORD_FILE: /run/secrets/mysql_user_password
+      TESTDB_USER_PASSWORD_FILE: /run/secrets/testdb_user_password
+      DATABASE_URL: mysql+aiomysql://user@db/lurkerbothunterdb
+      DATABASE_PREFIX: mysql+aiomysql://
+      DATABASE_NAME: lurkerbothunterdb
+      DB_SERVICE_NAME: db
+      DB_PORT: 3306
     volumes:
-      - testdb_data:/var/lib/mysql
+      - .:/server
+      - ./logs:/logs
+    ports:
+      - "443:443"
+    secrets:
+      - mysql_user_password
+      - testdb_user_password
+    depends_on:
+      db:
+        condition: service_healthy
+      test-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
+      test: ["CMD", "curl", "-f", "http://localhost:443/test"]
+      interval: 30s
+      timeout: 10s
       retries: 3
-    command: --wait_timeout=28800 --interactive_timeout=28800
-    deploy:
-      resources:
-        limits:
-          cpus: "1.0"
-          memory: "1g"
 
   db:
     image: mysql:latest
@@ -51,36 +58,51 @@ services:
           cpus: "1.0"
           memory: "1g"
 
-  server:
-    build: .
-    environment:
-      ENVIRONMENT: prod
-      CERT_PASSKEY: ${CERT_PASSKEY}
-      MYSQL_USER_PASSWORD_FILE: /run/secrets/mysql_user_password
-      TESTDB_USER_PASSWORD_FILE: /run/secrets/testdb_user_password
-      DATABASE_URL: mysql+aiomysql://user@db/lurkerbothunterdb
-      DATABASE_PREFIX: mysql+aiomysql://
-      DATABASE_NAME: lurkerbothunterdb
-      DB_SERVICE_NAME: db
-      DB_PORT: 3306
-    volumes:
-      - .:/server
-      - ./logs:/logs
+  redis:
+    image: redis:latest
     ports:
-      - "443:443"
-    secrets:
-      - mysql_user_password
-      - testdb_user_password
-    depends_on:
-      db:
-        condition: service_healthy
-      test-db:
-        condition: service_healthy
+      - "6379:6379"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:443/test"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 30s
       timeout: 10s
+      retries: 5
+
+  test-db:
+    image: mysql:latest
+    environment:
+      MYSQL_DATABASE: lurkerbothunter-testdb
+      MYSQL_USER: user
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/testdb_root_password
+      MYSQL_PASSWORD_FILE: /run/secrets/testdb_user_password
+    ports:
+      - "3307:3306"
+    secrets:
+      - testdb_root_password
+      - testdb_user_password
+    volumes:
+      - testdb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
       retries: 3
+    command: --wait_timeout=28800 --interactive_timeout=28800
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: "1g"
+
+  test-redis:
+    image: redis:latest
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
 volumes:
   mysql_data:
