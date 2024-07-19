@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 import yaml
 
@@ -17,6 +17,7 @@ class Config:
     _sqlmodel_database_uri: Optional[str] = None
     _db_name: Optional[str] = None
 
+    # defaults are typical test-db (MySQL) instance
     MYSQL_USER_PASSWORD_FILE: Optional[str] = None
     TESTDB_PASSWORD_FILE_FALLBACK = "./secrets/.testdb_user_password.txt"
     DATABASE_PREFIX = os.getenv("DATABASE_PREFIX", "mysql+aiomysql://")
@@ -25,6 +26,11 @@ class Config:
         "DB_SERVICE_NAME", "localhost"
     )  # "test-db" docker service name
     DBPORT = os.getenv("DB_PORT", "3307")
+
+    # defaults are typical test-redis instance
+    REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+    REDIS_PORT = os.getenv("REDIS_PORT", "6380")
+    REDIS_DB_INDEX = os.getenv("REDIS_DB", "0")
 
     # The access and refresh tokens are supplied by the twitch_oauth.sh servlet via the store_token
     # endpoint. See server.routes
@@ -97,3 +103,11 @@ class Config:
             cls._sqlmodel_database_uri = cls._build_db_uri()
 
         return cls._sqlmodel_database_uri
+
+    @classmethod
+    def get_redis_args(cls) -> dict[str, Any]:
+        return {
+            "host": Config.REDIS_HOST,
+            "port": Config.REDIS_PORT,
+            "db": Config.REDIS_DB_INDEX,
+        }

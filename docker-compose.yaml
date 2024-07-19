@@ -11,6 +11,9 @@ services:
       DATABASE_NAME: lurkerbothunterdb
       DB_SERVICE_NAME: db
       DB_PORT: 3306
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      REDIS_DB_INDEX: 0
     volumes:
       - .:/server
       - ./logs:/logs

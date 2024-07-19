@@ -4,15 +4,15 @@
 import pytest
 import pytest_asyncio
 
+from server.config import Config
 from server.utils import SharedQueue, SharedQueueError, SharedQueueFull
-from tests.conftest import TEST_REDIS_DB, TEST_REDIS_HOST, TEST_REDIS_PORT
+
+# from tests.conftest import TEST_REDIS_DB, TEST_REDIS_HOST, TEST_REDIS_PORT
 
 
 @pytest_asyncio.fixture(scope="function")
 async def shared_queue(redis_client):  # pylint: disable=unused-argument
-    queue = SharedQueue(
-        name="testqueue", host=TEST_REDIS_HOST, port=TEST_REDIS_PORT, db=TEST_REDIS_DB
-    )
+    queue = SharedQueue(name="testqueue", **Config.get_redis_args())
     await queue.clear()
     yield queue
     await queue.clear()
@@ -49,8 +49,6 @@ async def test_queue_size(shared_queue):
 
 @pytest.mark.asyncio
 async def test_empty(shared_queue):
-    initial_size = await shared_queue.queue_size()
-    print(f"{initial_size=}")
     assert await shared_queue.empty()
 
     await shared_queue.enqueue("item1")
@@ -70,13 +68,7 @@ async def test_clear(shared_queue):
 
 @pytest.mark.asyncio
 async def test_size_limit():
-    queue = SharedQueue(
-        name="limitedqueue",
-        size_limit=1,
-        host=TEST_REDIS_HOST,
-        port=TEST_REDIS_PORT,
-        db=TEST_REDIS_DB,
-    )
+    queue = SharedQueue(name="limitedqueue", size_limit=1, **Config.get_redis_args())
 
     await queue.enqueue("item1")
 

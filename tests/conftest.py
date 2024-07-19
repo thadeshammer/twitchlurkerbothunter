@@ -42,21 +42,37 @@ def event_loop():
     """
     try:
         loop = asyncio.get_running_loop()
+        # loop = asyncio.get_event_loop_policy().get_event_loop()
     except RuntimeError:
         loop = asyncio.get_event_loop_policy().new_event_loop()
+
     yield loop
-    loop.close()
+
+    try:
+        loop.close()
+    except RuntimeError:
+        print("Error trying to close event loop in pytest event_loop fixture.")
+        raise
 
 
 @pytest_asyncio.fixture(scope="session")
-async def redis_client(event_loop):
-    redis_instance = redis_async.Redis(
-        host=TEST_REDIS_HOST, port=TEST_REDIS_PORT, db=TEST_REDIS_DB
-    )
+async def redis_client(event_loop):  # type: ignore
+    """Redis client fixture (requires test-redis to be up).
+
+    NOTE. Needed to downgrade from 5.0.7 to 5.0.1 for testing to stop failing/erroring with a
+    RunTimeError due to the event loop being closed prior to the redis connection being closed.
+        See: https://github.com/redis/redis-py/issues/3239
+    Args:
+        event_loop (pytest fixture): The test session's custom event loop via fixture.
+    """
+    redis_instance = redis_async.Redis(**Config.get_redis_args())
     await redis_instance.flushdb()
     yield redis_instance
     await redis_instance.flushdb()
-    await redis_instance.aclose()  # type: ignore
+    try:
+        await redis_instance.aclose()  # type: ignore
+    except RuntimeError:
+        print("Error trying to close Redis connection in redis_client fixture.")
 
 
 @pytest_asyncio.fixture(scope="session")

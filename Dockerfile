@@ -23,6 +23,9 @@ ENV SECRETS_DIR="./secrets/tokens.yaml"
 ENV DBNAME="lurkerbothunterdb"
 ENV DB_SERVICE_NAME="db"
 ENV DB_PORT="3306"
+ENV REDIS_HOST="localhost"
+ENV REDIS_PORT="6379"
+ENV REDIS_DB_INDEX="0"
 
 COPY ./secrets/.mysql_root_password.txt /run/secrets/mysql_root_password
 COPY ./secrets/.mysql_user_password.txt /run/secrets/mysql_user_password
