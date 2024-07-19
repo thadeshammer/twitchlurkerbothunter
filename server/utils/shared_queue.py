@@ -1,7 +1,7 @@
 import asyncio
 from multiprocessing import Lock as multi_proc_lock
 from multiprocessing import Manager as multi_proc_manager
-from typing import Any, Awaitable, Optional
+from typing import Any, Optional
 
 import redis.asyncio as redis_async
 
