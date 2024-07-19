@@ -1,5 +1,5 @@
 """
-TwitchViewerListFetcher
+ViewerListFetcherChannelListener
 
 RESPECT THE RATE LIMIT. (See below.)
 
@@ -21,9 +21,9 @@ Usage:
     streams every 10 seconds, so that if we go to slow, len(queue) <= 20, and if we go too fast, the
     queue will bounce from 0 to 20 at the 10s mark, such that we can't possibly exceed the rate.
 
-    Instantiate one TwitchViewerListFetcher per multiprocess instance or microservice.
+    Instantiate one ViewerListFetcherChannelListener per multiprocess instance of ViewerListFetcher.
 
-    client = TwitchViewerListFetcher(worker_id, access_token)
+    client = ViewerListFetcherChannelListener(worker_id, access_token)
     await client.connect()
     for user_lists in big_user_lists_collection_of_somekind:
         user_lists = fetch_viewer_list_for_channels(list_of_channels)
@@ -81,9 +81,35 @@ class ViewerListFetchData:
             self.time_elapsed = self.end_time - self.start_time
 
 
-class TwitchViewerListFetcher(Client):
+class ViewerListFetcherChannelListener(Client):
+    """Core code to process one or more given channels. For each channel given:
+        - JOIN chat.
+        - Listen and parse 'CHATTER LIST' messages as they arrive.
+        - Listen for 'END OF NAMES' messages, PART from channel upon receipt.
+        - Return the list of observed viewer names collected during this operation.
+
+    TO USE:
+        - Instantiate ONE ViewerListFetcherChannelListener per ViewerListFetcher worker process.
+        - Pass channels in a list to fetch_viewer_list_for_channels() and await response, which will
+          be:
+            Tuple[dict[str, ViewerListFetchData], float]:
+                - A dict mapping channel_name to ViewerListFetchData
+                - The total time this call took to join, fetch, and part from all given channels, in
+                  seconds.
+    """
 
     def __init__(self, worker_id: str, access_token: str):
+        """Initialize a ViewerListFetcher for a worker. Provide it with the ID of the worker that
+        owns it and the currently live access token for init.
+
+        Args:
+            worker_id (str): _description_
+            access_token (str): _description_
+
+        Raises:
+            TypeError: _description_
+            TypeError: _description_
+        """
         if not isinstance(worker_id, str):
             raise TypeError(f"worker_id is {type(worker_id)} but needs be a str.")
         if not isinstance(access_token, str):
@@ -99,9 +125,15 @@ class TwitchViewerListFetcher(Client):
         super().__init__(token=self._access_token, initial_channels=[])
 
     async def event_ready(self):
+        """TwitchIO Client class override. Treat as a private member."""
         logger.info(f"{self._name} is ready.")
 
     async def event_raw_data(self, data: str):
+        """TwitchIO Client class override. Treat as a private member.
+
+        This is where the chatter list and end-of-chatter-list messages are listened for and
+        responded to.
+        """
         if IRC_CHATTER_LIST_MSG in data:
             # The "353" will only appear in raw event data if at least one channel has been joined.
             # So, until fetch_viewer_list_for_channels() is called with a list of channels, this
@@ -174,13 +206,13 @@ class TwitchViewerListFetcher(Client):
         Returns:
             Tuple[dict[str, ViewerListFetchData], float]:
                 - A dict mapping channel_name to ViewerListFetchData
-                - The time this call took to join, fetch, and part from all given channels, in
+                - The total time this call took to join, fetch, and part from all given channels, in
                   seconds.
         """
         if not isinstance(channels, list):
             raise TypeError(f"channels is {type(channels)} but needs be list.")
         if not all(isinstance(c, str) for c in channels):
-            raise TypeError(f"channels list contains non-str type(s).")
+            raise TypeError("channels list contains non-str type(s).")
 
         self._user_lists = {channel: ViewerListFetchData() for channel in channels}
         start_time: float = perf_counter()

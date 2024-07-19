@@ -4,15 +4,17 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from server.core.twitch_viewerlist_fetcher import (
-    TwitchViewerListFetcher,
+from server.core.viewerlist_fetcher import (
     ViewerListFetchData,
+    ViewerListFetcherChannelListener,
 )
 
 
 @pytest.fixture
 def _fetcher():
-    return TwitchViewerListFetcher(worker_id="test_worker", access_token="test_token")
+    return ViewerListFetcherChannelListener(
+        worker_id="test_worker", access_token="test_token"
+    )
 
 
 @pytest.mark.asyncio
@@ -56,12 +58,14 @@ async def test_event_raw_data_part_message(_fetcher):
 
 @pytest.mark.asyncio
 @patch(
-    "server.core.twitch_viewerlist_fetcher.perf_counter",
+    "server.core.viewerlist_fetcher.viewerlist_fetcher_channel_listener.perf_counter",
     return_value=0.0,
 )
-@patch("server.core.twitch_viewerlist_fetcher.logger")
-@patch.object(TwitchViewerListFetcher, "join_channels", new_callable=AsyncMock)
-@patch.object(TwitchViewerListFetcher, "_wait_for_all_users", new_callable=AsyncMock)
+@patch("server.core.viewerlist_fetcher.viewerlist_fetcher_channel_listener.logger")
+@patch.object(ViewerListFetcherChannelListener, "join_channels", new_callable=AsyncMock)
+@patch.object(
+    ViewerListFetcherChannelListener, "_wait_for_all_users", new_callable=AsyncMock
+)
 async def test_fetch_viewer_list_for_channels(
     mock_wait_for_all_users,
     mock_join_channels,
