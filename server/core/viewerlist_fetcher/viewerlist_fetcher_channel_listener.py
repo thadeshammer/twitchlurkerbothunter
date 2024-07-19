@@ -57,7 +57,7 @@ from twitchio.errors import (
     Unauthorized,
 )
 
-logger = logging.getLogger("app")
+logger = logging.getLogger(__name__)
 
 
 # These correspond to RFC 1459 / IRC protocol

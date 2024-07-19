@@ -28,7 +28,7 @@ from server.db import get_db, upsert_one
 from server.db.query import fetch_secret
 from server.models import Secret, SecretCreate
 
-logger = logging.getLogger("server")
+logger = logging.getLogger(__name__)
 
 
 class TwitchSecretsManagerException(Exception):

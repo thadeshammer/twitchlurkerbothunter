@@ -4,7 +4,7 @@ from typing import Any, Optional, Union
 
 import yaml
 
-logger = logging.getLogger("server")
+logger = logging.getLogger(__name__)
 
 
 class Config:
@@ -40,6 +40,14 @@ class Config:
     # Client ID and Secret are loaded in from secrets/ on disk.
     TWITCH_CLIENT_ID: Optional[str] = None
     TWITCH_CLIENT_SECRET: Optional[str] = None
+
+    # Rate limits
+    TWITCH_CHANNEL_JOIN_LIMIT_COUNT = int(
+        os.getenv("TWITCH_CHANNEL_JOIN_LIMIT_COUNT", "20")
+    )
+    TWITCH_CHANNEL_JOIN_LIMIT_PER_SECONDS = int(
+        os.getenv("TWITCH_CHANNEL_JOIN_LIMIT_PER_SECONDS", "10")
+    )
 
     @classmethod
     def initialize(cls) -> None:

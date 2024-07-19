@@ -35,7 +35,7 @@ setup_logging(Config.LOGGING_CONFIG_FILE)
 logging.getLogger("asyncio").setLevel(
     logging.WARNING
 )  # "Using selector: EpollSelector" spam
-logger = logging.getLogger("server")
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # Set to debug level to capture detailed logs
 logger.info("Logger is ready.")
 
