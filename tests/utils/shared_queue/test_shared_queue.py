@@ -1,13 +1,14 @@
 # tests/utils/shared_queue
 # pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+from unittest.mock import patch
+
 import pytest
 import pytest_asyncio
+from redis.exceptions import RedisError
 
 from server.config import Config
 from server.utils import SharedQueue, SharedQueueError, SharedQueueFull
-
-# from tests.conftest import TEST_REDIS_DB, TEST_REDIS_HOST, TEST_REDIS_PORT
 
 
 @pytest_asyncio.fixture(scope="function")
@@ -79,15 +80,21 @@ async def test_size_limit():
 
 
 @pytest.mark.asyncio
-async def test_enqueue_failure(shared_queue, mocker):
-    assert True
+@patch("redis.asyncio.Redis.rpush", side_effect=RedisError("rpush failed"))
+async def test_enqueue_failure(mock_rpush, shared_queue):
+    with pytest.raises(SharedQueueError, match="Failed to enqueue."):
+        await shared_queue.enqueue("item")
 
 
 @pytest.mark.asyncio
-async def test_dequeue_failure(shared_queue, mocker):
-    assert True
+@patch("redis.asyncio.Redis.blpop", side_effect=RedisError("blpop failed"))
+async def test_dequeue_failure(mock_blpop, shared_queue):
+    with pytest.raises(SharedQueueError, match="Failed to dequeue."):
+        await shared_queue.dequeue()
 
 
 @pytest.mark.asyncio
-async def test_clear_failure(shared_queue, mocker):
-    assert True
+@patch("redis.asyncio.Redis.delete", side_effect=RedisError("delete failed"))
+async def test_clear_failure(mock_delete, shared_queue):
+    with pytest.raises(SharedQueueError, match="Failed to clear queue."):
+        await shared_queue.clear()
