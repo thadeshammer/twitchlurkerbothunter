@@ -1,6 +1,7 @@
 # tests/utils/shared_queue
 # pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
 from unittest.mock import patch
 
 import pytest
@@ -12,7 +13,7 @@ from server.utils import SharedQueue, SharedQueueError, SharedQueueFull
 
 
 @pytest_asyncio.fixture(scope="function")
-async def shared_queue(redis_client):  # pylint: disable=unused-argument
+async def shared_queue(redis_client):
     queue = SharedQueue(name="testqueue", **Config.get_redis_args())
     await queue.clear()
     yield queue
