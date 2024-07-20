@@ -65,16 +65,26 @@ IRC_CHATTER_LIST_MSG = "353"
 IRC_END_OF_NAMES_MSG = "366"
 
 
-class ViewerListFetchException(Exception):
+class VLFetcherError(Exception):
+    pass
+
+
+class VLFetcherChannelPartError(VLFetcherError):
+    pass
+
+
+class VLFetcherChannelJoinError(VLFetcherError):
     pass
 
 
 @dataclass
 class ViewerListFetchData:
     user_names: Set[str] = field(default_factory=set)
+    done: bool = False
     start_time: float = field(default_factory=perf_counter)
     end_time: Optional[float] = None
     time_elapsed: Optional[float] = None
+    error: Optional[Exception] = None
 
     def calculate_time_elapsed(self):
         if self.start_time is not None and self.end_time is not None:
@@ -134,6 +144,8 @@ class ViewerListFetcherChannelListener(Client):
         This is where the chatter list and end-of-chatter-list messages are listened for and
         responded to.
         """
+        # logger.debug("TwitchIO Chat Client raw data: {data}")  # the nuclear option
+
         if IRC_CHATTER_LIST_MSG in data:
             # The "353" will only appear in raw event data if at least one channel has been joined.
             # So, until fetch_viewer_list_for_channels() is called with a list of channels, this
@@ -152,7 +164,7 @@ class ViewerListFetcherChannelListener(Client):
                 msg_parts = parts[1].strip().split()
                 channel_name = msg_parts[-1].lstrip("#")
                 if channel_name not in self._user_lists:
-                    raise ViewerListFetchException(
+                    raise VLFetcherError(
                         f"VLFetcher {self._worker_id} wrong channel error {channel_name}"
                     )
 
@@ -176,6 +188,10 @@ class ViewerListFetcherChannelListener(Client):
                 end_of_names_msg = parts[2].split()
                 logger.info(f"Parting from {channel_name} because {end_of_names_msg}")
 
+            self._user_lists[channel_name].end_time = perf_counter()
+            self._user_lists[channel_name].calculate_time_elapsed()
+            self._user_lists[channel_name].done = True
+
             try:
                 await self.part_channels(channel_name)
             except (
@@ -186,11 +202,41 @@ class ViewerListFetcherChannelListener(Client):
                 TwitchIOException,
                 Unauthorized,
             ) as e:
-                logger.error(f"Error fetching viewer list for channels: {e}")
-                raise e
+                self._user_lists[channel_name].error = e
+                raise VLFetcherChannelPartError() from e
 
-            self._user_lists[channel_name].end_time = perf_counter()
-            self._user_lists[channel_name].calculate_time_elapsed()
+    async def _join_channel(self, channel_name: str):
+        try:
+            await self.join_channels([channel_name])
+        except (
+            HTTPException,
+            InvalidContent,
+            AuthenticationError,
+            IRCCooldownError,
+            TwitchIOException,
+            Unauthorized,
+        ) as e:
+            self._user_lists[channel_name].error = e
+            self._user_lists[channel_name].done = True
+            raise VLFetcherChannelJoinError() from e
+
+        logger.info(f"{self._name} joined {channel_name}")
+
+    async def _wait_for_user_list(self, channel_name: str):
+        while not self._user_lists[channel_name].done:
+            # These messages reportedly arrive in the order of whole seconds, so this may be too
+            # aggressive.
+            await asyncio.sleep(0.1)
+
+    async def _process_channel_task(self, channel_name: str):
+        await self._join_channel(channel_name)
+        await self._wait_for_user_list(channel_name)
+
+    def _kick_off_listener_tasks(self, channels: list[str]):
+        tasks = []
+        for channel in channels:
+            tasks.append(self._process_channel_task(channel))
+        asyncio.gather(*tasks)
 
     async def fetch_viewer_list_for_channels(
         self, channels: list[str]
@@ -209,8 +255,6 @@ class ViewerListFetcherChannelListener(Client):
                 - The total time this call took to join, fetch, and part from all given channels, in
                   seconds.
         """
-        if not isinstance(channels, list):
-            raise TypeError(f"channels is {type(channels)} but needs be list.")
         if not all(isinstance(c, str) for c in channels):
             raise TypeError("channels list contains non-str type(s).")
 
@@ -218,9 +262,7 @@ class ViewerListFetcherChannelListener(Client):
         start_time: float = perf_counter()
 
         try:
-            await self.join_channels(*channels)
-            logger.info(f"{self._name} joined {channels}")
-            await self._wait_for_all_users(channels)
+            self._kick_off_listener_tasks(channels)
         except (
             HTTPException,
             InvalidContent,
@@ -234,10 +276,6 @@ class ViewerListFetcherChannelListener(Client):
 
         total_time_elapsed = perf_counter() - start_time
         return self._user_lists.copy(), total_time_elapsed
-
-    async def _wait_for_all_users(self, channels: list[str]) -> None:
-        while any(channel not in self._user_lists for channel in channels):
-            await asyncio.sleep(0.1)
 
 
 # Sample usage follows

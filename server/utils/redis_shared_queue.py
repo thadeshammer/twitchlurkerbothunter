@@ -1,9 +1,27 @@
+# server/utils/redis_shared_queue.py
+"""
+    RedisSharedQueue
+
+    A queue that's hosted in Redis so that all mutable data is handled safely for multiprocess
+    stuff.
+
+    Usage:
+        - fill out a RedisSharedQueueDetails structure, fill out name at a minimum
+            - optionally provide size_limit when desired
+        - call get_redis_shared_queue(deets: RedisSharedQueueDetails) to get your queue wrapper
+
+        - ONLY ONE MULTIPROCESS SHOULD HOLD RESPONSIBLITY FOR ENQUEUEING. Enqueue is a lock
+          bottleneck by design to make size_limiting easier for now. (The goal is to respect
+          Twitch's rate limit.)
+        - Dequeue as you like.
+"""
 import asyncio
+import json
 import logging
 from dataclasses import dataclass, field
 from multiprocessing import Lock as multi_proc_lock
 from multiprocessing import Manager as multi_proc_manager
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import redis.asyncio as redis_async
 from redis.exceptions import ConnectionError as RedisConnectionError
@@ -48,13 +66,13 @@ class RedisSharedQueueDetails:
 
 def get_redis_shared_queue(
     details: RedisSharedQueueDetails,
-) -> Optional["RedisSharedQueue"]:
+) -> "RedisSharedQueue":
     """Use THIS builder function for each process that will be sharing the queue. DO NOT SHARE A
     SHAREDQUEUE single reference across multiple processes or you will run into thread starvation.
     We're using Redis specifically to offload fair locking mechanisms from our app here.
 
     Raises:
-        SharedQueueError: _description_
+        SharedQueueError: If connection to Redis fails.
 
     Returns:
         RedisSharedQueue wrapping a list in the Redis instance.
@@ -77,13 +95,28 @@ def get_redis_shared_queue(
 class RedisSharedQueue:
     """USE THE BUILDER FUNCTION `get_shared_queue()`. I.D. QUEUE WITH NAMESPACE:NAME AS KEY.
 
-    Serves a queue that can be shared by multiprocess processes. Does nothing intrinsically to
-    guard against process starvation.
+    Serves a queue that (in theory) can be shared by multiprocess processes which each use asyncio.
 
     USAGE. Leverage the fact that this implementation uses Redis under the hood. Share the details
     used to instantiate this SharedQueue and not the SharedQueue reference itself: create multiple,
     independent instances of SharedQueue all connecting to the same Redis instance and Redis key and
     let Redis worry about thread-safety.
+
+    enqueue: If you set a size_limit, this method will raise a RedisSharedQueueFull error if it's
+    full. It uses a Redis lua script to enforce the size limit, and it uses an asyncio lock and
+    multiprocess lock to make sure race conditions bypassing the size limit are impossible. (Redis
+    should alone handle this, but the word *should* wound up with me locking this critical code.)
+
+    dequeue: It's not locked down at all and multiple workers may get to the pop call and only some
+    of  them will get items; others will come up empty (with None). You can set a timeout if you
+    want the worker to park for some number of seconds until a new item is available.
+
+    NOTE. It turns out that asyncio and multiprocess don't play nicely together in terms of shared
+    memory which is why we're using Redis; however it turns out, using multiprocess locks will
+    deadlock the asyncio event loop. Seems if we acquire an asyncio lock (for the given
+    multiprocess) first, we're okay...but I haven't tested extensively with multiprocess yet, so we
+    may need to fall back on Redis 100% here until I can learn more about how to make these two
+    thing mingle in Python town.
     """
 
     _manager = multi_proc_manager()
@@ -97,26 +130,66 @@ class RedisSharedQueue:
     ):
         self.__db = redis_async.Redis(**redis_kwargs)
         self.key = f"{namespace}:{name}"
-        self._process_lock: multi_proc_lock = self._manager.Lock()
-        self._async_lock = asyncio.Lock()
+        self._multiprocess_lock: multi_proc_lock = self._manager.Lock()
+        self._asyncio_lock = asyncio.Lock()
         self.size_limit: Optional[int] = size_limit
 
+        # Lua script to check size limit and enqueue atomically
+        self.size_limit_script = f"""
+        local key = KEYS[1]
+        local size_limit = tonumber({self.size_limit})
+        local item = ARGV[1]
+        local current_size = redis.call('LLEN', key)
+        if current_size < size_limit then
+            redis.call('RPUSH', key, item)
+            return 1
+        else
+            return 0
+        end
+        """
+
+        # Lua script when there's no resize but still enforces atomicity.
+        self.no_size_limit_script = """
+        local key = KEYS[1]
+        local item = ARGV[1]
+        redis.call('RPUSH', key, item)
+        return 1
+        """
+
+        self._enqueue_with_limit = self.__db.register_script(self.size_limit_script)
+        self._enqueue_without_limit = self.__db.register_script(
+            self.no_size_limit_script
+        )
+
+        if self.size_limit is not None:
+            self._enqueue = self._enqueue_with_limit
+        else:
+            self._enqueue = self._enqueue_without_limit
+
     async def queue_size(self) -> int:
-        """Return the approximate size of the queue."""
+        """Return the size of the queue."""
         try:
             queue_size = await self.__db.llen(self.key)
         except Exception as e:
             raise RedisSharedQueueError("Failed to get queue size.") from e
         return queue_size
 
-    async def enqueue(self, item: str) -> None:
+    async def remaining_space(self) -> Optional[int]:
+        """Return size_limit - queue_size if there's a size_limit, else None."""
+        if self.size_limit is None:
+            return None
+
+        return self.size_limit - (await self.queue_size())
+
+    async def enqueue(self, item: Union[str, dict[str, str]]) -> None:
         """Put item into the queue. ONLY ONE PROCESS SHOULD BE TRUSTED TO ENQUEUE IF A LIMIT IS IN
         PLACE. Otherwise a resulting race condition between enqueueing processes will breeze past
         the size_limit check and blow past the limit. If there is no limit, it's probably fine to
         bypass acquiring the process lock, but for now it's uniform for this method.
 
         Args:
-            item (str): The value to put at the end of the queue.
+            item (str, dict[str, str]): The value to put at the end of the queue. Can be a
+            dict[str, str] which will be json-ified into Redis as a string.
 
         Raises:
             RedisSharedQueueFull: If this enqueue action would break the size_limit, the value will
@@ -125,18 +198,33 @@ class RedisSharedQueue:
 
             RedisSharedQueueError: If the Redis.rpush fails, this is raised.
         """
-        with self._process_lock:
-            async with self._async_lock:
-                if self.size_limit is not None:
-                    current_size = await self.queue_size()
-                    if current_size == self.size_limit:
-                        raise RedisSharedQueueFull()
+        async with self._asyncio_lock:
+            with self._multiprocess_lock:
+                if isinstance(item, dict):
+                    data: str = json.dumps(item)
+                else:
+                    data = str(item)
                 try:
-                    await self.__db.rpush(self.key, item)
-                except Exception as e:
+                    result = await self._enqueue(keys=[self.key], args=[data])
+                    if result == 0:
+                        if self.size_limit is not None:
+                            raise RedisSharedQueueFull()
+
+                        raise RedisSharedQueueError(
+                            "No size limit set but enqueue blocked by size limit script."
+                        )
+                except (
+                    RedisConnectionError,
+                    RedisError,
+                    RedisInvalidResponse,
+                    RedisResponseError,
+                    RedisTimeoutError,
+                ) as e:
                     raise RedisSharedQueueError("Failed to enqueue.") from e
 
-    async def dequeue(self, timeout: int = 2) -> Optional[str]:
+    async def dequeue(
+        self, timeout: int = 2
+    ) -> tuple[Optional[str], Optional[dict[str, str]]]:
         """Remove and return an item from the queue.
 
         NOTE. asyncio_lock only, meaning two or more workers may get past the `queue_size` check and
@@ -150,36 +238,50 @@ class RedisSharedQueue:
             RedisSharedQueueError: If Redis blpop fails, this is raised.
 
         Returns:
-            Optional[str]: The next value in the queue, or None if it's empty.
+            Tuple(Optional[str], Optional[dict]):
+                The next value in the queue as a raw string and parsed json dict if applicable.
+                If the queue is empty, return (None, {})
         """
         if (await self.queue_size()) == 0:
-            return None
+            return (None, {})
         try:
             # The docs type-hint blpop() as tuple[str, str] but it's actually
             # tuple[bytes, bytes] at this time.
             item: Optional[tuple[Any, Any]] = await self.__db.blpop(
                 self.key, timeout=timeout
             )
-            if item is not None:
-                return_value = (
+            if item is None:
+                return_value = (None, {})
+            else:
+                raw_data: str = (
                     item[1].decode("utf-8") if isinstance(item[1], bytes) else item[1]
                 )
-            else:
-                return_value = None
 
-        except Exception as e:
+                try:
+                    json_data: dict[str, str] = json.loads(raw_data)
+                except json.JSONDecodeError:
+                    json_data = {}
+
+                return_value = (raw_data, json_data)
+
+        except (
+            RedisConnectionError,
+            RedisError,
+            RedisInvalidResponse,
+            RedisResponseError,
+            RedisTimeoutError,
+        ) as e:
             raise RedisSharedQueueError("Failed to dequeue.") from e
 
-        if return_value is not None:
-            return return_value
+        return return_value
 
     async def empty(self) -> bool:
         """Return True if the queue is empty, False otherwise."""
         return (await self.queue_size()) == 0
 
     async def clear(self):
-        with self._process_lock:
-            async with self._async_lock:
+        with self._multiprocess_lock:
+            async with self._asyncio_lock:
                 try:
                     await self.__db.delete(self.key)
                 except Exception as e:

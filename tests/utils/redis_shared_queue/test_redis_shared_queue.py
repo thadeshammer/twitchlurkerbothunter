@@ -29,10 +29,12 @@ async def test_enqueue_and_dequeue(shared_queue):
     assert size == 2
 
     item = await shared_queue.dequeue()
-    assert item == "item1"
+    assert item[0] == "item1"
+    assert item[1] == {}
 
     item = await shared_queue.dequeue()
-    assert item == "item2"
+    assert item[0] == "item2"
+    assert item[1] == {}
 
     size = await shared_queue.queue_size()
     assert size == 0
@@ -75,7 +77,12 @@ async def test_size_limit():
     )
 
     await queue.clear()
+
+    assert (await queue.remaining_space()) == 1
+
     await queue.enqueue("item1")
+
+    assert (await queue.remaining_space()) == 0
 
     with pytest.raises(RedisSharedQueueFull):
         await queue.enqueue("item2")
@@ -84,17 +91,18 @@ async def test_size_limit():
 
 
 @pytest.mark.asyncio
-@patch("redis.asyncio.Redis.rpush", side_effect=RedisError("rpush failed"))
-async def test_enqueue_failure(mock_rpush, shared_queue):
-    with pytest.raises(RedisSharedQueueError, match="Failed to enqueue."):
-        await shared_queue.enqueue("item")
+@pytest.mark.asyncio
+async def test_enqueue_failure(shared_queue):
+    with patch.object(shared_queue, "_enqueue", side_effect=RedisError("rpush failed")):
+        with pytest.raises(RedisSharedQueueError, match="Failed to enqueue."):
+            await shared_queue.enqueue("item")
 
 
 @pytest.mark.asyncio
 @patch("redis.asyncio.Redis.blpop", side_effect=RedisError("blpop failed"))
 async def test_dequeue_failure(mock_blpop, shared_queue):
-    failure_resuilt = await shared_queue.dequeue()
-    assert failure_resuilt is None
+    failure_result = await shared_queue.dequeue()
+    assert failure_result == (None, {})
 
 
 @pytest.mark.asyncio

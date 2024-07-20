@@ -1,11 +1,17 @@
 from .viewerlist_fetcher_channel_listener import (
     ViewerListFetchData,
     ViewerListFetcherChannelListener,
-    ViewerListFetchException,
+    VLFetcherChannelJoinError,
+    VLFetcherChannelPartError,
+    VLFetcherError,
 )
+from .workbench import Workbench
 
 __all__ = [
     "ViewerListFetchData",
     "ViewerListFetcherChannelListener",
-    "ViewerListFetchException",
+    "VLFetcherError",
+    "VLFetcherChannelJoinError",
+    "VLFetcherChannelPartError",
+    "Workbench",
 ]

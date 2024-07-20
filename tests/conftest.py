@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from concurrent.futures import ProcessPoolExecutor  # asyncio + multiproc??
 
 import pytest
 import pytest_asyncio
@@ -28,6 +29,28 @@ _TEST_DB_URI = Config.get_db_uri()
 TEST_REDIS_HOST = "localhost"
 TEST_REDIS_PORT = 6380  # TODO move to Config
 TEST_REDIS_DB = 0
+
+
+# @pytest_asyncio.fixture(scope="session")
+# def event_loop():
+#     """Create and return a new event loop for the session."""
+#     try:
+#         loop = asyncio.get_running_loop()
+#         # loop = asyncio.get_event_loop_policy().get_event_loop()
+#     except RuntimeError:
+#         loop = asyncio.get_event_loop_policy().new_event_loop()
+
+#     executor = ProcessPoolExecutor()
+#     loop.run_in_executor(
+#         executor,
+#     )
+#     yield loop
+
+#     try:
+#         loop.close()
+#     except RuntimeError:
+#         print("Error trying to close event loop in pytest event_loop fixture.")
+#         raise
 
 
 @pytest_asyncio.fixture(scope="session")
