@@ -56,27 +56,23 @@ class Workbench:
         return self._redis_shared_queue_details_pending
 
     async def update(self):
-        # Every ten seconds, fill the workbench queue up to max fill (20 for now) from pending
-        # Keep track of the timer
-        current_time = perf_counter()
-        if current_time >= self._stopwatch + self._timebox:
-            # reset stopwatch
-            self._stopwatch = current_time
+        pending_queue_size: int = await self._pending_queue.queue_size()
+        space_on_workbench: Optional[int] = (
+            await self._workbench_queue.remaining_space()
+        )
 
-            space_on_workbench, pending_queue_size = await asyncio.gather(
-                self._workbench_queue.remaining_space(),
-                self._pending_queue.queue_size(),
+        if pending_queue_size > 0:
+            tasks = [self._pending_queue.dequeue() for _ in range(space_on_workbench)]
+            results: list[tuple[Optional[str], Optional[dict[str, str]]]] = (
+                await asyncio.gather(*tasks)
             )
 
-            # enqueue up to space_on_workbench from pending_queue
-            if pending_queue_size > 0:
-                for _ in range(space_on_workbench):
-                    item: tuple[Optional[str], Optional[dict[str, str]]] = (
-                        await self._pending_queue.dequeue()
-                    )
-                    if item[0] is None:
-                        logger.info(
-                            "Ran out of items in pending, nothing for the workbench."
-                        )
-                        break  # we're done, we need to park or wait or something.
-                    await self._workbench_queue.enqueue(item[0])
+            valid_items = [item[0] for item in results if item[0] is not None]
+
+            if not valid_items:
+                logger.info("Ran out of items in pending, nothing for the workbench.")
+
+            enqueue_tasks = [
+                self._workbench_queue.enqueue(item) for item in valid_items
+            ]
+            await asyncio.gather(*enqueue_tasks)

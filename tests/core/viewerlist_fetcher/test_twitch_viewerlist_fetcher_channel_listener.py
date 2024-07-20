@@ -115,7 +115,7 @@ async def test_process_channel_task(mock_client):
 
 @pytest.mark.asyncio
 async def test_fetch_viewer_list_for_channels(mock_client):
-    channels = ["channel1", "channel2"]
+    channels = ["channel1", "channel2", "channel3", "channel4", "channel5"]
     mock_client._kick_off_listener_tasks = AsyncMock()
 
     result, elapsed = await mock_client.fetch_viewer_list_for_channels(channels)
@@ -123,4 +123,7 @@ async def test_fetch_viewer_list_for_channels(mock_client):
     assert set(result.keys()) == set(channels)
     assert isinstance(result["channel1"], ViewerListFetchData)
     assert isinstance(result["channel2"], ViewerListFetchData)
+    assert isinstance(result["channel3"], ViewerListFetchData)
+    assert isinstance(result["channel4"], ViewerListFetchData)
+    assert isinstance(result["channel5"], ViewerListFetchData)
     assert elapsed > 0

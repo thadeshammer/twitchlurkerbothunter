@@ -102,7 +102,7 @@ async def test_database_interactions(
             suspicion_reason=SuspicionReason.CONCURRENT_CHANNEL_COUNT,
             is_banned_or_deleted=False,
         )
-        suspected_bot = SuspectedBot(**suspected_bot_data.dict())
+        suspected_bot = SuspectedBot(**suspected_bot_data.model_dump())
         async_session.add(suspected_bot)
     await async_session.commit()
 

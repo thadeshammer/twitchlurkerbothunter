@@ -1,6 +1,6 @@
+# pylint: disable=redefined-outer-name
 import asyncio
 import logging
-from concurrent.futures import ProcessPoolExecutor  # asyncio + multiproc??
 
 import pytest
 import pytest_asyncio
@@ -31,28 +31,6 @@ TEST_REDIS_PORT = 6380  # TODO move to Config
 TEST_REDIS_DB = 0
 
 
-# @pytest_asyncio.fixture(scope="session")
-# def event_loop():
-#     """Create and return a new event loop for the session."""
-#     try:
-#         loop = asyncio.get_running_loop()
-#         # loop = asyncio.get_event_loop_policy().get_event_loop()
-#     except RuntimeError:
-#         loop = asyncio.get_event_loop_policy().new_event_loop()
-
-#     executor = ProcessPoolExecutor()
-#     loop.run_in_executor(
-#         executor,
-#     )
-#     yield loop
-
-#     try:
-#         loop.close()
-#     except RuntimeError:
-#         print("Error trying to close event loop in pytest event_loop fixture.")
-#         raise
-
-
 @pytest_asyncio.fixture(scope="session")
 def event_loop():
     """Create and return a new event loop for the session.
@@ -79,7 +57,7 @@ def event_loop():
 
 
 @pytest_asyncio.fixture(scope="session")
-async def redis_client(event_loop):  # type: ignore
+async def redis_client(event_loop):  # pylint: disable=unused-argument
     """Redis client fixture (requires test-redis to be up).
 
     NOTE. Needed to downgrade from 5.0.7 to 5.0.1 for testing to stop failing/erroring with a

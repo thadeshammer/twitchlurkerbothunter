@@ -10,7 +10,7 @@ import pytest_asyncio
 
 from server.config import Config
 from server.core.viewerlist_fetcher import Workbench
-from server.utils import RedisSharedQueue, RedisSharedQueueError, RedisSharedQueueFull
+from server.utils import RedisSharedQueue
 
 TEST_WORKBENCH_SIZE_LIMIT = 4
 
