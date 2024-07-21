@@ -26,10 +26,6 @@ from server.models.dummy_model import DummyModel
 
 _TEST_DB_URI = Config.get_db_uri()
 
-TEST_REDIS_HOST = "localhost"
-TEST_REDIS_PORT = 6380  # TODO move to Config
-TEST_REDIS_DB = 0
-
 
 @pytest_asyncio.fixture(scope="session")
 def event_loop():

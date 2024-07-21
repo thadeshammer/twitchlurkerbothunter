@@ -22,8 +22,7 @@ class ViewerSightingsCache:
     def __init__(self, num_shards: int = 4) -> None:
         self._num_shards: int = num_shards
         self._shards: list[redis.Redis] = [
-            redis.Redis(**Config.get_redis_args(), decode_responses=True)
-            for _ in range(num_shards)
+            redis.Redis(**Config.get_redis_args()) for _ in range(num_shards)
         ]
         self._increment_script: str = """
         local current = redis.call('HINCRBY', KEYS[1], 'times_seen', 1)

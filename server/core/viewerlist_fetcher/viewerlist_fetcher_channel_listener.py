@@ -232,11 +232,11 @@ class ViewerListFetcherChannelListener(Client):
         await self._join_channel(channel_name)
         await self._wait_for_user_list(channel_name)
 
-    def _kick_off_listener_tasks(self, channels: list[str]):
+    async def _kick_off_listener_tasks(self, channels: list[str]):
         tasks = []
         for channel in channels:
             tasks.append(self._process_channel_task(channel))
-        asyncio.gather(*tasks)
+        await asyncio.gather(*tasks)
 
     async def fetch_viewer_list_for_channels(
         self, channels: list[str]
@@ -262,7 +262,7 @@ class ViewerListFetcherChannelListener(Client):
         start_time: float = perf_counter()
 
         try:
-            self._kick_off_listener_tasks(channels)
+            await self._kick_off_listener_tasks(channels)
         except (
             HTTPException,
             InvalidContent,

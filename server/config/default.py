@@ -118,4 +118,5 @@ class Config:
             "host": Config.REDIS_HOST,
             "port": Config.REDIS_PORT,
             "db": Config.REDIS_DB_INDEX,
+            "decode_responses": True,
         }
