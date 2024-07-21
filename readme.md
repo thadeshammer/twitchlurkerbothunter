@@ -87,7 +87,7 @@ There's a second app - a single file Flask servlet - whose only job is to take c
 ## Supporting Apps
 
 - **Docker**: Containerization for easy deployment and management.
-- **Redis**: (UPCOMING) Simple caching for viewer-list fetching and async safe data sharing between processes.
+- **Redis**: Simple caching for viewer-list fetching and async safe data sharing between processes.
 
 ## Features
 
