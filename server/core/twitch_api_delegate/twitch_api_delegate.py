@@ -19,6 +19,7 @@ class TwitchAPIConfig:
     client_id: Optional[str] = None
     client_secret: Optional[str] = None
     base_url: str = "https://api.twitch.tv/helix"
+    oauth_token_url: str = "https://id.twitch.tv/oauth2/token"
 
 
 async def make_request(
@@ -104,6 +105,24 @@ async def get_user(
 ) -> Optional[TwitchUserDataCreate]:
     users = await get_users(config, [login_name])
     return users[0] if users else None
+
+
+async def revitalize_tokens(
+    config: TwitchAPIConfig, refresh_token: str
+) -> Dict[str, Any]:
+    params = {
+        "grant_type": "refresh_token",
+        "refresh_token": refresh_token,
+        "client_id": config.client_id,
+        "client_secret": config.client_secret,
+    }
+    logger.debug("Calling refresh endpoint.")
+    async with aiohttp.ClientSession() as session:
+        async with session.post(config.oauth_token_url, params=params) as response:
+            if response.status != 200:
+                logger.error(f"Failed to refresh token: {response.status}")
+                return {"error": response.status, "message": await response.text()}
+            return await response.json()
 
 
 # Example usage

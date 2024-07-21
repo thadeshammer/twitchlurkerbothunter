@@ -1,6 +1,12 @@
 services:
   server:
     build: .
+    command: >
+      uvicorn server:app
+      --host 0.0.0.0
+      --port 443
+      --ssl-keyfile /secrets/key.pem
+      --ssl-certfile /secrets/cert.pem
     environment:
       ENVIRONMENT: prod
       LOCAL_TIMEZONE: America/New_York

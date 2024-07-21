@@ -6,6 +6,7 @@ from .twitch_api_delegate import (
     get_streams,
     get_user,
     get_users,
+    revitalize_tokens,
 )
 
 __all__ = [
@@ -14,5 +15,6 @@ __all__ = [
     "get_user",
     "get_users",
     "models",
+    "revitalize_tokens",
     "TwitchAPIConfig",
 ]

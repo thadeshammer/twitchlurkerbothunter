@@ -25,6 +25,7 @@ from typing import Any, Optional
 from pydantic import ValidationError
 
 from server.config import Config
+from server.core.twitch_api_delegate import TwitchAPIConfig, revitalize_tokens
 from server.db import get_db, upsert_one
 from server.db.query import fetch_secret
 from server.models import Secret, SecretCreate
@@ -33,6 +34,10 @@ logger = logging.getLogger(__name__)
 
 
 class TwitchSecretsManagerException(Exception):
+    pass
+
+
+class TwitchSecretsManagerRefreshError(TwitchSecretsManagerException):
     pass
 
 
@@ -49,7 +54,7 @@ class TwitchSecretsManager:
 
     def __init__(self):
         with self._singleton_lock:
-            if not hasattr(self, "initialized"):  # To prevent reinitialization
+            if not hasattr(self, "initialized"):
                 self._secrets_store: Optional[Secret] = None
                 self._multiprocess_lock: multi_proc_lock = self._manager.Lock()
                 self._asyncio_lock = asyncio.Lock()
@@ -131,7 +136,49 @@ class TwitchSecretsManager:
                 return True
 
     async def _refresh_tokens(self):
-        pass
+        async with self._asyncio_lock:
+            with self._multiprocess_lock:
+                logger.info("Refreshing token.")
+
+                if not self._secrets_store:
+                    raise TwitchSecretsManagerException(
+                        "Can't refresh / no tokens present."
+                    )
+
+                delegate_config = TwitchAPIConfig(
+                    self._secrets_store.access_token,
+                    self.client_id,
+                    self.client_secret,
+                )
+
+                response: dict[str, Any] = await revitalize_tokens(
+                    delegate_config, self._secrets_store.refresh_token
+                )
+
+                try:
+                    new_secret = SecretCreate(
+                        access_token=response["access_token"],
+                        refresh_token=response["refresh_token"],
+                        expires_in=response["expires_in"],
+                        token_type=self._secrets_store.token_type,
+                        scope=self._secrets_store.scope,
+                        last_update_timestamp=datetime.now(timezone.utc),
+                    )
+                except ValidationError as e:
+                    logger.error(f"SecretCreate validation failed: {e.errors()}")
+                    raise TwitchSecretsManagerException from e
+
+                token_portion = new_secret.access_token[:5]
+                logger.debug(f"Token: {token_portion}")
+
+                try:
+                    await self._insert_or_update_secret(new_secret)
+                except Exception as e:
+                    logger.error(f"Failed to insert or update secret: {str(e)}")
+                    raise TwitchSecretsManagerException from e
+
+    async def force_tokens_refresh(self):
+        await self._refresh_tokens()
 
     async def get_access_token(self) -> Optional[str]:
         async with self._asyncio_lock:

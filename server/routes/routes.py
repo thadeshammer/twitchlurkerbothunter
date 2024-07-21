@@ -37,6 +37,21 @@ async def store_token(request: Request):
     return {"message": "ok"}
 
 
+@router.post("/force-tokens-refresh")
+async def force_tokens_refresh():
+    logger.debug("In /force-tokens-refresh")
+    try:
+        secrets_manager = TwitchSecretsManager()
+        await secrets_manager._refresh_tokens()
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Tokens force-refresh failed: Internal Server Error",
+        ) from e
+
+    return {"message": "ok"}
+
+
 @router.get("/healthcheck")
 async def healthcheck():
     current_time = datetime.now(timezone.utc)
