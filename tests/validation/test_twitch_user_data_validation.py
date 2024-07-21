@@ -22,7 +22,6 @@ GET_USER_RESPONSE = {
     "description": "same ol same ol",
     "profile_image_url": "https://static-cdn.jtvnw.net/jtv_user_pictures/profile_image-300x300.png",
     "offline_image_url": "https://static-cdn.jtvnw.net/jtv_user_pictures/channel_offline.png",
-    "view_count": "5980557",
     # "email": "not-real@email.com",  # NOTE we do NOT scope for this; response will lack email.
     "created_at": "2016-12-14T20:32:28Z",
 }
@@ -51,7 +50,6 @@ TWITCH_USER_DATA_PARTIAL = {
     "login_name": "weepwop1337socks",
     "account_type": "",
     "broadcaster_type": "affiliate",
-    "view_count": "5980557",
     "created_at": "2016-12-14T20:32:28Z",
 }
 
@@ -60,7 +58,6 @@ TWITCH_USER_DATA_FULL = {
     "login_name": "sampleuser",
     "account_type": TwitchAccountType.NORMAL,
     "broadcaster_type": TwitchBroadcasterType.AFFILIATE,
-    "lifetime_view_count": 1000,
     "account_created_at": datetime.now(),
     "first_sighting_as_viewer": datetime.now(),
     "most_recent_sighting_as_viewer": datetime.now(),
@@ -79,7 +76,6 @@ def test_create_from_get_user():
     assert tud.login_name == GET_USER_RESPONSE["login"]
     assert tud.account_type == GET_USER_RESPONSE["type"]
     assert tud.broadcaster_type == GET_USER_RESPONSE["broadcaster_type"]
-    assert tud.lifetime_view_count == int(GET_USER_RESPONSE["view_count"])
 
     assert tud.account_created_at is not None
     expected_timestamp = convert_timestamp_from_twitch(GET_USER_RESPONSE["created_at"])

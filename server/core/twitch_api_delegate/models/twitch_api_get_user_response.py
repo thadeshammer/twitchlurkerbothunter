@@ -12,7 +12,6 @@ class User(BaseModel):
     description: str
     profile_image_url: str
     offline_image_url: str
-    view_count: int
     created_at: str
 
 

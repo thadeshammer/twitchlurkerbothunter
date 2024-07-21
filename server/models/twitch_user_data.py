@@ -85,8 +85,10 @@ class TwitchUserDataBase(SQLModel, table=False):
             normal user.
         broadcaster_type (str): Possible values: ('partner', 'affiliate', '') where '' is a normal
             user.
-        lifetime_view_count (int): The total number of channel views this user's channel has.
         account_created_at (DateTime): Timestamp of this account's creation.
+
+        NOTE. 'view_count': Was depecated two years ago and slated for removal, but it still lingers
+        and returns 0 in every request.
 
         NOTE. We're not currently storing 'description' or profile_img urls. If we want these for
             display purposes / visualization, we can fetch them adhoc or reconsider later.
@@ -116,10 +118,6 @@ class TwitchUserDataBase(SQLModel, table=False):
     # - https://github.com/pydantic/pydantic/discussions/9270
     account_type: Optional[str] = Field(default=None, nullable=True)
     broadcaster_type: Optional[str] = Field(default=None, nullable=True)
-
-    lifetime_view_count: Annotated[
-        Optional[int], Field(default=None, nullable=True, gt=0)
-    ]
     account_created_at: Optional[datetime] = Field(default=None)
 
     first_sighting_as_viewer: Optional[datetime] = Field(default=None)
@@ -166,7 +164,6 @@ class TwitchUserDataBase(SQLModel, table=False):
             data["twitch_account_id"] = data.pop("id")
             data["login_name"] = data.pop("login")
             data["account_type"] = data.pop("type")
-            data["lifetime_view_count"] = data.pop("view_count")
             data["account_created_at"] = data.pop("created_at")
 
             if not data["account_type"] in TwitchAccountType.__members__.values():
