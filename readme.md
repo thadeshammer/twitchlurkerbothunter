@@ -150,7 +150,9 @@ This is very, very early development, so if you fork it, you're really just gett
 
 ## Usage
 
-Currently, the bot doesn't do anything beyond standing up and creating the tables if they don't exist yet. Stay tuned.
+IN DEVELOPMENT, usage is limited.
+
+See **/docs** for existing endpoints, summarized below.
 
 ### API Endpoints
 
