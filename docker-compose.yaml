@@ -3,6 +3,7 @@ services:
     build: .
     environment:
       ENVIRONMENT: prod
+      LOCAL_TIMEZONE: America/New_York
       CERT_PASSKEY: ${CERT_PASSKEY}
       MYSQL_USER_PASSWORD_FILE: /run/secrets/mysql_user_password
       TESTDB_USER_PASSWORD_FILE: /run/secrets/testdb_user_password

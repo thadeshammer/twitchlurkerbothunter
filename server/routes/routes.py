@@ -1,9 +1,12 @@
 import logging
+from datetime import datetime, timezone
 from typing import Optional
 
+import pytz
 from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import ValidationError
 
+from server.config import Config
 from server.core.twitch_api_delegate import TwitchAPIConfig, get_streams, get_user
 from server.core.twitch_secrets_manager import TwitchSecretsManager
 
@@ -14,8 +17,6 @@ router = APIRouter()
 
 @router.post("/store-token")
 async def store_token(request: Request):
-    logger.debug("/store-token accessed.")
-
     if not await request.json():
         raise HTTPException(status_code=400, detail="Missing JSON payload")
 
@@ -38,12 +39,32 @@ async def store_token(request: Request):
 
 @router.get("/healthcheck")
 async def healthcheck():
-    return {"status": "ok"}
+    current_time = datetime.now(timezone.utc)
+
+    try:
+        local_timezone = pytz.timezone(Config.LOCAL_TIMEZONE)
+        server_start_local = Config.server_start_time.astimezone(local_timezone)
+        current_time_local = current_time.astimezone(local_timezone)
+    except pytz.UnknownTimeZoneError:
+        logger.error(
+            f"Check config: {Config.LOCAL_TIMEZONE} is unknown. Defaulting to {Config.DEFAULT_TIMEZONE}"
+        )
+        local_timezone = pytz.timezone(Config.DEFAULT_TIMEZONE)
+        server_start_local = "Error: check config. Use IANA db timezone code."
+        current_time_local = "Error: check config. Use IANA db timezone code."
+
+    uptime = current_time - Config.server_start_time
+    return {
+        "status": "ok",
+        "server_start_time": f"{Config.server_start_time.isoformat()} ({server_start_local})",
+        "current_time": f"{current_time.isoformat()} ({current_time_local})",
+        "uptime": str(uptime),
+    }
 
 
 @router.get("/")
 async def read_root():
-    return {"message": "Welcome to the FastAPI application!"}
+    return {"message": "ohai!"}
 
 
 @router.get("/streams")
@@ -58,7 +79,7 @@ async def get_streams_endpoint(
         streams_response = await get_streams(config, game_id, user_id, user_login)
 
         # Return the first page of the response
-        return streams_response.model_dump_json()
+        return streams_response.model_dump()
     except ValidationError as e:
         logger.error(f"Validation error: {e.errors()}")
         raise HTTPException(
@@ -81,7 +102,7 @@ async def get_user_endpoint(username: str):
         user_response = await get_user(config, username)
 
         # Return the user information
-        return user_response.model_dump_json()
+        return user_response.model_dump()
     except ValidationError as e:
         logger.error(f"Validation error: {e.errors()}")
         raise HTTPException(

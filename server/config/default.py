@@ -1,5 +1,6 @@
 import logging
 import os
+from datetime import datetime, timezone
 from typing import Any, Optional, Union
 
 import yaml
@@ -10,9 +11,14 @@ logger = logging.getLogger(__name__)
 class Config:
     _initialized = False
 
+    server_start_time = datetime.now(timezone.utc)
+
     PORT = 443
     ENVIRONMENT = os.getenv("ENVIRONMENT", "dev").lower()
     LOGGING_CONFIG_FILE: str = os.getenv("LOG_CFG", "./logging_config.yaml")
+
+    DEFAULT_TIMEZONE = "UTC"
+    LOCAL_TIMEZONE = os.getenv("LOCAL_TIMEZONE", DEFAULT_TIMEZONE)
 
     _sqlmodel_database_uri: Optional[str] = None
     _db_name: Optional[str] = None
