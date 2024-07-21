@@ -31,7 +31,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Annotated, Any, Optional, cast
 
-from pydantic import StringConstraints, model_validator
+from pydantic import BaseModel, StringConstraints, model_validator
 from sqlmodel import Field, SQLModel
 from sqlmodel._compat import SQLModelConfig
 
@@ -198,3 +198,10 @@ class TwitchUserDataCreate(TwitchUserDataBase):
 
 class TwitchUserDataRead(TwitchUserDataBase):
     """Model for reading TwitchUserData from the db."""
+
+
+class GetUsersResponse(BaseModel):
+    """Model for parsing a 'Get Users' response which is a list[dict], where each dict will fall
+    into our TwitchUserDataCreate by design."""
+
+    users: list[TwitchUserDataCreate]

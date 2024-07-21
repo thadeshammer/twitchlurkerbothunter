@@ -17,7 +17,8 @@ services:
       REDIS_DB_INDEX: 0
     volumes:
       - .:/server
-      - ./logs:/logs
+      - ./logs/server.log:/logs/server.log
+      - ./logs/db.log:/logs/db.log
     ports:
       - "443:443"
     secrets:

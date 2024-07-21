@@ -50,6 +50,7 @@ from .suspected_bot import (
     SuspicionReason,
 )
 from .twitch_user_data import (
+    GetUsersResponse,
     TwitchAccountType,
     TwitchBroadcasterType,
     TwitchUserData,
@@ -59,6 +60,7 @@ from .twitch_user_data import (
 from .viewer_sighting import ViewerSighting, ViewerSightingCreate, ViewerSightingRead
 
 __all__ = [
+    "GetUsersResponse",
     "ScanningSession",
     "ScanningSessionCreate",
     "ScanningSessionRead",

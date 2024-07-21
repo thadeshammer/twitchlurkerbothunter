@@ -6,7 +6,9 @@ from typing import Any, Dict, Optional
 import aiohttp
 from pydantic import ValidationError
 
-from .models import GetStreamsResponse, GetUsersResponse
+from server.models import GetUsersResponse, TwitchUserDataCreate
+
+from .models import GetStreamsResponse
 
 logger = logging.getLogger("__name__")
 
