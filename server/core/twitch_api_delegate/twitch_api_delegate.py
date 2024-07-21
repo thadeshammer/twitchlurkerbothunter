@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional
 import aiohttp
 from pydantic import ValidationError
 
-from server.models import GetUsersResponse, TwitchUserDataCreate
+from server.models import TwitchUserDataCreate
 
 from .models import GetStreamsResponse
 
@@ -87,19 +87,23 @@ async def get_more_streams(
 
 async def get_users(
     config: TwitchAPIConfig, login_names: list[str]
-) -> GetUsersResponse:
+) -> list[TwitchUserDataCreate]:
     params = {"login": login_names}
 
     response = await make_request(config, "users", params)
     try:
-        return GetUsersResponse(**response)
+        users_data = response.get("data", [])
+        return [TwitchUserDataCreate(**user) for user in users_data]
     except ValidationError as e:
         logger.error(f"Error parsing response: {e}")
         raise
 
 
-async def get_user(config: TwitchAPIConfig, login_name: str) -> GetUsersResponse:
-    return await get_users(config, [login_name])
+async def get_user(
+    config: TwitchAPIConfig, login_name: str
+) -> Optional[TwitchUserDataCreate]:
+    users = await get_users(config, [login_name])
+    return users[0] if users else None
 
 
 # Example usage

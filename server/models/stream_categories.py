@@ -46,7 +46,6 @@ class StreamCategoryBase(SQLModel):
     model_config = cast(
         SQLModelConfig,
         {
-            "extra": "allow",
             "populate_by_name": "True",
             "arbitrary_types_allowed": "True",
         },

@@ -166,6 +166,9 @@ class TwitchUserDataBase(SQLModel, table=False):
             data["account_type"] = data.pop("type")
             data["account_created_at"] = data.pop("created_at")
 
+            if "viewer_count" in data:
+                data.pop("viewer_count")
+
             if not data["account_type"] in TwitchAccountType.__members__.values():
                 raise ValueError("Invalid value for account_type enum.")
             if (
@@ -179,7 +182,6 @@ class TwitchUserDataBase(SQLModel, table=False):
     model_config = cast(
         SQLModelConfig,
         {
-            "extra": "allow",
             "populate_by_name": "True",
             "arbitrary_types_allowed": "True",
         },

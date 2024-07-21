@@ -102,7 +102,10 @@ async def get_user_endpoint(username: str):
         user_response = await get_user(config, username)
 
         # Return the user information
-        return user_response.model_dump()
+        if user_response is not None:
+            return user_response.model_dump()
+
+        return {"message": "User not found."}
     except ValidationError as e:
         logger.error(f"Validation error: {e.errors()}")
         raise HTTPException(
