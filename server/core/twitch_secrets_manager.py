@@ -24,6 +24,7 @@ from typing import Any, Optional
 
 from pydantic import ValidationError
 
+from server.config import Config
 from server.db import get_db, upsert_one
 from server.db.query import fetch_secret
 from server.models import Secret, SecretCreate
@@ -50,10 +51,12 @@ class TwitchSecretsManager:
         with self._singleton_lock:
             if not hasattr(self, "initialized"):  # To prevent reinitialization
                 self._secrets_store: Optional[Secret] = None
-                self._process_lock: multi_proc_lock = self._manager.Lock()
-                self._async_lock = asyncio.Lock()
+                self._multiprocess_lock: multi_proc_lock = self._manager.Lock()
+                self._asyncio_lock = asyncio.Lock()
                 self.expiration_time: Optional[datetime] = None
                 self.initialized = True
+                self.client_id: str = Config.TWITCH_CLIENT_ID or ""
+                self.client_secret: str = Config.TWITCH_CLIENT_SECRET or ""
 
     @staticmethod
     def _calculate_expiry_time(lifetime_in_seconds: int) -> datetime:
@@ -104,8 +107,8 @@ class TwitchSecretsManager:
         Returns:
             bool: True if update succeeded; False otherwise.
         """
-        with self._process_lock:
-            async with self._async_lock:
+        async with self._asyncio_lock:
+            with self._multiprocess_lock:
                 try:
                     new_secret = SecretCreate(**servlet_payload)
                     new_secret.last_update_timestamp = datetime.now(timezone.utc)
@@ -131,8 +134,8 @@ class TwitchSecretsManager:
         pass
 
     async def get_access_token(self) -> Optional[str]:
-        with self._process_lock:
-            async with self._async_lock:
+        async with self._asyncio_lock:
+            with self._multiprocess_lock:
                 # if _secrets_store is None, attempt to fetch from DB
                 if self._secrets_store is None:
                     self._secrets_store = await fetch_secret()
@@ -157,3 +160,11 @@ class TwitchSecretsManager:
                     return self._secrets_store.access_token
 
                 return None
+
+    async def get_credentials(self) -> dict[str, str]:
+        access_token: str = await self.get_access_token() or ""
+        return {
+            "access_token": access_token,
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
+        }

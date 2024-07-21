@@ -2,7 +2,7 @@
 # pylint: disable=protected-access
 
 import asyncio
-from time import perf_counter
+from time import perf_counter, sleep
 from unittest.mock import patch
 
 import pytest
@@ -26,7 +26,7 @@ async def workbench():
         size_limit=TEST_WORKBENCH_SIZE_LIMIT,
         **Config.get_redis_args(),
     )
-    workbench._stopwatch = perf_counter() - 10.1
+    workbench._last_update_timemarker = perf_counter() - 10.1
     yield workbench
 
 
@@ -102,3 +102,27 @@ async def test_update_full_workbench_queue(workbench):
     # Check that dequeue and enqueue were not called because the workbench queue is full
     assert await workbench._pending_queue.queue_size() == 2
     assert await workbench._workbench_queue.queue_size() == TEST_WORKBENCH_SIZE_LIMIT
+
+
+@pytest.mark.asyncio
+async def test_udpate_rate_limit(workbench: Workbench):
+    await workbench._pending_queue.clear()
+    await workbench._workbench_queue.clear()
+
+    await workbench._pending_queue.enqueue("item1")
+    await workbench._pending_queue.enqueue("item2")
+    await workbench._pending_queue.enqueue("item3")
+
+    workbench._ratelimit_timebox = 0.1
+    workbench._last_update_timemarker = perf_counter()
+
+    result = await workbench.update()
+    assert result is False
+
+    sleep(0.1)
+
+    result = await workbench.update()
+    assert result is True
+
+    assert await workbench._pending_queue.queue_size() < 3
+    assert await workbench._workbench_queue.queue_size() > 0

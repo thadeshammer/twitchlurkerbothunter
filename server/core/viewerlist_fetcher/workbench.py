@@ -8,8 +8,6 @@ from server.config import Config
 from server.utils import (
     RedisSharedQueue,
     RedisSharedQueueDetails,
-    RedisSharedQueueError,
-    RedisSharedQueueFull,
     get_redis_shared_queue,
 )
 
@@ -33,8 +31,10 @@ class Workbench:
         )
 
         # Fill the workbench HERE
-        self._stopwatch: float = perf_counter()
-        self._timebox: float = float(Config.TWITCH_CHANNEL_JOIN_LIMIT_PER_SECONDS)
+        self._last_update_timemarker: float = perf_counter()
+        self._ratelimit_timebox: float = float(
+            Config.TWITCH_CHANNEL_JOIN_LIMIT_PER_SECONDS
+        )
 
     def get_workbench_queue_details(self) -> RedisSharedQueueDetails:
         """Workers will use this to set up their own access to the workbench queue, connecting to
@@ -55,7 +55,16 @@ class Workbench:
         """
         return self._redis_shared_queue_details_pending
 
-    async def update(self):
+    async def update(self) -> bool:
+        """Call this at a regular cadence to update the workbench queue from pending queue. Will
+        return True if its internal rate limit timer tracking allowed an update; False otherwise.
+
+        Returns:
+            bool: True if its internal rate limit timer tracking allowed an update; False otherwise.
+        """
+        if self._ratelimit_timebox + self._last_update_timemarker >= perf_counter():
+            return False
+
         pending_queue_size: int = await self._pending_queue.queue_size()
         space_on_workbench: Optional[int] = (
             await self._workbench_queue.remaining_space()
@@ -76,3 +85,5 @@ class Workbench:
                 self._workbench_queue.enqueue(item) for item in valid_items
             ]
             await asyncio.gather(*enqueue_tasks)
+
+        return True
