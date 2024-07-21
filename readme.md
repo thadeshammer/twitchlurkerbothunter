@@ -12,7 +12,7 @@ CURRENTLY IN DEVELOPMENT
 | Twitch OAuth flow                        | ✅     |
 | Step up OAuth to HTTPS                   | ✅     |
 | Scan Conductor                           | ❌     |
-| Stream Fetcher (multiproc)               | ❌     |
+| Stream Fetcher (multiproc, single proc)  | ❌     |
 | Stream Viewer List Fetcher (multiproc)   | ❌     |
 | User Data Enricher (multiproc)           | ❌     |
 | Viewer Sightings Aggregator              | ❌     |
@@ -154,9 +154,10 @@ Currently, the bot doesn't do anything beyond standing up and creating the table
 
 ### API Endpoints
 
-- **GET /**: Returns a summary of collected user data.
-- **GET /test**: Confirms the server is in fact up.
-- **POST /store_token**: Receiver for a token from the twitch-oauth servlet. (Stub.)
+- **GET /healthcheck**: Confirms the server is in fact up.
+- **POST /store_token**: Receiver for a token from the twitch-oauth servlet.
+- **GET /streams:** proof-of-concept, fetches the first page of a 'Get Streams' request. Requires Oauth flow success prior.
+- **GET /user/\{username\}:** fetches a single user profile. Requires Oauth flow success prior.
 - **POST /fetch_viewer_list**: Pull viewer list from specified channel. (Not implemented.)
 - **POST /start_scan**: Start a scanning session of a set of live streams. (Not implemented.)
 
