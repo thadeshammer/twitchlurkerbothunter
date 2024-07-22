@@ -2,6 +2,7 @@
 from .twitch_api_delegate import (
     TwitchAPIConfig,
     TwitchGetStreamsParams,
+    get_categories,
     get_streams,
     get_user,
     get_users,
@@ -9,6 +10,7 @@ from .twitch_api_delegate import (
 )
 
 __all__ = [
+    "get_categories",
     "get_streams",
     "get_user",
     "get_users",

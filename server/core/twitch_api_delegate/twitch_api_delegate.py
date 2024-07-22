@@ -6,9 +6,13 @@ from typing import Any, Dict, Optional
 import aiohttp
 from pydantic import ValidationError
 
-from server.models import GetStreamResponse, TwitchUserDataCreate
+from server.models import GetStreamResponse, StreamCategoryCreate, TwitchUserDataCreate
 
 logger = logging.getLogger("__name__")
+
+
+class TwitchAPIDelegateError(Exception):
+    pass
 
 
 @dataclass
@@ -85,6 +89,9 @@ async def get_streams(
 async def get_users(
     config: TwitchAPIConfig, login_names: list[str]
 ) -> list[TwitchUserDataCreate]:
+    if len(login_names) > 100:
+        raise TwitchAPIDelegateError("Limit 100 names for the 'Get Users' request.")
+
     params = {"login": login_names}
 
     response = await make_request(config, "users", params)
@@ -119,6 +126,33 @@ async def revitalize_tokens(
                 logger.error(f"Failed to refresh token: {response.status}")
                 return {"error": response.status, "message": await response.text()}
             return await response.json()
+
+
+async def get_categories(
+    config: TwitchAPIConfig,
+    category_ids: Optional[list[str]] = None,
+    category_names: Optional[list[str]] = None,
+) -> list[StreamCategoryCreate]:
+
+    id_count = len(category_ids) if category_ids else 0
+    name_count = len(category_names) if category_names else 0
+    if id_count + name_count > 100:
+        raise TwitchAPIDelegateError("Limit 100 ids+names for 'Get Category' request.")
+
+    params = {}
+    if category_ids:
+        params["id"] = category_ids
+    if category_names:
+        params["name"] = category_names
+
+    response = await make_request(config, "games", params)
+    try:
+        categories_data = response.get("data", [])
+        categories = [StreamCategoryCreate(**category) for category in categories_data]
+        return categories
+    except ValidationError as e:
+        logger.error(f"Error parsing response: {e}")
+        raise
 
 
 # Example usage

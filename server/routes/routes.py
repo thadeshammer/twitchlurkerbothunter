@@ -3,17 +3,19 @@ from datetime import datetime, timezone
 from typing import Optional
 
 import pytz
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, HTTPException, Query, Request, status
 from pydantic import ValidationError
 
 from server.config import Config
 from server.core.twitch_api_delegate import (
     TwitchAPIConfig,
     TwitchGetStreamsParams,
+    get_categories,
     get_streams,
     get_user,
 )
 from server.core.twitch_secrets_manager import TwitchSecretsManager
+from server.models import StreamCategoryCreate
 
 logger = logging.getLogger(__name__)
 
@@ -153,4 +155,32 @@ async def get_user_endpoint(username: str):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch user: {str(e)}",
+        ) from e
+
+
+@router.get("/categories", response_model=list[StreamCategoryCreate])
+async def get_categories_endpoint(
+    category_ids: Optional[list[str]] = Query(None),
+    category_names: Optional[list[str]] = Query(None),
+):
+    try:
+        # Retrieve credentials from SecretsManager
+        secrets_manager = TwitchSecretsManager()
+        config = TwitchAPIConfig(**(await secrets_manager.get_credentials()))
+
+        # Call the delegate function
+        categories = await get_categories(config, category_ids, category_names)
+
+        # Return the categories information
+        return [category.model_dump() for category in categories]
+    except ValidationError as e:
+        logger.error(f"Validation error: {e.errors()}")
+        raise HTTPException(
+            status_code=400, detail=f"Validation error: {e.errors()}"
+        ) from e
+    except Exception as e:
+        logger.error(f"Error fetching categories: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch categories: {str(e)}",
         ) from e

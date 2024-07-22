@@ -15,6 +15,7 @@ VALID_DATA = {
     "fetch_action_at": datetime.now(),
     "duration_of_fetch_action": 1.5,
     "fetch_status": StreamViewerListFetchStatus.PENDING,
+    "scanning_session_id": UUID("12345678-1234-1234-1234-123456789abc"),
     "channel_owner_id": 12345,
     "category_id": 67890,
     "viewer_count": 100,
