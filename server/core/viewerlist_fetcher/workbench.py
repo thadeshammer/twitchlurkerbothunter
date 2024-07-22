@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 class Workbench:
     def __init__(self):
+        logger.debug("In Workbench __init__")
         self._redis_shared_queue_details_workbench = RedisSharedQueueDetails(
             name="workbench", size_limit=Config.TWITCH_CHANNEL_JOIN_LIMIT_COUNT
         )
@@ -62,7 +63,9 @@ class Workbench:
         Returns:
             bool: True if its internal rate limit timer tracking allowed an update; False otherwise.
         """
+        logger.debug("Updating workbench.")
         if self._ratelimit_timebox + self._last_update_timemarker >= perf_counter():
+            logger.debug("Too soon for update.")
             return False
 
         pending_queue_size: int = await self._pending_queue.queue_size()

@@ -132,11 +132,15 @@ class ViewerListFetcherChannelListener(Client):
         self._channels: list[str] = []
         self._user_lists: dict[str, ViewerListFetchData] = {}
 
+        self._ready_event = asyncio.Event()
+
         super().__init__(token=self._access_token, initial_channels=[])
 
     async def event_ready(self):
         """TwitchIO Client class override. Treat as a private member."""
+        await super().event_ready()
         logger.info(f"{self._name} is ready.")
+        self._ready_event.set()
 
     async def event_raw_data(self, data: str):
         """TwitchIO Client class override. Treat as a private member.
@@ -144,7 +148,7 @@ class ViewerListFetcherChannelListener(Client):
         This is where the chatter list and end-of-chatter-list messages are listened for and
         responded to.
         """
-        # logger.debug("TwitchIO Chat Client raw data: {data}")  # the nuclear option
+        logger.debug("TwitchIO Chat Client raw data: {data}")  # the nuclear option
 
         if IRC_CHATTER_LIST_MSG in data:
             # The "353" will only appear in raw event data if at least one channel has been joined.
@@ -206,6 +210,9 @@ class ViewerListFetcherChannelListener(Client):
                 raise VLFetcherChannelPartError() from e
 
     async def _join_channel(self, channel_name: str):
+        if not self._ready_event.is_set():
+            logger.debug("Need to wait for event_ready before joining.")
+            await self._ready_event.wait()
         try:
             await self.join_channels([channel_name])
         except (
@@ -223,6 +230,7 @@ class ViewerListFetcherChannelListener(Client):
         logger.info(f"{self._name} joined {channel_name}")
 
     async def _wait_for_user_list(self, channel_name: str):
+        logger.debug(f"Waiting for user list messages from {channel_name}")
         while not self._user_lists[channel_name].done:
             # These messages reportedly arrive in the order of whole seconds, so this may be too
             # aggressive.
@@ -262,6 +270,7 @@ class ViewerListFetcherChannelListener(Client):
         start_time: float = perf_counter()
 
         try:
+            logger.debug("Kicking off listener tasks.")
             await self._kick_off_listener_tasks(channels)
         except (
             HTTPException,

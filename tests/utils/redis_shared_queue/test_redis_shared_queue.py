@@ -9,12 +9,20 @@ import pytest_asyncio
 from redis.exceptions import RedisError
 
 from server.config import Config
-from server.utils import RedisSharedQueue, RedisSharedQueueError, RedisSharedQueueFull
+from server.utils import (
+    RedisSharedQueue,
+    RedisSharedQueueDetails,
+    RedisSharedQueueError,
+    RedisSharedQueueFull,
+    get_redis_shared_queue,
+)
 
 
 @pytest_asyncio.fixture(scope="function")
 async def shared_queue(redis_client):
-    queue = RedisSharedQueue(name="testqueue", **Config.get_redis_args())
+    # queue = RedisSharedQueue(name="testqueue", **Config.get_redis_args())
+    details = RedisSharedQueueDetails("test_queue")
+    queue = get_redis_shared_queue(details)
     await queue.clear()
     yield queue
     await queue.clear()

@@ -184,3 +184,21 @@ async def get_categories_endpoint(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch categories: {str(e)}",
         ) from e
+
+
+@router.post("/smoketest/{channelname}")
+async def smoketest(channelname: str):
+    from server.core.scan_conductor import ScanConductor
+
+    logger.debug(f"SMOKETEST: {channelname}")
+
+    secrets_manager = TwitchSecretsManager()
+    access_token = await secrets_manager.get_access_token()
+    conductor = ScanConductor(access_token=access_token)
+    try:
+        await conductor.try_it_out(channel_name=channelname)
+    except Exception as e:
+        logger.error(f"Internal server error: {str(e)}")
+        raise
+
+    return {"message": "ok"}

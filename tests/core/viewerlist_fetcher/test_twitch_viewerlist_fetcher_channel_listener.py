@@ -8,8 +8,10 @@ from twitchio.errors import TwitchIOException
 
 from server.core.viewerlist_fetcher import (
     ViewerListFetchData,
-    ViewerListFetcherChannelListener,
     VLFetcherChannelJoinError,
+)
+from server.core.viewerlist_fetcher.viewerlist_fetcher_channel_listener import (
+    ViewerListFetcherChannelListener,
 )
 
 

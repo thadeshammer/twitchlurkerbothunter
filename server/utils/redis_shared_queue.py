@@ -53,14 +53,14 @@ class RedisSharedQueueDetails:
     OPTIONAL:
         - size_limit (int): Max number of items allowed in the queue at once; enqueuing beyond this
           will raise a RedisSharedQueueFull Exception.
-        - namespace (str): "queue" by default,  The Redis key = f"{namespace}:{name} and you can
-          override the namespace if desired.
+        - namespace (str): The Redis key = f"{namespace}:{name} and you can override the namespace
+          if desired. Default is "shared_queues"
         - redis_args (dict[str, str]): host, port, db_index, defaults to Config
     """
 
     name: str
     size_limit: Optional[int] = None
-    namespace: str = "queue"
+    namespace: str = "shared_queues"
     redis_args: dict[str, str] = field(default_factory=Config.get_redis_args)
 
 
@@ -77,9 +77,17 @@ def get_redis_shared_queue(
     Returns:
         RedisSharedQueue wrapping a list in the Redis instance.
     """
+    if details.name is None or details.name == "":
+        raise RedisSharedQueueError("Name is required.")
+    if details.namespace is None or details.namespace == "":
+        raise RedisSharedQueueError("Namespace is required.")
     try:
+        logger.debug(f"Creating RedisSharedQueue via factory: {details}")
         return RedisSharedQueue(
-            details.name, details.size_limit, details.namespace, **details.redis_args
+            name=details.name,
+            namespace=details.namespace,
+            size_limit=details.size_limit,
+            **details.redis_args,
         )
     except (
         RedisError,
@@ -124,7 +132,7 @@ class RedisSharedQueue:
     def __init__(
         self,
         name: str,
-        namespace: str = "queue",
+        namespace: str = "shared_queues",
         size_limit: Optional[int] = None,
         **redis_kwargs,
     ):
@@ -244,7 +252,7 @@ class RedisSharedQueue:
                     RedisResponseError,
                     RedisTimeoutError,
                 ) as e:
-                    raise RedisSharedQueueError("Failed to enqueue.") from e
+                    raise RedisSharedQueueError(f"Failed to enqueue. {str(e)}") from e
 
     async def dequeue(
         self, timeout: int = 2

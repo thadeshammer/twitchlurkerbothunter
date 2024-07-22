@@ -12,7 +12,7 @@ class CustomFormatter(logging.Formatter):
         return super().format(record)
 
 
-_LOG_FORMAT = "%(asctime)s - %(levelname)s - %(module)s - %(funcName)s - %(message)s"
+_LOG_FORMAT = "%(asctime)s - %(levelname)s - %(module)s::%(funcName)s: %(message)s"
 
 
 def _extract_filenames_from_logger_config(logger_config: dict) -> list:
