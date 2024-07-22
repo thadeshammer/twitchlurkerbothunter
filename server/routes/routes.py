@@ -95,6 +95,8 @@ async def get_streams_endpoint(
     first: Optional[str] = None,  # streams per page
     cursor: Optional[str] = None,
 ):
+    logger.debug("In /streams endpoint.")
+    print("in /streams", flush=True)
     try:
         secrets_manager = TwitchSecretsManager()
         config = TwitchAPIConfig(**(await secrets_manager.get_credentials()))
@@ -108,6 +110,8 @@ async def get_streams_endpoint(
         )
         streams_response, pagination_cursor = await get_streams(params)
 
+        print(f"{pagination_cursor=} {streams_response=}", flush=True)
+
         # Return the first page of the response
         return {
             "streams": [s.model_dump() for s in streams_response],
@@ -119,7 +123,7 @@ async def get_streams_endpoint(
             status_code=400, detail=f"Validation error: {e.errors()}"
         ) from e
     except Exception as e:
-        logger.error(f"Error fetching streams: {str(e)}")
+        logger.error(f"Error fetching streams: {str(e)} ")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch streams: Internal Server Error",

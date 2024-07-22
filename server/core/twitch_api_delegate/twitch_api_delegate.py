@@ -50,26 +50,32 @@ async def make_request(
 async def get_streams(
     get_streams_params: TwitchGetStreamsParams,
 ) -> tuple[list[GetStreamResponse], str]:
-    params = {"first": get_streams_params.first}
+    params = {"first": get_streams_params.first or "20"}
     if get_streams_params.cursor is not None:
         # get next page of stream results
         params["after"] = get_streams_params.cursor
     else:
         # this is our first go
-        if get_streams_params.game_id:
+        if get_streams_params.game_id is not None:
             params["game_id"] = get_streams_params.game_id
-        if get_streams_params.user_id:
+        if get_streams_params.user_id is not None:
             params["user_id"] = get_streams_params.user_id
-        if get_streams_params.user_login:
+        if get_streams_params.user_login is not None:
             params["user_login"] = get_streams_params.user_login
+
+    # Filter out None values from params
+    # params = {k: v for k, v in params.items() if v is not None}
+    logger.debug(f"{params=}")
 
     response = await make_request(
         get_streams_params.twitch_api_config, "streams", params
     )
     try:
         streams_data = response.get("data", [])
-        pagination_cursor = response.get("pagination", {}).get("cursor", "")
-        streams = [GetStreamResponse(**stream) for stream in streams_data]
+        pagination_cursor: str = response.get("pagination", {}).get("cursor", "")
+        streams: list[GetStreamResponse] = [
+            GetStreamResponse(**stream) for stream in streams_data
+        ]
         return streams, pagination_cursor
     except ValidationError as e:
         logger.error(f"Error parsing response: {e}")

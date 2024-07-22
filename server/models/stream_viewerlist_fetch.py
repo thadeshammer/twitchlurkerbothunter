@@ -76,14 +76,62 @@ class StreamViewerListFetchStatus(StrEnum):
 class GetStreamResponse(SQLModel):
     """See StreamViewerListFetchBase docstring below."""
 
-    channel_owner_id: Annotated[int, Field(index=True, ge=0)]
-    category_id: Annotated[int, Field(index=True, ge=0)]
+    channel_owner_id: Annotated[
+        int,
+        Field(
+            index=True,
+            ge=0,
+            foreign_key="twitch_user_data.twitch_account_id",
+            nullable=False,
+        ),
+    ]
+    category_id: Annotated[
+        int,
+        Field(
+            index=True,
+            ge=0,
+            foreign_key="stream_categories.category_id",
+            nullable=False,
+        ),
+    ]
     viewer_count: Annotated[int, Field(..., ge=0)]
     stream_id: Annotated[int, Field(..., ge=0)]
     stream_started_at: datetime = Field(...)
     language: Annotated[str, StringConstraints(pattern=LANGUAGE_CODE_REGEX)]
     is_mature: bool = Field(...)
     was_live: bool = Field(...)
+
+    @model_validator(mode="before")
+    @classmethod
+    def prep_and_validate_fields(cls, data: dict[str, Any]) -> dict[str, Any]:
+        """Need to convert the 'type' key into the `was_live` bool.
+
+        if 'type' == "live":
+            was_live = True
+        elif type == "":
+            was_live = False
+
+        NOTE. Coming in from the /streams endpoint in routes (ours, not Helix's) can wind up running
+        validation twice in a row, so we need to fingerprint to see whether that's the case before
+        crashing into unnecessary KeyErrors
+        """
+        if "channel_owner_id" not in data:
+            data["channel_owner_id"] = data.pop("user_id")
+            data["category_id"] = data.pop("game_id")
+            data["stream_id"] = data.pop("id")
+            data["stream_started_at"] = data.pop("started_at")
+
+        if "type" in data.keys():
+            if data["type"] == "live":
+                data["was_live"] = True
+            elif data["type"] == "":
+                data["was_live"] = False
+            else:
+                raise ValueError("Invalid value for stream 'type' / 'was_live'.")
+
+            data.pop("type")
+
+        return data
 
 
 class StreamViewerListFetchBase(GetStreamResponse):
@@ -121,9 +169,15 @@ class StreamViewerListFetchBase(GetStreamResponse):
         viewer_sightings (): many viewer_sightings to one stream_viewerlist_fetch
     """
 
-    fetch_action_at: datetime = Field(nullable=False)
-    duration_of_fetch_action: Annotated[Optional[float], Field(nullable=False, ge=0.0)]
+    fetch_action_at: datetime = Field(..., nullable=False)
+    duration_of_fetch_action: Annotated[
+        Optional[float], Field(default=None, nullable=True, ge=0.0)
+    ]
     fetch_status: str = Field(default=StreamViewerListFetchStatus.PENDING)
+
+    scanning_session_id: UUID = Field(
+        foreign_key="scanning_sessions.id", nullable=False, index=True
+    )
 
     model_config = cast(
         SQLModelConfig,
@@ -133,6 +187,17 @@ class StreamViewerListFetchBase(GetStreamResponse):
         },
     )
 
+    @model_validator(mode="before")
+    def check_fields(cls, data: dict[str, Any]) -> dict[str, Any]:
+        if (
+            "fetch_status" in data
+            and not data["fetch_status"]
+            in StreamViewerListFetchStatus.__members__.values()
+        ):
+            raise ValueError("Invalid value for StreamViewerListFetchStatus enum.")
+
+        return data
+
 
 class StreamViewerListFetch(StreamViewerListFetchBase, table=True):
 
@@ -140,54 +205,9 @@ class StreamViewerListFetch(StreamViewerListFetchBase, table=True):
 
     fetch_id: UUID = Field(default_factory=uuid4, primary_key=True)
 
-    scanning_session_id: UUID = Field(
-        foreign_key="scanning_sessions.id", nullable=False, index=True
-    )
-    channel_owner_id: Annotated[
-        int,
-        Field(
-            foreign_key="twitch_user_data.twitch_account_id",
-            nullable=False,
-            index=True,
-        ),
-    ]
-    category_id: Annotated[
-        int,
-        Field(
-            foreign_key="stream_categories.category_id",
-            nullable=False,
-            index=True,
-        ),
-    ]
-
 
 class StreamViewerListFetchCreate(StreamViewerListFetchBase):
     """Model for creating a new Stream Viewer List Fetch entry."""
-
-    @model_validator(mode="before")
-    @classmethod
-    def prep_and_validate_fields(cls, data: dict[str, Any]) -> dict[str, Any]:
-        """Need to convert the 'type' key into the `was_live` bool.
-
-        if 'type' == "live":
-            was_live = True
-        elif type == "":
-            was_live = False
-        """
-        if "type" in data.keys():
-            if data["type"] == "live":
-                data["was_live"] = True
-            elif data["type"] == "":
-                data["was_live"] = False
-            else:
-                raise ValueError("Invalid value for stream 'type' / 'was_live'.")
-
-            data.pop("type")
-
-        if not data["fetch_status"] in StreamViewerListFetchStatus.__members__.values():
-            raise ValueError("Invalid value for StreamViewerListFetchStatus enum.")
-
-        return data
 
 
 class StreamViewerListFetchRead(StreamViewerListFetchBase):
