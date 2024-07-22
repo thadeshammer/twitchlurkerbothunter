@@ -37,10 +37,12 @@ class StreamCategoryBase(SQLModel):
 
     @model_validator(mode="before")
     def handle_aliases(cls, data: dict[str, Any]) -> dict[str, Any]:
-        if "game_id" in data.keys():
+        if all(x in data for x in ["game_id", "game_name"]):
             data["category_id"] = data.pop("game_id")
-        if "game_name" in data.keys():
             data["category_name"] = data.pop("game_name")
+        elif all(x in data for x in ["box_art_url", "igdb_id"]):
+            data["category_id"] = data.pop("id")
+            data["category_name"] = data.pop("name")
         return data
 
     model_config = cast(

@@ -145,10 +145,14 @@ async def get_categories(
     if category_names:
         params["name"] = category_names
 
+    logger.debug(f"{params=}")
     response = await make_request(config, "games", params)
+
     try:
         categories_data = response.get("data", [])
+        logger.debug(f"{categories_data=}")
         categories = [StreamCategoryCreate(**category) for category in categories_data]
+        logger.debug(f"{categories=}")
         return categories
     except ValidationError as e:
         logger.error(f"Error parsing response: {e}")
