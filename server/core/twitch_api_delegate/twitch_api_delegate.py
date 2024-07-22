@@ -157,11 +157,3 @@ async def get_categories(
     except ValidationError as e:
         logger.error(f"Error parsing response: {e}")
         raise
-
-
-# Example usage
-# async def main():
-#     config = TwitchAPIConfig(..stuff it needs..)
-
-#     streams = await get_streams(config, game_id="21779")  # Example game_id
-#     print(streams)

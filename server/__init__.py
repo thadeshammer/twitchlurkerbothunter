@@ -32,9 +32,12 @@ if not CERT_PASSKEY:
 
 # Logger setup outside of create_app
 setup_logging(Config.LOGGING_CONFIG_FILE)
-logging.getLogger("asyncio").setLevel(
-    logging.WARNING
-)  # "Using selector: EpollSelector" spam
+
+# "Using selector: EpollSelector" spam
+logging.getLogger("asyncio").setLevel(logging.WARNING)
+# debug log-lines about caching the sha2
+logging.getLogger("aiomysql").setLevel(logging.WARNING)
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # Set to debug level to capture detailed logs
 logger.info("Logger is ready.")

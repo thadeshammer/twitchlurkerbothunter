@@ -44,6 +44,7 @@ async def test_increment_times_seen(viewer_sightings_cache: ViewerSightingsCache
 
     result = await viewer_sightings_cache.increment_times_seen(username)
     sighting = await viewer_sightings_cache.get_user_data(username)
+    assert sighting is not None
     assert result == 4
     assert sighting.times_seen == 4
     assert sighting.username == username
@@ -62,10 +63,15 @@ async def test_set_enriched(viewer_sightings_cache):
         )
     )
 
-    await viewer_sightings_cache.set_enriched(username, True)
+    result = await viewer_sightings_cache.set_enriched(username, True)
+    assert result is True
+
     sighting = await viewer_sightings_cache.get_user_data(username)
     assert sighting.enriched is True
     assert sighting.username == username
+
+    result = await viewer_sightings_cache.set_enriched("fake_user", True)
+    assert result is False
 
 
 @pytest.mark.asyncio
@@ -81,10 +87,15 @@ async def test_set_aggregated(viewer_sightings_cache):
         )
     )
 
-    await viewer_sightings_cache.set_aggregated(username, True)
+    result = await viewer_sightings_cache.set_aggregated(username, True)
+    assert result is True
+
     sighting = await viewer_sightings_cache.get_user_data(username)
     assert sighting.aggregated is True
     assert sighting.username == username
+
+    result = await viewer_sightings_cache.set_aggregated("fake_user", True)
+    assert result is False
 
 
 @pytest.mark.asyncio
@@ -113,6 +124,12 @@ async def test_get_user_data(viewer_sightings_cache):
 
 
 @pytest.mark.asyncio
+async def test_get_user_data_no_data(viewer_sightings_cache):
+    retrieved_sighting = await viewer_sightings_cache.get_user_data("not_a_real_user")
+    assert retrieved_sighting is None
+
+
+@pytest.mark.asyncio
 async def test_set_user_data(viewer_sightings_cache):
     username = "test_user"
     times_seen = 3
@@ -135,3 +152,46 @@ async def test_set_user_data(viewer_sightings_cache):
     assert retrieved_sighting.enriched == enriched
     assert retrieved_sighting.aggregated == aggregated
     assert retrieved_sighting.timestamp == timestamp
+
+    # test collision
+    sighting.timestamp = datetime.now(timezone.utc)
+    await viewer_sightings_cache.set_user_data(sighting)
+    retrieved_sighting = await viewer_sightings_cache.get_user_data(username)
+
+    assert retrieved_sighting.times_seen == times_seen + 1
+    assert retrieved_sighting.timestamp > timestamp
+
+
+@pytest.mark.asyncio
+async def test_clear_cache(viewer_sightings_cache):
+    username = "test_user"
+    times_seen = 3
+    enriched = True
+    aggregated = True
+
+    tasks = []
+    for i in range(5):
+        sighting = CachedViewerSighting(
+            username=f"{username}#{i}",
+            times_seen=times_seen + i,
+            enriched=enriched,
+            aggregated=aggregated,
+            timestamp=datetime.now(timezone.utc),
+        )
+        tasks.append(viewer_sightings_cache.set_user_data(sighting))
+
+    await asyncio.gather(*tasks)
+
+    for i in range(5):
+        retrieved_sighting = await viewer_sightings_cache.get_user_data(
+            f"{username}#{i}"
+        )
+        assert retrieved_sighting.times_seen == times_seen + i
+
+    await viewer_sightings_cache.clear_cache()
+
+    for i in range(5):
+        retrieved_sighting = await viewer_sightings_cache.get_user_data(
+            f"{username}#{i}"
+        )
+        assert retrieved_sighting is None
