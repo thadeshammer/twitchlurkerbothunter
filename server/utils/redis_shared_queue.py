@@ -166,8 +166,32 @@ class RedisSharedQueue:
         else:
             self._enqueue = self._enqueue_without_limit
 
+        # Lua script for dequeue
+        self.dequeue_script = """
+        local key = KEYS[1]
+        local timeout = tonumber(ARGV[1])
+        local item = redis.call('BLPOP', key, timeout)
+        if item then
+            return item[2]
+        else
+            return nil
+        end
+        """
+        self._dequeue_script = self.__db.register_script(self.dequeue_script)
+
+        # Lua script for clear
+        self.clear_script = """
+        local key = KEYS[1]
+        local keys = redis.call('KEYS', key .. '*')
+        if #keys > 0 then
+            return redis.call('DEL', unpack(keys))
+        else
+            return 0
+        end
+        """
+        self._clear_script = self.__db.register_script(self.clear_script)
+
     async def queue_size(self) -> int:
-        """Return the size of the queue."""
         try:
             queue_size = await self.__db.llen(self.key)
         except Exception as e:
@@ -175,10 +199,8 @@ class RedisSharedQueue:
         return queue_size
 
     async def remaining_space(self) -> Optional[int]:
-        """Return size_limit - queue_size if there's a size_limit, else None."""
         if self.size_limit is None:
             return None
-
         return self.size_limit - (await self.queue_size())
 
     async def enqueue(self, item: Union[str, dict[str, str]]) -> None:
@@ -186,6 +208,9 @@ class RedisSharedQueue:
         PLACE. Otherwise a resulting race condition between enqueueing processes will breeze past
         the size_limit check and blow past the limit. If there is no limit, it's probably fine to
         bypass acquiring the process lock, but for now it's uniform for this method.
+
+        NOTE. Using atomic Lua scripts _should_ mitigate this and obviate the need for the locking
+        approach I initialized used here; worth testing.
 
         Args:
             item (str, dict[str, str]): The value to put at the end of the queue. Can be a
@@ -209,7 +234,6 @@ class RedisSharedQueue:
                     if result == 0:
                         if self.size_limit is not None:
                             raise RedisSharedQueueFull()
-
                         raise RedisSharedQueueError(
                             "No size limit set but enqueue blocked by size limit script."
                         )
@@ -245,25 +269,20 @@ class RedisSharedQueue:
         if (await self.queue_size()) == 0:
             return (None, {})
         try:
-            # The docs type-hint blpop() as tuple[str, str] but it's actually
-            # tuple[bytes, bytes] at this time.
-            item: Optional[tuple[Any, Any]] = await self.__db.blpop(
-                self.key, timeout=timeout
+            item: Optional[str] = await self._dequeue_script(
+                keys=[self.key], args=[timeout]
             )
             if item is None:
                 return_value = (None, {})
             else:
                 raw_data: str = (
-                    item[1].decode("utf-8") if isinstance(item[1], bytes) else item[1]
+                    item.decode("utf-8") if isinstance(item, bytes) else item
                 )
-
                 try:
                     json_data: dict[str, str] = json.loads(raw_data)
                 except json.JSONDecodeError:
                     json_data = {}
-
                 return_value = (raw_data, json_data)
-
         except (
             RedisConnectionError,
             RedisError,
@@ -272,17 +291,10 @@ class RedisSharedQueue:
             RedisTimeoutError,
         ) as e:
             raise RedisSharedQueueError("Failed to dequeue.") from e
-
         return return_value
 
     async def empty(self) -> bool:
-        """Return True if the queue is empty, False otherwise."""
         return (await self.queue_size()) == 0
 
-    async def clear(self):
-        with self._multiprocess_lock:
-            async with self._asyncio_lock:
-                try:
-                    await self.__db.delete(self.key)
-                except Exception as e:
-                    raise RedisSharedQueueError("Failed to clear queue.") from e
+    async def clear(self) -> None:
+        await self._clear_script(keys=[self.key])

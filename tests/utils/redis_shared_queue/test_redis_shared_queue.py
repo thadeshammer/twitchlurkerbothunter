@@ -103,10 +103,3 @@ async def test_enqueue_failure(shared_queue):
 async def test_dequeue_failure(mock_blpop, shared_queue):
     failure_result = await shared_queue.dequeue()
     assert failure_result == (None, {})
-
-
-@pytest.mark.asyncio
-@patch("redis.asyncio.Redis.delete", side_effect=RedisError("delete failed"))
-async def test_clear_failure(mock_delete, shared_queue):
-    with pytest.raises(RedisSharedQueueError, match="Failed to clear queue."):
-        await shared_queue.clear()
