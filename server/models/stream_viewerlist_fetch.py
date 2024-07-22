@@ -55,7 +55,7 @@ from enum import StrEnum
 from typing import Annotated, Any, Optional, cast
 from uuid import UUID, uuid4
 
-from pydantic import StringConstraints, ValidationError, model_validator
+from pydantic import StringConstraints, model_validator
 from sqlmodel import Field, SQLModel
 from sqlmodel._compat import SQLModelConfig
 
@@ -73,7 +73,20 @@ class StreamViewerListFetchStatus(StrEnum):
     COMPLETE = "complete"
 
 
-class StreamViewerListFetchBase(SQLModel):
+class GetStreamResponse(SQLModel):
+    """See StreamViewerListFetchBase docstring below."""
+
+    channel_owner_id: Annotated[int, Field(index=True, ge=0)]
+    category_id: Annotated[int, Field(index=True, ge=0)]
+    viewer_count: Annotated[int, Field(..., ge=0)]
+    stream_id: Annotated[int, Field(..., ge=0)]
+    stream_started_at: datetime = Field(...)
+    language: Annotated[str, StringConstraints(pattern=LANGUAGE_CODE_REGEX)]
+    is_mature: bool = Field(...)
+    was_live: bool = Field(...)
+
+
+class StreamViewerListFetchBase(GetStreamResponse):
     """SQLmodel representing a Stream Viewlist Fetch event from the Viewer List Fetcher.
 
     The Viewer List Fetcher will negotiate and handle the reception and parsing of the viewer list
@@ -111,15 +124,6 @@ class StreamViewerListFetchBase(SQLModel):
     fetch_action_at: datetime = Field(nullable=False)
     duration_of_fetch_action: Annotated[Optional[float], Field(nullable=False, ge=0.0)]
     fetch_status: str = Field(default=StreamViewerListFetchStatus.PENDING)
-
-    channel_owner_id: Annotated[int, Field(index=True, ge=0)]
-    category_id: Annotated[int, Field(index=True, ge=0)]
-    viewer_count: Annotated[int, Field(..., ge=0)]
-    stream_id: Annotated[int, Field(..., ge=0)]
-    stream_started_at: datetime = Field(...)
-    language: Annotated[str, StringConstraints(pattern=LANGUAGE_CODE_REGEX)]
-    is_mature: bool = Field(...)
-    was_live: bool = Field(...)
 
     model_config = cast(
         SQLModelConfig,

@@ -36,6 +36,7 @@ from .scanning_session import (
 from .secrets import Secret, SecretCreate, SecretRead
 from .stream_categories import StreamCategory, StreamCategoryCreate, StreamCategoryRead
 from .stream_viewerlist_fetch import (
+    GetStreamResponse,
     StreamViewerListFetch,
     StreamViewerListFetchCreate,
     StreamViewerListFetchRead,
@@ -50,7 +51,6 @@ from .suspected_bot import (
     SuspicionReason,
 )
 from .twitch_user_data import (
-    GetUsersResponse,
     TwitchAccountType,
     TwitchBroadcasterType,
     TwitchUserData,
@@ -60,7 +60,7 @@ from .twitch_user_data import (
 from .viewer_sighting import ViewerSighting, ViewerSightingCreate, ViewerSightingRead
 
 __all__ = [
-    "GetUsersResponse",
+    "GetStreamResponse",
     "ScanningSession",
     "ScanningSessionCreate",
     "ScanningSessionRead",

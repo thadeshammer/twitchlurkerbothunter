@@ -7,7 +7,12 @@ from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import ValidationError
 
 from server.config import Config
-from server.core.twitch_api_delegate import TwitchAPIConfig, get_streams, get_user
+from server.core.twitch_api_delegate import (
+    TwitchAPIConfig,
+    TwitchGetStreamsParams,
+    get_streams,
+    get_user,
+)
 from server.core.twitch_secrets_manager import TwitchSecretsManager
 
 logger = logging.getLogger(__name__)
@@ -37,12 +42,12 @@ async def store_token(request: Request):
     return {"message": "ok"}
 
 
-@router.post("/force-tokens-refresh")
+@router.get("/force-tokens-refresh")
 async def force_tokens_refresh():
     logger.debug("In /force-tokens-refresh")
     try:
         secrets_manager = TwitchSecretsManager()
-        await secrets_manager._refresh_tokens()
+        await secrets_manager.force_tokens_refresh()
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -87,14 +92,27 @@ async def get_streams_endpoint(
     game_id: Optional[str] = None,
     user_id: Optional[str] = None,
     user_login: Optional[str] = None,
+    first: Optional[str] = None,  # streams per page
+    cursor: Optional[str] = None,
 ):
     try:
         secrets_manager = TwitchSecretsManager()
         config = TwitchAPIConfig(**(await secrets_manager.get_credentials()))
-        streams_response = await get_streams(config, game_id, user_id, user_login)
+        params = TwitchGetStreamsParams(
+            twitch_api_config=config,
+            game_id=game_id,
+            user_id=user_id,
+            user_login=user_login,
+            first=first,
+            cursor=cursor,
+        )
+        streams_response, pagination_cursor = await get_streams(params)
 
         # Return the first page of the response
-        return streams_response.model_dump()
+        return {
+            "streams": [s.model_dump() for s in streams_response],
+            "cursor": pagination_cursor,
+        }
     except ValidationError as e:
         logger.error(f"Validation error: {e.errors()}")
         raise HTTPException(

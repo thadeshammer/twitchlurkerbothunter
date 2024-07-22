@@ -6,9 +6,7 @@ from typing import Any, Dict, Optional
 import aiohttp
 from pydantic import ValidationError
 
-from server.models import TwitchUserDataCreate
-
-from .models import GetStreamsResponse
+from server.models import GetStreamResponse, TwitchUserDataCreate
 
 logger = logging.getLogger("__name__")
 
@@ -20,6 +18,16 @@ class TwitchAPIConfig:
     client_secret: Optional[str] = None
     base_url: str = "https://api.twitch.tv/helix"
     oauth_token_url: str = "https://id.twitch.tv/oauth2/token"
+
+
+@dataclass
+class TwitchGetStreamsParams:
+    twitch_api_config: TwitchAPIConfig
+    game_id: Optional[str] = None
+    user_id: Optional[str] = None
+    user_login: Optional[str] = None
+    first: str = "20"
+    cursor: Optional[str] = None
 
 
 async def make_request(
@@ -40,47 +48,29 @@ async def make_request(
 
 
 async def get_streams(
-    config: TwitchAPIConfig,
-    game_id: Optional[str] = None,
-    user_id: Optional[str] = None,
-    user_login: Optional[str] = None,
-    first: str = "20",
-) -> GetStreamsResponse:
-    params = {"first": first}
-    if game_id:
-        params["game_id"] = game_id
-    if user_id:
-        params["user_id"] = user_id
-    if user_login:
-        params["user_login"] = user_login
+    get_streams_params: TwitchGetStreamsParams,
+) -> tuple[list[GetStreamResponse], str]:
+    params = {"first": get_streams_params.first}
+    if get_streams_params.cursor is not None:
+        # get next page of stream results
+        params["after"] = get_streams_params.cursor
+    else:
+        # this is our first go
+        if get_streams_params.game_id:
+            params["game_id"] = get_streams_params.game_id
+        if get_streams_params.user_id:
+            params["user_id"] = get_streams_params.user_id
+        if get_streams_params.user_login:
+            params["user_login"] = get_streams_params.user_login
 
-    response = await make_request(config, "streams", params)
+    response = await make_request(
+        get_streams_params.twitch_api_config, "streams", params
+    )
     try:
-        return GetStreamsResponse(**response)
-    except ValidationError as e:
-        logger.error(f"Error parsing response: {e}")
-        raise
-
-
-async def get_more_streams(
-    config: TwitchAPIConfig,
-    cursor: str,
-    game_id: Optional[str] = None,
-    user_id: Optional[str] = None,
-    user_login: Optional[str] = None,
-    first: int = 20,
-) -> GetStreamsResponse:
-    params = {"first": first, "after": cursor}
-    if game_id:
-        params["game_id"] = game_id
-    if user_id:
-        params["user_id"] = user_id
-    if user_login:
-        params["user_login"] = user_login
-
-    response = await make_request(config, "streams", params)
-    try:
-        return GetStreamsResponse(**response)
+        streams_data = response.get("data", [])
+        pagination_cursor = response.get("pagination", {}).get("cursor", "")
+        streams = [GetStreamResponse(**stream) for stream in streams_data]
+        return streams, pagination_cursor
     except ValidationError as e:
         logger.error(f"Error parsing response: {e}")
         raise
