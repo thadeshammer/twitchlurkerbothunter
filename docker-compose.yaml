@@ -8,7 +8,7 @@ services:
       --ssl-keyfile /secrets/key.pem
       --ssl-certfile /secrets/cert.pem
     environment:
-      ENVIRONMENT: prod
+      ENVIRONMENT: container
       LOCAL_TIMEZONE: America/New_York
       CERT_PASSKEY: ${CERT_PASSKEY}
       MYSQL_USER_PASSWORD_FILE: /run/secrets/mysql_user_password

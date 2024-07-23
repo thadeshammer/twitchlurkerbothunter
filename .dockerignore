@@ -4,10 +4,10 @@ __pycache__/
 *.pyo
 
 # Ignore virtual environments
-venv/
-.venv/
-ENV/
-env/
+/venv/
+/.venv/
+/ENV/
+/env/
 
 # Ignore macOS specific files
 .DS_Store
@@ -17,10 +17,10 @@ env/
 *.env
 
 # Ignore test outputs
-tests/__pycache__/
-tests/*.pyc
-tests
-test
+/tests/__pycache__/
+/tests/*.pyc
+/tests/
+/test/
 .pylintrc
 
 # Ignore Git files
@@ -29,26 +29,28 @@ test
 .git*
 
 # Ignore Docker files
+.dockerignore
 docker-compose.yml
 Dockerfile
 
 # Ignore build directories
-build/
-dist/
-tmp/
+/build/
+/dist/
+/tmp/
 
 # Ignore IDE specific files
-.vscode/
+/.vscode/
 
 # Ignore any other sensitive or irrelevant files
-node_modules/
-secrets/
-uml/
+/node_modules/
+/secrets/
+/uml/
 
 # Except these files
-!secrets/cert.pem
-!secrets/key.pem
-!secrets/.mysql_root_password.txt
-!secrets/.mysql_user_password.txt
-!secrets/.testdb_root_password.txt
-!secrets/.testdb_user_password.txt
+!/secrets/tokens.yaml
+!/secrets/cert.pem
+!/secrets/key.pem
+!/secrets/.mysql_root_password.txt
+!/secrets/.mysql_user_password.txt
+!/secrets/.testdb_root_password.txt
+!/secrets/.testdb_user_password.txt

@@ -11,9 +11,10 @@ RUN pip install -r requirements.txt
 
 RUN apt-get update && apt-get install -y default-mysql-client
 
-# Copy SSL certificates (bypass .dockerignore for these files)
+# Copy SSL certificates and client id & secret
 COPY secrets/cert.pem /secrets/cert.pem
 COPY secrets/key.pem /secrets/key.pem
+COPY secrets/tokens.yaml /secrets/tokens.yaml
 
 # Copy application code
 COPY . .
@@ -23,11 +24,15 @@ RUN mkdir -p /logs
 
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
+
+ENV ENVIRONMENT="container"
 ENV LOG_CFG="logging_config.yaml"
-ENV SECRETS_DIR="./secrets/tokens.yaml"
+ENV SECRETS_DIR="/secrets/tokens.yaml"
+
 ENV DBNAME="lurkerbothunterdb"
 ENV DB_SERVICE_NAME="db"
 ENV DB_PORT="3306"
+
 ENV REDIS_HOST="localhost"
 ENV REDIS_PORT="6379"
 ENV REDIS_DB_INDEX="0"

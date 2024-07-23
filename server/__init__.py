@@ -31,6 +31,9 @@ if not CERT_PASSKEY:
     raise EnvironmentError("CERT_PASSKEY environment variable not set")
 
 # Logger setup outside of create_app
+# if Config.ENVIRONMENT == "container":
+# Currently only run in a container, FastAPI hates running in WSL Python 3.12 local anyway.
+# If I want this to run in local, I need to massage out how I'm handling the logging path.
 setup_logging(Config.LOGGING_CONFIG_FILE)
 
 # "Using selector: EpollSelector" spam
@@ -47,13 +50,15 @@ logger.info("Logger is ready.")
 async def lifespan(
     fastapi_app: FastAPI,  # type: ignore  pylint:disable=unused-argument
 ) -> AsyncGenerator[None, None]:
-    # Startup event
+    # Startup events
+    logger.info("SERVER START")
     await async_create_all_tables()
 
     yield  # this allows the server to run
 
     # Shutdown event
     # Add any necessary cleanup code here
+    logger.info("SERVER STOP")
 
 
 def create_app() -> FastAPI:
@@ -61,8 +66,6 @@ def create_app() -> FastAPI:
 
     Config.initialize()
     fastapi_app.debug = False
-
-    logger.info("Logger is ready.")
 
     # Log the worker PID
     worker_pid = os.getpid()

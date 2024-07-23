@@ -8,14 +8,18 @@ import yaml
 logger = logging.getLogger(__name__)
 
 
+class ConfigLoadError(Exception):
+    pass
+
+
 class Config:
     _initialized = False
 
     server_start_time = datetime.now(timezone.utc)
 
     PORT = 443
-    ENVIRONMENT = os.getenv("ENVIRONMENT", "dev").lower()
-    LOGGING_CONFIG_FILE: str = os.getenv("LOG_CFG", "./logging_config.yaml")
+    ENVIRONMENT = os.getenv("ENVIRONMENT", "local").lower()
+    LOGGING_CONFIG_FILE: str = os.getenv("LOG_CFG", "./logging_config_local.yaml")
 
     DEFAULT_TIMEZONE = "UTC"
     LOCAL_TIMEZONE = os.getenv("LOCAL_TIMEZONE", DEFAULT_TIMEZONE)
@@ -57,22 +61,35 @@ class Config:
 
     @classmethod
     def initialize(cls) -> None:
-        twitch_oauth_secrets_path: str = os.getenv(
-            "SECRETS_DIR", "./secrets/tokens.yaml"
-        )
+        if cls._initialized:
+            return
 
-        if os.path.exists(twitch_oauth_secrets_path):
-            with open(twitch_oauth_secrets_path, "r", encoding="UTF8") as file:
-                secrets: Union[dict, list, None] = yaml.safe_load(file)
-                if not isinstance(secrets, dict):
-                    raise TypeError("secrets load failed.")
-                cls.TWITCH_CLIENT_ID = secrets["TWITCH_CLIENT_ID"]
-                cls.TWITCH_CLIENT_SECRET = secrets["TWITCH_CLIENT_SECRET"]
+        if cls.ENVIRONMENT == "prod":
+            twitch_oauth_secrets_path: str = os.getenv(
+                "SECRETS_DIR", "/secrets/tokens.yaml"
+            )
+            if not os.path.exists(twitch_oauth_secrets_path):
+                raise ConfigLoadError(
+                    f"Secrets file not found: should be at {twitch_oauth_secrets_path=}"
+                )
+            try:
+                with open(twitch_oauth_secrets_path, "r", encoding="UTF8") as file:
+                    secrets: Union[dict, list, None] = yaml.safe_load(file)
+                    if not isinstance(secrets, dict):
+                        raise TypeError("secrets load failed.")
+                    cls.TWITCH_CLIENT_ID = secrets["TWITCH_CLIENT_ID"]
+                    cls.TWITCH_CLIENT_SECRET = secrets["TWITCH_CLIENT_SECRET"]
+            except OSError as e:
+                raise ConfigLoadError from e
+            logger.debug("Twitch secrets loaded.")
+        elif cls.ENVIRONMENT in ["dev", "test", "local"]:
+            cls.TWITCH_CLIENT_ID = "bogus_client_id"
+            cls.TWITCH_CLIENT_SECRET = "bogus_client_secret"
 
         if cls.ENVIRONMENT == "prod":
             cls.MYSQL_USER_PASSWORD_FILE = os.getenv("MYSQL_USER_PASSWORD_FILE")
             cls._db_name = os.getenv("DATABASE_NAME")
-        elif cls.ENVIRONMENT in {"test", "dev"}:
+        elif cls.ENVIRONMENT in ["test", "dev", "local"]:
             cls.MYSQL_USER_PASSWORD_FILE = os.getenv(
                 "TESTDB_USER_PASSWORD", cls.TESTDB_PASSWORD_FILE_FALLBACK
             )

@@ -1,0 +1,42 @@
+version: 1
+disable_existing_loggers: False
+
+formatters:
+  detailed:
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  custom:
+    (): server.utils.log_util.CustomFormatter
+    format: "%(asctime)s - %(levelname)s - %(module)s - %(funcName)s - %(message)s"
+
+handlers:
+  console:
+    class: logging.StreamHandler
+    level: DEBUG
+    formatter: detailed
+    stream: ext://sys.stdout
+
+  file_handler:
+    class: logging.FileHandler
+    formatter: detailed
+    level: DEBUG
+    filename: ./logs/server.log
+
+  sqlalchemy_file_handler:
+    class: logging.FileHandler
+    formatter: detailed
+    level: DEBUG
+    filename: ./logs/db.log
+
+loggers:
+  "":
+    handlers:
+      - console
+      - file_handler
+    level: DEBUG
+    propagate: True
+
+  sqlalchemy.engine:
+    handlers:
+      - sqlalchemy_file_handler
+    level: DEBUG
+    propagate: False
