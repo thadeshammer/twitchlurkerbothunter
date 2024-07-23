@@ -86,7 +86,10 @@ class Config:
             cls.TWITCH_CLIENT_ID = "bogus_client_id"
             cls.TWITCH_CLIENT_SECRET = "bogus_client_secret"
 
-        if cls.ENVIRONMENT == "prod":
+        if cls.ENVIRONMENT in [
+            "container",
+            "prod",
+        ]:  # container is an approximation of prod
             cls.MYSQL_USER_PASSWORD_FILE = os.getenv("MYSQL_USER_PASSWORD_FILE")
             cls._db_name = os.getenv("DATABASE_NAME")
         elif cls.ENVIRONMENT in ["test", "dev", "local"]:
