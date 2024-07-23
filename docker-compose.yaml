@@ -22,9 +22,7 @@ services:
       REDIS_PORT: 6379
       REDIS_DB_INDEX: 0
     volumes:
-      - .:/server
-      - ./logs/server.log:/logs/server.log
-      - ./logs/db.log:/logs/db.log
+      - ./logs:/server/logs
     ports:
       - "443:443"
     secrets:

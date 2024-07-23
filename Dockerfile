@@ -2,16 +2,21 @@ FROM python:3.11-slim
 
 WORKDIR /server
 
+# run pip install first + cache it
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 
+# slower but more space efficient
+# RUN pip install --no-cache-dir -r requirements.txt
+
 RUN apt-get update && apt-get install -y default-mysql-client
 
-COPY . .
-
-# Copy SSL certificates
+# Copy SSL certificates (bypass .dockerignore for these files)
 COPY secrets/cert.pem /secrets/cert.pem
 COPY secrets/key.pem /secrets/key.pem
+
+# Copy application code
+COPY . .
 
 # Create log directory
 RUN mkdir -p /logs

@@ -17,15 +17,15 @@ handlers:
 
   file_handler:
     class: logging.FileHandler
-    filename: "logs/server.log"
     formatter: detailed
     level: DEBUG
+    filename: /server/logs/server.log
 
   sqlalchemy_file_handler:
     class: logging.FileHandler
-    filename: "logs/db.log"
     formatter: detailed
     level: DEBUG
+    filename: /server/logs/db.log
 
 loggers:
   "":

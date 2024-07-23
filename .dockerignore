@@ -12,10 +12,6 @@ env/
 # Ignore macOS specific files
 .DS_Store
 
-# Ignore logs
-*.log
-logs/
-
 # Ignore local configurations
 *.local
 *.env
@@ -23,10 +19,14 @@ logs/
 # Ignore test outputs
 tests/__pycache__/
 tests/*.pyc
+tests
+test
+.pylintrc
 
 # Ignore Git files
 .git/
 .gitignore
+.git*
 
 # Ignore Docker files
 docker-compose.yml
@@ -43,6 +43,7 @@ tmp/
 # Ignore any other sensitive or irrelevant files
 node_modules/
 secrets/
+uml/
 
 # Except these files
 !secrets/cert.pem
