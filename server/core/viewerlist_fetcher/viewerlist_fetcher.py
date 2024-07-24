@@ -39,7 +39,7 @@ from server.utils import (
     get_redis_shared_queue,
 )
 
-from .viewerlist_fetcher_channel_listener import ViewerListFetcherChannelListener
+from .channel_listener import ViewerListFetcherChannelListener
 
 logger = logging.getLogger("__name__")
 

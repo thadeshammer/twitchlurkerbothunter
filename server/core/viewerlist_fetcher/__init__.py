@@ -1,11 +1,11 @@
-from .viewer_sightings_cache import CachedViewerSighting, ViewerSightingsCache
-from .viewerlist_fetcher import ViewerListFetcher
-from .viewerlist_fetcher_channel_listener import (
+from .channel_listener import (
     ViewerListFetchData,
     VLFetcherChannelJoinError,
     VLFetcherChannelPartError,
     VLFetcherError,
 )
+from .viewer_sightings_cache import CachedViewerSighting, ViewerSightingsCache
+from .viewerlist_fetcher import ViewerListFetcher
 from .workbench import Workbench
 
 __all__ = [

@@ -19,13 +19,13 @@ handlers:
     class: logging.FileHandler
     formatter: detailed
     level: DEBUG
-    filename: ./logs/server.log
+    filename: ./debug_logs/server_debug.log
 
   sqlalchemy_file_handler:
     class: logging.FileHandler
     formatter: detailed
     level: DEBUG
-    filename: ./logs/db.log
+    filename: ./debug_logs/db_debug.log
 
 loggers:
   "":

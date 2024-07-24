@@ -35,20 +35,42 @@ class TwitchGetStreamsParams:
 
 
 async def make_request(
-    config: TwitchAPIConfig, endpoint: str, params: Optional[Dict[str, Any]] = None
+    config: TwitchAPIConfig,
+    endpoint: str,
+    params: Optional[Dict[str, Any]] = None,
+    custom_headers: Optional[Dict[str, str]] = None,
+    base_url: Optional[str] = None,
 ) -> Dict[str, Any]:
     headers = {
         "Client-ID": config.client_id,
         "Authorization": f"Bearer {config.access_token}",
     }
+    if custom_headers:
+        headers.update(custom_headers)
+
+    url = base_url if base_url else config.base_url
     async with aiohttp.ClientSession(headers=headers) as session:
-        async with session.get(
-            f"{config.base_url}/{endpoint}", params=params
-        ) as response:
+        async with session.get(f"{url}/{endpoint}", params=params) as response:
             if response.status != 200:
                 logger.error(f"Failed to make request: {response.status}")
                 return {"error": response.status, "message": await response.text()}
             return await response.json()
+
+
+def response_error_check(response: dict[str, Any]):
+    """Checks a Twitch backend API response dict for error and surfaces the full error message if
+    applicable.
+
+    Args:
+        response (dict[str, Any]): The full Twitch API response object.
+
+    Raises:
+        TwitchAPIDelegateError: If any errors came back with the response, this is raised.
+    """
+    if "error" in response:
+        error_message = response.get("message", "Unknown error")
+        logger.error(f"Twitch API error: {error_message}")
+        raise TwitchAPIDelegateError(f"Twitch API error: {error_message}")
 
 
 async def get_streams(
@@ -74,6 +96,7 @@ async def get_streams(
     response = await make_request(
         get_streams_params.twitch_api_config, "streams", params
     )
+    response_error_check(response=response)
     try:
         streams_data = response.get("data", [])
         pagination_cursor: str = response.get("pagination", {}).get("cursor", "")
@@ -93,8 +116,9 @@ async def get_users(
         raise TwitchAPIDelegateError("Limit 100 names for the 'Get Users' request.")
 
     params = {"login": login_names}
+    response: dict[str, Any] = await make_request(config, "users", params)
+    response_error_check(response=response)
 
-    response = await make_request(config, "users", params)
     try:
         users_data = response.get("data", [])
         return [TwitchUserDataCreate(**user) for user in users_data]
@@ -128,6 +152,29 @@ async def revitalize_tokens(
             return await response.json()
 
 
+async def check_token_validity(config: TwitchAPIConfig) -> bool:
+    try:
+        custom_headers = {
+            "Authorization": f"OAuth {config.access_token}",
+        }
+        response = await make_request(
+            config=config,
+            endpoint="oauth2/validate",
+            custom_headers=custom_headers,
+            base_url="https://id.twitch.tv",
+        )
+        response_error_check(response=response)
+        if "status" in response and response["status"] != 200:
+            logger.error(f"Token validation failed: {response['message']}")
+            return False
+        return True
+    except TwitchAPIDelegateError:
+        raise
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        logger.error(f"Exception occurred during token validation: {str(e)}")
+        raise
+
+
 async def get_categories(
     config: TwitchAPIConfig,
     category_ids: Optional[list[str]] = None,
@@ -147,6 +194,7 @@ async def get_categories(
 
     logger.debug(f"{params=}")
     response = await make_request(config, "games", params)
+    response_error_check(response=response)
 
     try:
         categories_data = response.get("data", [])

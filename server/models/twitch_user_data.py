@@ -158,11 +158,11 @@ class TwitchUserDataBase(SQLModel, table=False):
         ):
             # 'Get Streams' fingerprint
             data["twitch_account_id"] = data.pop("user_id")
-            data["login_name"] = data.pop("user_login")
+            data["login_name"] = data.pop("user_login").lower()
         elif all(key in data for key in ["id", "login", "type", "broadcaster_type"]):
             # 'Get Users' fingerprint
             data["twitch_account_id"] = data.pop("id")
-            data["login_name"] = data.pop("login")
+            data["login_name"] = data.pop("login").lower()
             data["account_type"] = data.pop("type")
             data["account_created_at"] = data.pop("created_at")
 

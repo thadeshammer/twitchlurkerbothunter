@@ -130,9 +130,9 @@ async def async_session(
         await session.close()
 
 
-@pytest.fixture(scope="module", autouse=True)
-def disable_logging():
-    """Automatically disable logging for all unit tests."""
-    logging.disable(logging.CRITICAL)
-    yield
-    logging.disable(logging.NOTSET)
+# @pytest.fixture(scope="module", autouse=True)
+# def disable_logging():
+#     """Automatically disable logging for all unit tests."""
+#     logging.disable(logging.CRITICAL)
+#     yield
+#     logging.disable(logging.NOTSET)

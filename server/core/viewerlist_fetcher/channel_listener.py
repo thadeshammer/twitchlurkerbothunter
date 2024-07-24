@@ -10,12 +10,17 @@ lists of login names from the viewerlist.
 
 This class uses TwitchIO to handle the noodly parts of interfacing with Twitch's IRC.
 
+NOTE. Experiments have shown me (quickly) that joining a chat with the chat:edit scope will very
+quickly result in the bot being rate-limited for too many chats per 30 second window, which would
+drop the scrap time by two orders of magnitude. It appears that this doesn't happen if I use ONLY
+the chat:read but experiments are ongoing.
+
 Usage:
     NOTE. RESPECT THE RATE LIMIT. The rate limit for unapproved bots (like me) is a max of 20
     channel joins per 10 second window, per the docs. You'll need to manage this outside of this
     class. The reason being 1. single responsiblity and 2. the use case we're desiging for is using
     this across multiple process workers which will all go faster but must together respect the rate
-    limit.
+    limit. (This all goes out the window if I'm limited as though I'm sending messages.)
 
     The plan is for the conductor to handle this: it will refill a queue to size 20 with unchecked
     streams every 10 seconds, so that if we go to slow, len(queue) <= 20, and if we go too fast, the
@@ -64,6 +69,8 @@ logger = logging.getLogger(__name__)
 IRC_CHATTER_LIST_MSG = "353"
 IRC_END_OF_NAMES_MSG = "366"
 
+OVERALL_TIMEOUT = 10.0  # fractional seconds a la perf_counter
+
 
 class VLFetcherError(Exception):
     pass
@@ -77,6 +84,10 @@ class VLFetcherChannelJoinError(VLFetcherError):
     pass
 
 
+class VLFetcherOvertimeError(VLFetcherError):
+    """Return if overall timeout exceeded."""
+
+
 @dataclass
 class ViewerListFetchData:
     user_names: Set[str] = field(default_factory=set)
@@ -86,9 +97,12 @@ class ViewerListFetchData:
     time_elapsed: Optional[float] = None
     error: Optional[Exception] = None
 
-    def calculate_time_elapsed(self):
+    def calculate_final_time_elapsed(self):
         if self.start_time is not None and self.end_time is not None:
             self.time_elapsed = self.end_time - self.start_time
+
+    def calculate_time_elapsed(self) -> float:
+        return perf_counter() - self.start_time
 
 
 class ViewerListFetcherChannelListener(Client):
@@ -142,72 +156,158 @@ class ViewerListFetcherChannelListener(Client):
         logger.info(f"{self._name} is ready.")
         self._ready_event.set()
 
+    def _process_join_message(self, msg: str) -> str:
+        """Process a single user join message fron raw event data.
+
+        Returns:
+            str: The channel name if successfullyl parsed.
+        """
+        # single user join
+        # :username!username@username.tmi.twitch.tv JOIN #channel_name
+        channel_name: str = msg.split("#")[1].strip()
+        username: str = msg.split("!")[0][1:].strip()
+        logger.info(f"Received JOIN: {channel_name=} {username=}")
+        self._user_lists[channel_name].user_names.add(username)
+        return channel_name
+
+    def _process_chatter_list_message(self, msg: str) -> str:
+        """Processes a chatter list message from raw event data. The 353 in standard IRC.
+
+        Raises:
+            VLFetcherError: upon (impossible) KeyError in _user_lists (which has happened a few
+            times.)
+
+        Returns:
+            str: The channel name if successfully parsed.
+        """
+        # The "353" will only appear in raw event data if at least one channel has been
+        # joined. So, until fetch_viewer_list_for_channels() is called with a list of
+        # channels, this code here under the if can't fire, and the self._user_lists
+        # reference  won't blow us up.
+
+        # Extract the channel name and user list from the 353 message. Here's a sample:
+        # ":user!user@user.tmi.twitch.tv 353 this_bot = #channel :jane jack jill"
+        # We split on the colons
+        # [0] = ""
+        # [1] = the prefix including the 353 and the name of our bot here.
+        # [2] = the space-separated user list
+        parts = msg.split(":")
+        if len(parts) > 2:
+            # msg_parts ['user!user@user.tmi.twitch.tv', '353', 'this_bot', '=', '#channel']
+            msg_parts = parts[1].strip().split()
+            channel_name = msg_parts[-1].lstrip("#")
+            if channel_name not in self._user_lists:
+                raise VLFetcherError(
+                    f"VLFetcher {self._worker_id} channel not in user_list error {channel_name}"
+                )
+
+            user_list = set(parts[2].split())
+            self._user_lists[channel_name].user_names.update(user_list)
+            logger.info(
+                f"{self._worker_id} added names from {channel_name}: {list(user_list)}"
+            )
+        raise VLFetcherError(
+            f"Failed to parse {IRC_CHATTER_LIST_MSG} chatter list message."
+        )
+
+    def _process_end_of_names(self, msg: str) -> str:
+        """Processes end-of-names message from raw event data, 366 in standard IRC.
+
+        Returns:
+            str: The channel name, if successfully parsed.
+        """
+        # Part from the channel after receiving the 366 indicating end-of-353 messages.
+        # We split as above, except this time [2] is the end of names message.
+        parts = msg.split(":")
+        logger.debug(f"split {len(parts)} pieces: {parts}")
+        if len(parts) > 2:
+            # message = "this_bot:tmi.twitch.tv 366 this_bot channel :End of /NAMES list"
+            # parts == ['this_bot', 'tmi.twitch.tv 366 this_bot my_channel ', 'End of /NAMES list']
+            # msg_parts == ['tmi.twitch.tv', '366', 'this_bot', 'channel']
+            msg_parts = parts[1].strip().split()
+            channel_name = msg_parts[-1].lstrip("#")
+            # end_of_names_msg = parts[2].split()
+            print(f"Will part from channel: {channel_name}")
+            return channel_name
+        raise VLFetcherError(
+            f"Failed to parse {IRC_END_OF_NAMES_MSG} end-of-names message."
+        )
+
+    async def _part_from_channel(self, channel_name: str):
+        """Part from a channel. Call this upon processing the end-of-names message or timing out."""
+        if channel_name is None:
+            # Pylance, not only is this code reachable, it has happened before, okay?
+            raise ValueError("Cannot part from None channel.")
+        try:
+            logger.debug(
+                f"{channel_name} to be parted from. {self._user_lists.keys()=}"
+            )
+            self._user_lists[channel_name].end_time = perf_counter()
+            self._user_lists[channel_name].calculate_final_time_elapsed()
+            self._user_lists[channel_name].done = True
+            await self.part_channels(channel_name)
+        except KeyError as e:
+            raise VLFetcherChannelPartError(
+                f"The channel {channel_name} is not in {self._user_lists.keys()=}"
+            ) from e
+        except (
+            HTTPException,
+            InvalidContent,
+            AuthenticationError,
+            IRCCooldownError,
+            TwitchIOException,
+            Unauthorized,
+        ) as e:
+            self._user_lists[channel_name].error = e
+            raise VLFetcherChannelPartError() from e
+
     async def event_raw_data(self, data: str):
         """TwitchIO Client class override. Treat as a private member.
 
         This is where the chatter list and end-of-chatter-list messages are listened for and
         responded to.
         """
-        logger.debug("TwitchIO Chat Client raw data: {data}")  # the nuclear option
+        logger.debug(f"TwitchIO Chat Client raw data: {data}")  # the nuclear option
+        logger.debug(f"{self._user_lists.keys()=}")
 
-        if IRC_CHATTER_LIST_MSG in data:
-            # The "353" will only appear in raw event data if at least one channel has been joined.
-            # So, until fetch_viewer_list_for_channels() is called with a list of channels, this
-            # code here under the if can't fire, and the self._user_lists reference won't blow us
-            # up.
+        # Messages can arrive in tandem, e.g. multiple 353s and a 366 in one line; when this
+        # happens, the messages will be seperated by carriage return and line feed characters, \r\n,
+        # per the IRC protocol.
 
-            # Extract the channel name and user list from the 353 message. Here's a sample:
-            # ":user!user@user.tmi.twitch.tv 353 this_bot = #channel :jane jack jill"
-            # We split on the colons
-            # [0] = ""
-            # [1] = the prefix including the 353 and the name of our bot here.
-            # [2] = the space-separated user list
-            parts = data.split(":")
-            if len(parts) > 2:
-                # msg_parts ['user!user@user.tmi.twitch.tv', '353', 'this_bot', '=', '#channel']
-                msg_parts = parts[1].strip().split()
-                channel_name = msg_parts[-1].lstrip("#")
-                if channel_name not in self._user_lists:
-                    raise VLFetcherError(
-                        f"VLFetcher {self._worker_id} wrong channel error {channel_name}"
-                    )
+        if "\r\n" in data:
+            submessages = data.split("\r\n")
+            logger.debug(f"Split combined message: {submessages=}")
+        else:
+            submessages = [data]
+            logger.debug(f"Single message: {submessages=}")
 
-                user_list = set(parts[2].split())
-                self._user_lists[channel_name].user_names.update(user_list)
-                logger.info(
-                    f"VLFetcher {self._worker_id} for {channel_name}: {list(user_list)}"
-                )
+        # NOTE TODO If the bot gets rate-limited, the only sign this is happening is that we start
+        # getting bogus 353s which contain only the streamer's name and the bot's name and no other
+        # names, BUT the way the split works, we get a bunch of garbage as fake names in this case.
+        # This _should_ fail validation once it gets outside, but that's a lot of errors rippling
+        # out and we could catch and handle it right here.
 
-        if IRC_END_OF_NAMES_MSG in data:
-            # Part from the channel after receiving the 366 indicating end-of-353 messages.
-            # We split as above, except this time [2] is the end of names message.
-            parts = data.split(":")
-            if len(parts) > 2:
-                # message = ":tmi.twitch.tv 366 this_bot channel :End of /NAMES list"
-                # parts == ['', 'tmi.twitch.tv 366 this_bot my_channel ', 'End of /NAMES list']
-                # msg_parts == ['tmi.twitch.tv', '366', 'this_bot', 'channel']
-                msg_parts = parts[1].strip().split()
-                channel_name = msg_parts[-1].lstrip("#")
-
-                end_of_names_msg = parts[2].split()
-                logger.info(f"Parting from {channel_name} because {end_of_names_msg}")
-
-            self._user_lists[channel_name].end_time = perf_counter()
-            self._user_lists[channel_name].calculate_time_elapsed()
-            self._user_lists[channel_name].done = True
-
+        end_of_names_received = False
+        channel_name: Optional[str] = None
+        for submessage in submessages:
             try:
-                await self.part_channels(channel_name)
-            except (
-                HTTPException,
-                InvalidContent,
-                AuthenticationError,
-                IRCCooldownError,
-                TwitchIOException,
-                Unauthorized,
-            ) as e:
-                self._user_lists[channel_name].error = e
-                raise VLFetcherChannelPartError() from e
+                if "JOIN" in submessage:
+                    logger.debug(f"IN JOIN CLOSURE: {submessage=}")
+                    channel_name = self._process_join_message(submessage)
+                if IRC_CHATTER_LIST_MSG in submessage:
+                    logger.debug(f"IN 353 CLOSURE: {submessage=}")
+                    channel_name = self._process_chatter_list_message(submessage)
+                if IRC_END_OF_NAMES_MSG in submessage:
+                    logger.debug(f"IN 366 CLOSURE: {submessage=}")
+                    channel_name = self._process_end_of_names(submessage)
+                    end_of_names_received = True
+                    # TODO set a brief TTL for straggler join and chatter list messages.
+            except Exception as e:  # pylint: disable=broad-exception-caught
+                logger.error(
+                    f"Unexpected error processing raw data: {e}", exc_info=True
+                )
+        if end_of_names_received:
+            await self._part_from_channel(channel_name)
 
     async def _join_channel(self, channel_name: str):
         if not self._ready_event.is_set():
@@ -215,6 +315,13 @@ class ViewerListFetcherChannelListener(Client):
             await self._ready_event.wait()
         try:
             await self.join_channels([channel_name])
+            channel = self.get_channel(channel_name)
+            if channel:  # optimism
+                logger.info(
+                    f"Joined channel {channel.name} with {len(channel.chatters)} viewers."
+                )
+                logger.debug(f"{channel.chatters=}")
+                self._user_lists[channel_name].user_names.update(channel.chatters)
         except (
             HTTPException,
             InvalidContent,
@@ -234,11 +341,25 @@ class ViewerListFetcherChannelListener(Client):
         while not self._user_lists[channel_name].done:
             # These messages reportedly arrive in the order of whole seconds, so this may be too
             # aggressive.
+            if (
+                self._user_lists[channel_name].calculate_time_elapsed()
+                >= OVERALL_TIMEOUT
+            ):
+                raise VLFetcherOvertimeError(
+                    f"Check for this channel exceeds {OVERALL_TIMEOUT}s."
+                )
             await asyncio.sleep(0.1)
 
     async def _process_channel_task(self, channel_name: str):
         await self._join_channel(channel_name)
-        await self._wait_for_user_list(channel_name)
+        try:
+            await self._wait_for_user_list(channel_name)
+        except VLFetcherOvertimeError as e:
+            logger.error(f"Timeout exceeded for {channel_name}, parting.")
+            self._user_lists[channel_name].end_time = perf_counter()
+            self._user_lists[channel_name].calculate_final_time_elapsed()
+            self._user_lists[channel_name].done = True
+            self._user_lists[channel_name].error = e
 
     async def _kick_off_listener_tasks(self, channels: list[str]):
         tasks = []
@@ -266,8 +387,14 @@ class ViewerListFetcherChannelListener(Client):
         if not all(isinstance(c, str) for c in channels):
             raise TypeError("channels list contains non-str type(s).")
 
-        self._user_lists = {channel: ViewerListFetchData() for channel in channels}
+        logger.debug(f"Targeted {channels=}")
+
+        self._user_lists: dict[str, ViewerListFetchData] = {
+            channel.lower(): ViewerListFetchData() for channel in channels
+        }
         start_time: float = perf_counter()
+
+        logger.debug(f"Prepped: {self._user_lists=}")
 
         try:
             logger.debug("Kicking off listener tasks.")

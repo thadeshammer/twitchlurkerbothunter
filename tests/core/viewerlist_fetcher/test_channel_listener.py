@@ -1,6 +1,7 @@
 # pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 import asyncio
+import logging
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -10,18 +11,22 @@ from server.core.viewerlist_fetcher import (
     ViewerListFetchData,
     VLFetcherChannelJoinError,
 )
-from server.core.viewerlist_fetcher.viewerlist_fetcher_channel_listener import (
+from server.core.viewerlist_fetcher.channel_listener import (
     ViewerListFetcherChannelListener,
 )
+
+logger = logging.getLogger("__name__")
 
 
 @pytest.fixture
 def mock_client():
     with patch(
-        "server.core.viewerlist_fetcher.viewerlist_fetcher_channel_listener.Client",
+        "server.core.viewerlist_fetcher.channel_listener.Client",
         autospec=True,
     ):
         client = ViewerListFetcherChannelListener("test_worker", "test_token")
+        client._ready_event = asyncio.Event()
+        client._ready_event.set()
         return client
 
 
@@ -30,6 +35,17 @@ def fetcher():
     return ViewerListFetcherChannelListener(
         worker_id="test_worker", access_token="test_token"
     )
+
+
+@pytest.mark.asyncio
+async def test_event_raw_data_chatter_join_message(fetcher):
+    # :user!user@user.tmi.twitch.tv JOIN #channel
+    fetcher._user_lists = {"test_channel": ViewerListFetchData()}
+    message = ":test_user!test_user@test_user.tmi.twitch.tv JOIN #test_channel"
+
+    await fetcher.event_raw_data(message)
+
+    assert fetcher._user_lists["test_channel"].user_names == {"test_user"}
 
 
 @pytest.mark.asyncio
@@ -57,14 +73,15 @@ async def test_event_raw_data_chatter_list_message_no_names(fetcher):
 
 
 @pytest.mark.asyncio
-async def test_event_raw_data_part_message(fetcher):
+async def test_event_raw_data_leave_channel_message(fetcher):
     with patch.object(
         fetcher, "part_channels", new_callable=AsyncMock
     ) as mock_part_channels:
 
         channel = "test_channel"
         fetcher._user_lists = {channel: ViewerListFetchData()}
-        message = f":tmi.twitch.tv 366 lurkerbot {channel} :End of /NAMES list"
+        message = f"lurkerbot:tmi.twitch.tv 366 lurkerbot {channel} :End of /NAMES list"
+        logger.info(f"{message=} || {fetcher._user_lists.keys()=}")
 
         await fetcher.event_raw_data(message)
 
@@ -128,4 +145,32 @@ async def test_fetch_viewer_list_for_channels(mock_client):
     assert isinstance(result["channel3"], ViewerListFetchData)
     assert isinstance(result["channel4"], ViewerListFetchData)
     assert isinstance(result["channel5"], ViewerListFetchData)
+    assert elapsed > 0
+
+
+@pytest.mark.asyncio
+async def test_fetch_viewer_list_for_channels_just_one(mock_client):
+    channels = ["channel1"]
+    mock_client._kick_off_listener_tasks = AsyncMock()
+
+    result, elapsed = await mock_client.fetch_viewer_list_for_channels(channels)
+
+    assert set(result.keys()) == set(channels)
+    assert isinstance(result["channel1"], ViewerListFetchData)
+    assert elapsed > 0
+
+
+@pytest.mark.asyncio
+async def test_fetch_viewer_list_for_channels_vs_mixed_case(mock_client):
+    """This is a weird edge case I needed to guard against. For most flows in the server, login
+    names are user case. Except when someone (me) enters a properly cased name into the smoke test
+    and it sidechannels its way in. So, adding .lower() in a few places will help better protect
+    internals. From me."""
+    channels = ["TotallyLeGitUserNameTho"]
+    mock_client._kick_off_listener_tasks = AsyncMock()
+
+    result, elapsed = await mock_client.fetch_viewer_list_for_channels(channels)
+
+    assert set(result.keys()) == set(c.lower() for c in channels)
+    assert isinstance(result["totallylegitusernametho"], ViewerListFetchData)
     assert elapsed > 0

@@ -10,6 +10,7 @@ from server.config import Config
 from server.core.twitch_api_delegate import (
     TwitchAPIConfig,
     TwitchGetStreamsParams,
+    check_token_validity,
     get_categories,
     get_streams,
     get_user,
@@ -59,6 +60,22 @@ async def force_tokens_refresh():
     return {"message": "ok"}
 
 
+@router.get("/check-token")
+async def check_token():
+    logger.debug("In /check-token")
+    try:
+        secrets_manager = TwitchSecretsManager()
+        config = TwitchAPIConfig(**(await secrets_manager.get_credentials()))
+        result = await check_token_validity(config=config)
+        return {"token_valid": str(result)}
+    except Exception as e:
+        logger.error(f"Error fetching streams: {str(e)} ")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch streams: Internal Server Error",
+        ) from e
+
+
 @router.get("/healthcheck")
 async def healthcheck():
     current_time = datetime.now(timezone.utc)
@@ -102,13 +119,15 @@ async def get_streams_endpoint(
     try:
         secrets_manager = TwitchSecretsManager()
         config = TwitchAPIConfig(**(await secrets_manager.get_credentials()))
-        params = TwitchGetStreamsParams(
-            twitch_api_config=config,
-            game_id=game_id,
-            user_id=user_id,
-            user_login=user_login,
-            first=first,
-            cursor=cursor,
+        params = (
+            TwitchGetStreamsParams(  # TODO clean this up with Pydantic model+validators
+                twitch_api_config=config,
+                game_id=game_id,
+                user_id=user_id,
+                user_login=user_login.lower() if user_login else None,
+                first=first,
+                cursor=cursor,
+            )
         )
         streams_response, pagination_cursor = await get_streams(params)
 
@@ -125,7 +144,7 @@ async def get_streams_endpoint(
             status_code=400, detail=f"Validation error: {e.errors()}"
         ) from e
     except Exception as e:
-        logger.error(f"Error fetching streams: {str(e)} ")
+        logger.error(f"Error fetching streams: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch streams: Internal Server Error",
@@ -138,7 +157,7 @@ async def get_user_endpoint(username: str):
         # Retrieve credentials from SecretsManager
         secrets_manager = TwitchSecretsManager()
         config = TwitchAPIConfig(**(await secrets_manager.get_credentials()))
-        user_response = await get_user(config, username)
+        user_response = await get_user(config, username.lower())
 
         # Return the user information
         if user_response is not None:

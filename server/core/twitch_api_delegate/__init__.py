@@ -2,6 +2,7 @@
 from .twitch_api_delegate import (
     TwitchAPIConfig,
     TwitchGetStreamsParams,
+    check_token_validity,
     get_categories,
     get_streams,
     get_user,
@@ -10,6 +11,7 @@ from .twitch_api_delegate import (
 )
 
 __all__ = [
+    "check_token_validity",
     "get_categories",
     "get_streams",
     "get_user",
