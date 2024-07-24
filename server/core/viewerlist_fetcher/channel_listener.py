@@ -206,6 +206,7 @@ class ViewerListFetcherChannelListener(Client):
             logger.info(
                 f"{self._worker_id} added names from {channel_name}: {list(user_list)}"
             )
+            return channel_name
         raise VLFetcherError(
             f"Failed to parse {IRC_CHATTER_LIST_MSG} chatter list message."
         )
