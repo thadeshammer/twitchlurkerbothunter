@@ -1,34 +1,12 @@
 # Twitch Lurker Bot Hunter
 
-<div align="center">
+**UPDATE**. 2024-07-24. Development is scrapped for now. Since the undocumented endpoint was sunset (it's unclear when, but I check Twitch Insights at least a couple times a week, and as of last week, it stopped getting meaningful update to bot names) but also, users have been saying they're seeing way less bots. This app can successfully pull and parse IRC NAMES messages, but there's an undocumented rate limit on that as well (I didn't measure it, but it seems to put the app into a 30mn timeout box if it polls more than two channels) and the new get chatters endpoint requires modererator permissions on the bot's user account.
 
-CURRENTLY IN DEVELOPMENT
+Overall these changes are good for Twitch, but - as you know - adversaries will find other ways. I expect lurker bots will return in some capacity at some point, but with the current available API endpoints, I won't be able to help after all.
 
-| Issues and Milestones                    | Status |
-| ---------------------------------------- | ------ |
-| Base schema implemeneted                 | ✅     |
-| Boilerplate nailed down                  | ✅     |
-| Test routes working                      | ✅     |
-| Twitch OAuth flow                        | ✅     |
-| Step up OAuth to HTTPS                   | ✅     |
-| Scan Conductor                           | ❌     |
-| Stream Fetcher (multiproc, single proc)  | ❌     |
-| Stream Viewer List Fetcher (multiproc)   | ❌     |
-| User Data Enricher (multiproc)           | ❌     |
-| Viewer Sightings Aggregator              | ❌     |
-| Simplistic Classifier                    | ❌     |
-| Collections metrics and visualizer       | ❌     |
-| Reconsider schema needs and indexing     | ✅     |
-| Documentation pass                       | ❌     |
-| white list / ignore list (for good bots) | ❌     |
-| Profiling                                | ❌     |
-| Parallelization                          | ❌     |
-| Get hard-coded config stuff into config. | ✅     |
-| Unit tests                               | ✅     |
+I'm proud of what I maanged to accomplish here, but alas, this won't be the aid I was hoping it would be.
 
-</div>
-
-## Why am I doing this?
+## Why was I doing this?
 
 **Lurker Bots** are Twitch accounts which remain resident in thousands of chat channels across
 Twitch for large spans of time, for a number of reasons including (but not limited to):
