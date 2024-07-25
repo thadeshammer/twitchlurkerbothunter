@@ -26,6 +26,7 @@
     Configurable hard limits on quantity of chat-joins per window. Docs say it's 20 joins per 10s.
     We could play very safely and cap at 18 joins per 10s OR 20 joins per 10.2s, etc.
 """
+import asyncio
 import logging
 
 from server.models import (
@@ -86,8 +87,16 @@ class ViewerListFetcher:
             else:
                 logger.debug(f"Grabbed {target_channel} from workbench.")
                 await self._listener.connect()
-                results = await self._listener.fetch_viewer_list_for_channels(
-                    [target_channel]
+                fetch_data, time_elapsed = (
+                    await self._listener.fetch_viewer_list_for_channels(
+                        [target_channel]
+                    )
                 )
-                logger.info(f"{self._worker_id} GOT ONE: {results}")
+                user_names = fetch_data[target_channel].user_names
+                logger.info(
+                    f"{self._worker_id} FETCHED {len(user_names)}: {user_names}"
+                )
+                logger.info(f"{time_elapsed=}")
+                logger.info("Sleeping to appease the rate limit.")
+                await asyncio.sleep(10.0)
         await self._listener.close()

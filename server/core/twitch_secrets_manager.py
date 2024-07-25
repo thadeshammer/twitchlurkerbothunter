@@ -140,7 +140,10 @@ class TwitchSecretsManager:
             with self._multiprocess_lock:
                 logger.info("Refreshing token.")
 
-                if not self._secrets_store:
+                if self._secrets_store is None:
+                    self._secrets_store = await fetch_secret()
+
+                if self._secrets_store is None:  # db was clear
                     raise TwitchSecretsManagerException(
                         "Can't refresh / no tokens present."
                     )

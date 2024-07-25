@@ -27,22 +27,27 @@ Author:
 Version:
     1.0.0
 """
-from .scanning_session import (
+from .pydantic.twitch_responses import UserListResponse
+from .sqlmodel.scanning_session import (
     ScanningSession,
     ScanningSessionCreate,
     ScanningSessionRead,
     ScanningSessionStopReasonEnum,
 )
-from .secrets import Secret, SecretCreate, SecretRead
-from .stream_categories import StreamCategory, StreamCategoryCreate, StreamCategoryRead
-from .stream_viewerlist_fetch import (
+from .sqlmodel.secrets import Secret, SecretCreate, SecretRead
+from .sqlmodel.stream_categories import (
+    StreamCategory,
+    StreamCategoryCreate,
+    StreamCategoryRead,
+)
+from .sqlmodel.stream_viewerlist_fetch import (
     GetStreamResponse,
     StreamViewerListFetch,
     StreamViewerListFetchCreate,
     StreamViewerListFetchRead,
     StreamViewerListFetchStatus,
 )
-from .suspected_bot import (
+from .sqlmodel.suspected_bot import (
     SUSPICION_RANKING_THRESHOLDS,
     SuspectedBot,
     SuspectedBotCreate,
@@ -50,14 +55,18 @@ from .suspected_bot import (
     SuspicionLevel,
     SuspicionReason,
 )
-from .twitch_user_data import (
+from .sqlmodel.twitch_user_data import (
     TwitchAccountType,
     TwitchBroadcasterType,
     TwitchUserData,
     TwitchUserDataCreate,
     TwitchUserDataRead,
 )
-from .viewer_sighting import ViewerSighting, ViewerSightingCreate, ViewerSightingRead
+from .sqlmodel.viewer_sighting import (
+    ViewerSighting,
+    ViewerSightingCreate,
+    ViewerSightingRead,
+)
 
 __all__ = [
     "GetStreamResponse",
@@ -86,6 +95,7 @@ __all__ = [
     "TwitchUserData",
     "TwitchUserDataCreate",
     "TwitchUserDataRead",
+    "UserListResponse",
     "ViewerSighting",
     "ViewerSightingCreate",
     "ViewerSightingRead",

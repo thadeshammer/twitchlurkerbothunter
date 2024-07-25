@@ -6,12 +6,21 @@ from typing import Any, Dict, Optional
 import aiohttp
 from pydantic import ValidationError
 
-from server.models import GetStreamResponse, StreamCategoryCreate, TwitchUserDataCreate
+from server.models import (
+    GetStreamResponse,
+    StreamCategoryCreate,
+    TwitchUserDataCreate,
+    UserListResponse,
+)
 
 logger = logging.getLogger("__name__")
 
 
 class TwitchAPIDelegateError(Exception):
+    pass
+
+
+class TwitchAPIDelegateTokenRefresh(TwitchAPIDelegateError):
     pass
 
 
@@ -146,10 +155,16 @@ async def revitalize_tokens(
     logger.debug("Calling refresh endpoint.")
     async with aiohttp.ClientSession() as session:
         async with session.post(config.oauth_token_url, params=params) as response:
-            if response.status != 200:
-                logger.error(f"Failed to refresh token: {response.status}")
-                return {"error": response.status, "message": await response.text()}
-            return await response.json()
+            try:
+                response_error_check(response=response)
+                if response.status != 200:
+                    logger.error(f"Failed to refresh token: {response.status}")
+                    return {"error": response.status, "message": await response.text()}
+                return await response.json()
+            except TwitchAPIDelegateError as e:
+                raise TwitchAPIDelegateTokenRefresh(
+                    f"Failed to refresh tokens. {str(e)}"
+                ) from e
 
 
 async def check_token_validity(config: TwitchAPIConfig) -> bool:
@@ -202,6 +217,45 @@ async def get_categories(
         categories = [StreamCategoryCreate(**category) for category in categories_data]
         logger.debug(f"{categories=}")
         return categories
+    except ValidationError as e:
+        logger.error(f"Error parsing response: {e}")
+        raise
+
+
+async def get_app_access_token(config: TwitchAPIConfig) -> Dict[str, Any]:
+    """Fetch an App Access token, intended for public API data. 800 requests per minute but limited
+    access (can't fetch follower info for instance)."""
+    params = {
+        "client_id": config.client_id,
+        "client_secret": config.client_secret,
+        "grant_type": "client_credentials",
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.post(config.oauth_token_url, params=params) as response:
+            if response.status != 200:
+                logger.error(f"Failed to get app access token: {response.status}")
+                raise TwitchAPIDelegateError(
+                    f"Failed to get app access token: {response.status}"
+                )
+            data = await response.json()
+            return {
+                "access_token": data.get("access_token"),
+                "expires_in": data.get("expires_in"),
+                "token_type": data.get("token_type"),
+            }
+
+
+async def get_channel_user_list(
+    config: TwitchAPIConfig, channel_name: str
+) -> UserListResponse:
+    # The ill-fated undocumented endpoint to get user list from a channel
+    endpoint = f"group/user/{channel_name}/chatters"
+    tmi_base_url = "https://tmi.twitch.tv"
+    response = await make_request(config, endpoint, base_url=tmi_base_url)
+    response_error_check(response=response)
+    try:
+        user_list_response = UserListResponse(**response)
+        return user_list_response
     except ValidationError as e:
         logger.error(f"Error parsing response: {e}")
         raise

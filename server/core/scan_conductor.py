@@ -11,6 +11,7 @@
     - Updates the ScanningSession with relevant metrics both during runtime and when complete.
     
 """
+import asyncio
 import logging
 
 from server.utils import (
@@ -38,12 +39,22 @@ class ScanConductor:
             "worker1", self._access_token, self.workbench_queue_details
         )
 
-    async def try_it_out(self, channel_name: str):
+    async def try_it_out(self, channel_list: list[str]):
+        """Smoketest method."""
+        if not isinstance(channel_list, list):
+            raise TypeError("Don't be so stupid.")
+
         logger.debug(f"{self.workbench_queue_details=}")
-        logger.debug(f"Starting test scan: {channel_name}")
+        logger.debug(f"Starting test scan: {channel_list}")
         logger.debug("Enqueuing.")
-        await self._workbench_queue.enqueue(channel_name)  # FOR TESTING
-        logger.debug("Updating workbench next.")
-        await self._the_workbench.update()
+
+        tasks = []
+        for channel in channel_list:
+            logger.debug(f"enqueuing: {channel}")
+            tasks.append(self._workbench_queue.enqueue(channel))
+        await asyncio.gather(*tasks)
+
+        # logger.debug("Updating workbench next.")
+        # await self._the_workbench.update()
         logger.debug("Starting processing loop.")
         await self._viewerlist_fetcher.processing_loop()

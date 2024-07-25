@@ -2,7 +2,7 @@ import pytest
 from sqlmodel import select
 
 from server.db import upsert_one
-from server.models.dummy_model import DummyModel
+from server.models.sqlmodel.dummy_model import DummyModel
 
 
 @pytest.mark.asyncio

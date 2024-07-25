@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from server.models.suspected_bot import (
+from server.models.sqlmodel.suspected_bot import (
     SuspectedBotCreate,
     SuspicionLevel,
     SuspicionReason,

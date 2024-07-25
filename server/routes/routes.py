@@ -12,11 +12,14 @@ from server.core.twitch_api_delegate import (
     TwitchGetStreamsParams,
     check_token_validity,
     get_categories,
+    get_channel_user_list,
     get_streams,
     get_user,
 )
 from server.core.twitch_secrets_manager import TwitchSecretsManager
 from server.models import StreamCategoryCreate
+
+from .request_models import StringList
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +55,7 @@ async def force_tokens_refresh():
         secrets_manager = TwitchSecretsManager()
         await secrets_manager.force_tokens_refresh()
     except Exception as e:
+        logger.error(f"Failed to refresh tokens: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Tokens force-refresh failed: Internal Server Error",
@@ -205,19 +209,47 @@ async def get_categories_endpoint(
         ) from e
 
 
-@router.post("/smoketest/{channelname}")
-async def smoketest(channelname: str):
+@router.post("/smoketest/")
+async def smoketest(channel_list: StringList):
     from server.core.scan_conductor import ScanConductor
 
-    logger.debug(f"SMOKETEST: {channelname}")
+    logger.debug(f"SMOKETEST: {channel_list.items}")
 
     secrets_manager = TwitchSecretsManager()
     access_token = await secrets_manager.get_access_token()
     conductor = ScanConductor(access_token=access_token)
     try:
-        await conductor.try_it_out(channel_name=channelname)
+        await conductor.try_it_out(channel_list=channel_list.items)
     except Exception as e:
         logger.error(f"Internal server error: {str(e)}")
         raise
 
     return {"message": "ok"}
+
+
+@router.get("/channel_user_list/{channel}")
+async def get_channel_user_list_route(channel: str):
+    try:
+        # Retrieve credentials from SecretsManager
+        secrets_manager = TwitchSecretsManager()
+        config = TwitchAPIConfig(**(await secrets_manager.get_credentials()))
+        response = await get_channel_user_list(
+            config=config, channel_name=channel.lower()
+        )
+
+        # Return the user information
+        if response is not None:
+            return response
+
+        return {"message": "User not found."}
+    except ValidationError as e:
+        logger.error(f"Validation error: {e.errors()}")
+        raise HTTPException(
+            status_code=400, detail=f"Validation error: {e.errors()}"
+        ) from e
+    except Exception as e:
+        logger.error(f"Error fetching user: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch user: {str(e)}",
+        ) from e

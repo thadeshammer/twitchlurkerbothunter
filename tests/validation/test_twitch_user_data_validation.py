@@ -3,7 +3,7 @@ from datetime import datetime
 import pytest
 from pydantic import ValidationError
 
-from server.models.twitch_user_data import (
+from server.models.sqlmodel.twitch_user_data import (
     TwitchAccountType,
     TwitchBroadcasterType,
     TwitchUserData,

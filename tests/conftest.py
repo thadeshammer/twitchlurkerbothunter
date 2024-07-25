@@ -22,7 +22,7 @@ from server.models import (
     TwitchUserData,
     ViewerSighting,
 )
-from server.models.dummy_model import DummyModel
+from server.models.sqlmodel.dummy_model import DummyModel
 
 _TEST_DB_URI = Config.get_db_uri()
 

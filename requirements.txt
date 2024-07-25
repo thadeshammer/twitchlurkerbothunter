@@ -15,6 +15,7 @@ requests-oauthlib==2.0.0
 requests==2.31.0
 sqlalchemy==2.0.31
 sqlmodel==0.0.19
-twitchio==2.9.1
+# twitchio==2.9.1  # testing new version
+twitchio==2.10.0
 uvicorn==0.29.0
 werkzeug==2.3.3
