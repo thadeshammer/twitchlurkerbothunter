@@ -4,7 +4,7 @@
 
 Overall these changes are good for Twitch, but - as you know - adversaries will find other ways. I expect lurker bots will return in some capacity at some point, but with the current available API endpoints, I won't be able to help after all.
 
-I'm proud of what I maanged to accomplish here, but alas, this won't be the aid I was hoping it would be.
+I'm proud of what I mananged to accomplish here, but alas, this won't be the aid I was hoping it would be.
 
 ## Why was I doing this?
 
